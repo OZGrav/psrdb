@@ -1,5 +1,5 @@
-from tables.graphql_table import GraphQLTable
-from tables.graphql_query import graphql_query_factory
+from meerdb.tables.graphql_table import GraphQLTable
+from meerdb.tables.graphql_query import graphql_query_factory
 
 
 class Foldings(GraphQLTable):
@@ -9,7 +9,7 @@ class Foldings(GraphQLTable):
         # create a new record
         self.create_mutation = """
         mutation ($processing_id: Int!, $folding_ephemeris_id: Int!, $nbin: Int!, $npol: Int!, $nchan: Int!, $dm: Float!, $tsubint: Float!) {
-            createFolding(input: { 
+            createFolding(input: {
                 processing_id: $processing_id,
                 folding_ephemeris_id: $folding_ephemeris_id,
                 nbin: $nbin,
@@ -27,7 +27,7 @@ class Foldings(GraphQLTable):
         # Update an existing record
         self.update_mutation = """
         mutation ($id: Int!, $processing_id: Int!, $folding_ephemeris_id: Int!, $nbin: Int!, $npol: Int!, $nchan: Int!, $dm: Float!, $tsubint: Float!) {
-            updateFolding(id: $id, input: { 
+            updateFolding(id: $id, input: {
                 processing_id: $processing_id,
                 folding_ephemeris_id: $folding_ephemeris_id,
                 nbin: $nbin,
@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
     GraphQLTable.configure_logging(args)
 
-    from graphql_client import GraphQLClient
+    from meerdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 

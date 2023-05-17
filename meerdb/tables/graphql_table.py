@@ -3,7 +3,7 @@ import logging
 import requests as r
 from base64 import b64decode, b64encode
 import binascii
-from graphql_client import GraphQLClient
+from meerdb.graphql_client import GraphQLClient
 
 
 class GraphQLTable:

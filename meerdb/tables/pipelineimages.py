@@ -1,5 +1,5 @@
-from tables.graphql_table import GraphQLTable
-from tables.graphql_query import graphql_query_factory
+from meerdb.tables.graphql_table import GraphQLTable
+from meerdb.tables.graphql_query import graphql_query_factory
 from base64 import b64encode
 
 
@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     GraphQLTable.configure_logging(args)
 
-    from graphql_client import GraphQLClient
+    from meerdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 

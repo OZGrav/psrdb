@@ -1,4 +1,4 @@
-from tables.graphql_join import GraphQLJoin
+from meerdb.tables.graphql_join import GraphQLJoin
 
 
 class PulsarsLaunches(GraphQLJoin):
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     GraphQLTable.configure_logging(args)
 
-    from graphql_client import GraphQLClient
+    from meerdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 

@@ -1,5 +1,5 @@
-from tables.graphql_table import GraphQLTable
-from tables.graphql_query import graphql_query_factory
+from meerdb.tables.graphql_table import GraphQLTable
+from meerdb.tables.graphql_query import graphql_query_factory
 
 
 class Observations(GraphQLTable):
@@ -9,7 +9,7 @@ class Observations(GraphQLTable):
         # create a new record
         self.create_mutation = """
         mutation ($target: Int!, $calibration: Int!, $telescope: Int!, $instrument_config: Int!, $project: Int!, $config: JSONString!, $duration: Float!, $utc_start: DateTime!, $nant: Int!, $nant_eff: Int!, $suspect: Boolean!, $comment: String) {
-            createObservation(input: { 
+            createObservation(input: {
                 target_id: $target,
                 calibration_id: $calibration,
                 telescope_id: $telescope,
@@ -21,7 +21,7 @@ class Observations(GraphQLTable):
                 nant: $nant,
                 nantEff: $nant_eff,
                 suspect: $suspect,
-                comment: $comment 
+                comment: $comment
             }) {
                 observation {
                     id
@@ -389,7 +389,7 @@ if __name__ == "__main__":
 
     GraphQLTable.configure_logging(args)
 
-    from graphql_client import GraphQLClient
+    from meerdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 

@@ -1,5 +1,5 @@
-from tables.graphql_table import GraphQLTable
-from tables.graphql_query import graphql_query_factory
+from meerdb.tables.graphql_table import GraphQLTable
+from meerdb.tables.graphql_query import graphql_query_factory
 
 
 class Pipelines(GraphQLTable):
@@ -10,7 +10,7 @@ class Pipelines(GraphQLTable):
         # create a new record
         self.create_mutation = """
         mutation ($name: String!, $description: String!, $revision: String!, $createdAt: DateTime!, $createdBy: String!, $configuration: JSONString!) {
-            createPipeline(input: { 
+            createPipeline(input: {
                 name: $name,
                 description: $description,
                 revision: $revision,
@@ -27,7 +27,7 @@ class Pipelines(GraphQLTable):
         # Update an existing record
         self.update_mutation = """
         mutation ($id: Int!, $name: String!, $description: String!, $revision: String!, $createdAt: DateTime!, $createdBy: String!, $configuration: JSONString!) {
-            updatePipeline(id: $id, input: { 
+            updatePipeline(id: $id, input: {
                 name: $name,
                 description: $description,
                 revision: $revision,
@@ -183,7 +183,7 @@ if __name__ == "__main__":
 
     GraphQLTable.configure_logging(args)
 
-    from graphql_client import GraphQLClient
+    from meerdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 

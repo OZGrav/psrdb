@@ -2,8 +2,8 @@
     CLI interface for the Basebandings model
 """
 
-from tables.graphql_table import GraphQLTable
-from tables.graphql_query import graphql_query_factory
+from meerdb.tables.graphql_table import GraphQLTable
+from meerdb.tables.graphql_query import graphql_query_factory
 
 
 class Basebandings(GraphQLTable):
@@ -24,7 +24,7 @@ class Basebandings(GraphQLTable):
         # create a new record
         self.create_mutation = """
         mutation ($processing_id: Int!) {
-            createBasebanding(input: { 
+            createBasebanding(input: {
                 processing_id: $processing_id,
             }) {
                 basebanding {
@@ -36,7 +36,7 @@ class Basebandings(GraphQLTable):
         # Update an existing record
         self.update_mutation = """
         mutation ($id: Int!, $processing_id: Int!) {
-            updateBasebanding(id: $id, input: { 
+            updateBasebanding(id: $id, input: {
                 processing_id: $processing_id,
             }) {
                 basebanding {
@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
     GraphQLTable.configure_logging(args)
 
-    from graphql_client import GraphQLClient
+    from meerdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 

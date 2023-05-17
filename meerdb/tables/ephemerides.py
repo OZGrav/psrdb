@@ -1,8 +1,8 @@
 import hashlib
 import json
 
-from tables.graphql_table import GraphQLTable
-from tables.graphql_query import graphql_query_factory
+from meerdb.tables.graphql_table import GraphQLTable
+from meerdb.tables.graphql_query import graphql_query_factory
 
 
 class Ephemerides(GraphQLTable):
@@ -26,7 +26,7 @@ class Ephemerides(GraphQLTable):
                 }) {
                 ephemeris {
                     id
-                }    
+                }
             }
         }
         """
@@ -290,7 +290,7 @@ if __name__ == "__main__":
 
     GraphQLTable.configure_logging(args)
 
-    from graphql_client import GraphQLClient
+    from meerdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 

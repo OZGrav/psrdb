@@ -1,5 +1,5 @@
-from joins.graphql_join import GraphQLJoin
-from tables.graphql_query import graphql_query_factory
+from meerdb.joins.graphql_join import GraphQLJoin
+from meerdb.tables.graphql_query import graphql_query_factory
 
 
 class ProcessedObservations(GraphQLJoin):
@@ -13,11 +13,11 @@ class ProcessedObservations(GraphQLJoin):
             "id",
             """
             observation {
-                target { id } 
-                telescope { id } 
-                calibration { id } 
-                project { id } 
-                instrumentConfig { id } 
+                target { id }
+                telescope { id }
+                calibration { id }
+                project { id }
+                instrumentConfig { id }
                 utcStart
             }
             """
@@ -33,11 +33,11 @@ class ProcessedObservations(GraphQLJoin):
             "id",
             """
             observation {
-                target { name } 
-                telescope { name } 
-                calibration { id } 
-                project { code } 
-                instrumentConfig { id } 
+                target { name }
+                telescope { name }
+                calibration { id }
+                project { code }
+                instrumentConfig { id }
                 utcStart
             }
             """,
@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
     GraphQLJoin.configure_logging(args)
 
-    from graphql_client import GraphQLClient
+    from meerdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 

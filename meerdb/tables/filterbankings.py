@@ -1,5 +1,5 @@
-from tables.graphql_table import GraphQLTable
-from tables.graphql_query import graphql_query_factory
+from meerdb.tables.graphql_table import GraphQLTable
+from meerdb.tables.graphql_query import graphql_query_factory
 
 
 class Filterbankings(GraphQLTable):
@@ -9,7 +9,7 @@ class Filterbankings(GraphQLTable):
         # create a new record
         self.create_mutation = """
         mutation ($processing_id: Int!, $nbit: Int!, $npol: Int!, $nchan: Int!, $dm: Float!, $tsamp: Float!) {
-            createFilterbanking(input: { 
+            createFilterbanking(input: {
                 processing_id: $processing_id,
                 nbit: $nbit,
                 npol: $npol,
@@ -26,7 +26,7 @@ class Filterbankings(GraphQLTable):
         # Update an existing record
         self.update_mutation = """
         mutation ($id: Int!, $processing_id: Int!, $nbit: Int!, $npol: Int!, $nchan: Int!, $dm: Float!, $tsamp: Float!) {
-            updateFilterbanking(id: $id, input: { 
+            updateFilterbanking(id: $id, input: {
                 processing_id: $processing_id,
                 nbit: $nbit,
                 npol: $npol,
@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
     GraphQLTable.configure_logging(args)
 
-    from graphql_client import GraphQLClient
+    from meerdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 
