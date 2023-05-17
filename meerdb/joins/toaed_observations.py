@@ -66,11 +66,22 @@ class ToaedObservations(GraphQLJoin):
         project_code=None,
         instrument_config_id=None,
         instrument_config_name=None,
-        utc_start_gte=None,
-        utc_start_lte=None,
+        utcs=None,
+        utce=None,
         pipeline_id=None,
         pipeline_name=None,
     ):
+        # Also convert dates to correct format
+        if utcs == "":
+            utcs = None
+        else:
+            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
+            utcs = f"{d.date()}T{d.time()}+00:00"
+        if utce == "":
+            utce = None
+        else:
+            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
+            utce = f"{d.date()}T{d.time()}+00:00"
         filters = [
             {"field": "inputFolding_FoldingEphemeris_Pulsar_Id", "value": pulsar_id, "join": "Pulsars"},
             {"field": "inputFolding_FoldingEphemeris_Pulsar_Jname", "value": pulsar_jname, "join": "Pulsars"},
@@ -88,8 +99,8 @@ class ToaedObservations(GraphQLJoin):
                 "value": instrument_config_name,
                 "join": "InstrumentConfigs",
             },
-            {"field": "processing_Observation_UtcStart_Gte", "value": utc_start_gte, "join": None},
-            {"field": "processing_Observation_UtcStart_Lte", "value": utc_start_lte, "join": None},
+            {"field": "processing_Observation_UtcStart_Gte", "value": utcs, "join": None},
+            {"field": "processing_Observation_UtcStart_Lte", "value": utce, "join": None},
             {"field": "processing_Pipeline_Id", "value": pipeline_id, "join": "Pipelines"},
             {"field": "processing_Pipeline_Name", "value": pipeline_name, "join": "Pipelines"},
         ]
@@ -109,8 +120,8 @@ class ToaedObservations(GraphQLJoin):
                 args.project_code,
                 args.instrument_config_id,
                 args.instrument_config_name,
-                args.utc_start_gte,
-                args.utc_start_lte,
+                args.utcs,
+                args.utce,
                 args.pipeline_id,
                 args.pipeline_name,
             )
@@ -154,10 +165,10 @@ class ToaedObservations(GraphQLJoin):
         parser_list.add_argument("--project_id", type=int, help="list toaed observations matching the project id")
         parser_list.add_argument("--project_code", type=str, help="list toaed observations matching the project code")
         parser_list.add_argument(
-            "--utc_start_gte", type=str, help="list toaed observations with utc_start greater than the timestamp"
+            "--utcs", type=str, help="list toaed observations with utc_start greater than the timestamp"
         )
         parser_list.add_argument(
-            "--utc_start_lte", type=str, help="list toaed observations with utc_start less than the timestamp"
+            "--utce", type=str, help="list toaed observations with utc_start less than the timestamp"
         )
         parser_list.add_argument(
             "--pipeline_id",

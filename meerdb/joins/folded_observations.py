@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from meerdb.joins.graphql_join import GraphQLJoin
 from meerdb.tables.graphql_query import graphql_query_factory
 
@@ -73,9 +75,25 @@ class FoldedObservations(GraphQLJoin):
         project_code=None,
         instrument_config_id=None,
         instrument_config_name=None,
-        utc_start_gte=None,
-        utc_start_lte=None,
+        utcs=None,
+        utce=None,
     ):
+        # Parse some defaults
+        if pulsar_jname == "":
+            pulsar_jname = None
+        if project_code == "":
+            project_code = None
+        # Also convert dates to correct format
+        if utcs == "":
+            utcs = None
+        else:
+            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
+            utcs = f"{d.date()}T{d.time()}+00:00"
+        if utce == "":
+            utce = None
+        else:
+            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
+            utce = f"{d.date()}T{d.time()}+00:00"
         filters = [
             {"field": "foldingEphemeris_Pulsar_Id", "value": pulsar_id, "join": "Pulsars"},
             {"field": "foldingEphemeris_Pulsar_Jname", "value": pulsar_jname, "join": "Pulsars"},
@@ -93,8 +111,8 @@ class FoldedObservations(GraphQLJoin):
                 "value": instrument_config_name,
                 "join": "InstrumentConfigs",
             },
-            {"field": "processing_Observation_UtcStart_Gte", "value": utc_start_gte, "join": None},
-            {"field": "processing_Observation_UtcStart_Lte", "value": utc_start_lte, "join": None},
+            {"field": "processing_Observation_UtcStart_Gte", "value": utcs, "join": None},
+            {"field": "processing_Observation_UtcStart_Lte", "value": utce, "join": None},
         ]
         graphql_query = graphql_query_factory(self.table_name, self.record_name, None, filters)
         return GraphQLJoin.list_graphql(self, graphql_query)
@@ -112,8 +130,8 @@ class FoldedObservations(GraphQLJoin):
                 args.project_code,
                 args.instrument_config_id,
                 args.instrument_config_name,
-                args.utc_start_gte,
-                args.utc_start_lte,
+                args.utcs,
+                args.utce,
             )
 
     @classmethod
@@ -155,10 +173,10 @@ class FoldedObservations(GraphQLJoin):
         parser_list.add_argument("--project_id", type=int, help="list folded observations matching the project id")
         parser_list.add_argument("--project_code", type=str, help="list folded observations matching the project code")
         parser_list.add_argument(
-            "--utc_start_gte", type=str, help="list folded observations with utc_start greater than the timestamp"
+            "--utcs", type=str, help="list folded observations with utc_start greater than the timestamp"
         )
         parser_list.add_argument(
-            "--utc_start_lte", type=str, help="list folded observations with utc_start less than the timestamp"
+            "--utce", type=str, help="list folded observations with utc_start less than the timestamp"
         )
 
 

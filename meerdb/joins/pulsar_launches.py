@@ -14,7 +14,7 @@ class PulsarsLaunches(GraphQLJoin):
 
         filters = [
             {"arg": "target_id", "field": "observation_Target_Id", "join": "Targets"},
-            {"arg": "target_name", "field": "observation_Target_Name", "join": "Targets"},
+            {"arg": "pulsar", "field": "observation_Target_Name", "join": "Targets"},
             {"arg": "telescope_id", "field": "observation_Telescope_Id", "join": "Telescopes"},
             {"arg": "telescope_name", "field": "observation_Telescope_Name", "join": "Telescopes"},
             {"arg": "project_id", "field": "observation_Project_Id", "join": "Projects"},
@@ -25,8 +25,8 @@ class PulsarsLaunches(GraphQLJoin):
                 "field": "observation_InstrumentConfig_Name",
                 "join": "InstrumentConfigs",
             },
-            {"arg": "utc_start_gte", "field": "observation_UtcStart_Gte", "join": None},
-            {"arg": "utc_start_lte", "field": "observation_UtcStart_Lte", "join": None},
+            {"arg": "utcs", "field": "observation_UtcStart_Gte", "join": None},
+            {"arg": "utce", "field": "observation_UtcStart_Lte", "join": None},
         ]
         fields = []
         for f in filters:
@@ -78,7 +78,7 @@ class PulsarsLaunches(GraphQLJoin):
 
 if __name__ == "__main__":
 
-    parser = PulsarLaunches.get_parsers()
+    parser = PulsarsLaunches.get_parsers()
     args = parser.parse_args()
 
     GraphQLTable.configure_logging(args)
@@ -87,5 +87,5 @@ if __name__ == "__main__":
 
     client = GraphQLClient(args.url, args.very_verbose)
 
-    p = PulsarLaunches(client, args.url, args.token)
+    p = PulsarsLaunches(client, args.url, args.token)
     response = p.process(args)

@@ -46,11 +46,11 @@ class Pulsartargets(GraphQLTable):
         self.literal_field_names = ["id", "pulsar {id}", "target {id}"]
         self.field_names = ["id", "pulsar {jname}", "target {name}"]
 
-    def list(self, id=None, target_id=None, target_name=None, pulsar_id=None, pulsar_jname=None):
+    def list(self, id=None, target_id=None, pulsar=None, pulsar_id=None, pulsar_jname=None):
         """Return a list of records matching the id and/or the provided arguments."""
         filters = [
             {"field": "target_Id", "value": target_id, "join": "Targets"},
-            {"field": "target_Name", "value": target_name, "join": "Targets"},
+            {"field": "target_Name", "value": pulsar, "join": "Targets"},
             {"field": "pulsar_Id", "value": pulsar_id, "join": "Pulsars"},
             {"field": "pulsar_Jname", "value": pulsar_jname, "join": "Pulsars"},
         ]
@@ -73,7 +73,7 @@ class Pulsartargets(GraphQLTable):
         elif args.subcommand == "update":
             return self.update(args.id, args.pulsar, args.target)
         elif args.subcommand == "list":
-            return self.list(args.id, args.target, args.target_name, args.pulsar, args.pulsar_jname)
+            return self.list(args.id, args.target, args.pulsar, args.pulsar, args.pulsar_jname)
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
@@ -114,7 +114,7 @@ class Pulsartargets(GraphQLTable):
             "--target", metavar="TGTID", type=int, help="list pulsartargets matching the target id [int]"
         )
         parser_list.add_argument(
-            "--target_name", metavar="TGTNAME", type=str, help="list pulsartargets matching the target name [str]"
+            "--pulsar", metavar="TGTNAME", type=str, help="list pulsartargets matching the target (pulsar) name [str]"
         )
 
         # create the parser for the "create" command

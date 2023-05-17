@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from meerdb.tables.graphql_table import GraphQLTable
 from meerdb.tables.graphql_query import graphql_query_factory
 
@@ -107,28 +109,39 @@ class Observations(GraphQLTable):
         self,
         id=None,
         target_id=None,
-        target_name=None,
+        pulsar=None,
         telescope_id=None,
         telescope_name=None,
         project_id=None,
         project_code=None,
         instrumentconfig_id=None,
         instrumentconfig_name=None,
-        utcstart_gte=None,
-        utcstart_lte=None,
+        utcs=None,
+        utce=None,
     ):
+        # Convert dates to correct format
+        if utcs == "":
+            utcs = None
+        else:
+            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
+            utcs = f"{d.date()}T{d.time()}+00:00"
+        if utce == "":
+            utce = None
+        else:
+            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
+            utce = f"{d.date()}T{d.time()}+00:00"
         """Return a list of records matching the id and/or any of the arguments."""
         filters = [
             {"field": "target_Id", "value": target_id, "join": "Targets"},
-            {"field": "target_Name", "value": target_name, "join": "Targets"},
+            {"field": "target_Name", "value": pulsar, "join": "Targets"},
             {"field": "telescope_Id", "value": telescope_id, "join": "Telescopes"},
             {"field": "telescope_Name", "value": telescope_name, "join": "Telescopes"},
             {"field": "project_Id", "value": project_id, "join": "Projects"},
             {"field": "project_Code", "value": project_code, "join": "Projects"},
             {"field": "instrumentConfig_Id", "value": instrumentconfig_id, "join": "InstrumentConfigs"},
             {"field": "instrumentConfig_Name", "value": instrumentconfig_name, "join": "InstrumentConfigs"},
-            {"field": "utcStart_Gte", "value": utcstart_gte, "join": None},
-            {"field": "utcStart_Lte", "value": utcstart_lte, "join": None},
+            {"field": "utcStart_Gte", "value": utcs, "join": None},
+            {"field": "utcStart_Lte", "value": utce, "join": None},
         ]
         graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
         return GraphQLTable.list_graphql(self, graphql_query)
@@ -235,15 +248,15 @@ class Observations(GraphQLTable):
             return self.list(
                 args.id,
                 args.target_id,
-                args.target_name,
+                args.pulsar,
                 args.telescope_id,
                 args.telescope_name,
                 args.project_id,
                 args.project_code,
                 args.instrumentconfig_id,
                 args.instrumentconfig_name,
-                args.utcstart_gte,
-                args.utcstart_lte,
+                args.utcs,
+                args.utce,
             )
         elif args.subcommand == "delete":
             return self.delete(args.id)
@@ -276,10 +289,10 @@ class Observations(GraphQLTable):
         parser_list = subs.add_parser("list", help="list existing observations")
         parser_list.add_argument("--id", metavar="ID", type=int, help="list observations matching the id [int]")
         parser_list.add_argument(
-            "--target_id", metavar="TGTID", type=int, help="list observations matching the target id [int]"
+            "--target_id", metavar="TGTID", type=int, help="list observations matching the target (pulsar) id [int]"
         )
         parser_list.add_argument(
-            "--target_name", metavar="TGTNAME", type=str, help="list observations matching the target name [str]"
+            "--pulsar", metavar="TGTNAME", type=str, help="list observations matching the target (pulsar) name [str]"
         )
         parser_list.add_argument(
             "--telescope_id", metavar="TELID", type=int, help="list observations matching the telescope id [int]"
@@ -306,13 +319,13 @@ class Observations(GraphQLTable):
             "--project_code", metavar="PROJCODE", type=str, help="list observations matching the project code [str]"
         )
         parser_list.add_argument(
-            "--utcstart_gte",
+            "--utcs",
             metavar="UTCGTE",
             type=str,
             help="list observations with utc_start greater than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
         )
         parser_list.add_argument(
-            "--utcstart_lte",
+            "--utce",
             metavar="UTCLET",
             type=str,
             help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",

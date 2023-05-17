@@ -53,19 +53,30 @@ class ProcessedObservations(GraphQLJoin):
     def list(
         self,
         target_id=None,
-        target_name=None,
+        pulsar=None,
         telescope_id=None,
         telescope_name=None,
         project_id=None,
         project_code=None,
         instrument_config_id=None,
         instrument_config_name=None,
-        utc_start_gte=None,
-        utc_start_lte=None,
+        utcs=None,
+        utce=None,
     ):
+        # Also convert dates to correct format
+        if utcs == "":
+            utcs = None
+        else:
+            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
+            utcs = f"{d.date()}T{d.time()}+00:00"
+        if utce == "":
+            utce = None
+        else:
+            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
+            utce = f"{d.date()}T{d.time()}+00:00"
         filters = [
             {"value": target_id, "field": "observation_Target_Id", "join": "Targets"},
-            {"value": target_name, "field": "observation_Target_Name", "join": "Targets"},
+            {"value": pulsar, "field": "observation_Target_Name", "join": "Targets"},
             {"value": telescope_id, "field": "observation_Telescope_Id", "join": "Telescopes"},
             {"value": telescope_name, "field": "observation_Telescope_Name", "join": "Telescopes"},
             {"value": project_id, "field": "observation_Project_Id", "join": "Projects"},
@@ -80,8 +91,8 @@ class ProcessedObservations(GraphQLJoin):
                 "field": "observation_InstrumentConfig_Name",
                 "join": "InstrumentConfigs",
             },
-            {"value": utc_start_gte, "field": "observation_UtcStart_Gte", "join": None},
-            {"value": utc_start_lte, "field": "observation_UtcStart_Lte", "join": None},
+            {"value": utcs, "field": "observation_UtcStart_Gte", "join": None},
+            {"value": utce, "field": "observation_UtcStart_Lte", "join": None},
         ]
 
         graphql_query = graphql_query_factory(self.table_name, self.record_name, None, filters)
@@ -93,15 +104,15 @@ class ProcessedObservations(GraphQLJoin):
         if args.subcommand == "list":
             return self.list(
                 args.target_id,
-                args.target_name,
+                args.pulsar,
                 args.telescope_id,
                 args.telescope_name,
                 args.project_id,
                 args.project_code,
                 args.instrument_config_id,
                 args.instrument_config_name,
-                args.utc_start_gte,
-                args.utc_start_lte,
+                args.utcs,
+                args.utce,
             )
 
     @classmethod
@@ -130,7 +141,7 @@ class ProcessedObservations(GraphQLJoin):
         parser_list = subs.add_parser("list", help="list existing processings of observations")
         parser_list.add_argument("--target_id", type=int, help="list processed observations matching the target id")
         parser_list.add_argument(
-            "--target_name", type=str, help="list processed observations matching the target name"
+            "--pulsar", type=str, help="list processed observations matching the target (pulsar) name"
         )
         parser_list.add_argument(
             "--telescope_id", type=int, help="list processed observations matching the telescope id"
@@ -151,10 +162,10 @@ class ProcessedObservations(GraphQLJoin):
             "--project_code", type=str, help="list processed observations matching the project code"
         )
         parser_list.add_argument(
-            "--utc_start_gte", type=str, help="list processed observations with utc_start greater than the timestamp"
+            "--utcs", type=str, help="list processed observations with utc_start greater than the timestamp"
         )
         parser_list.add_argument(
-            "--utc_start_lte", type=str, help="list processed observations with utc_start less than the timestamp"
+            "--utce", type=str, help="list processed observations with utc_start less than the timestamp"
         )
 
 

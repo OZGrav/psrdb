@@ -33,7 +33,7 @@ The first arguments is the table name and the second is the action.
 For example if I wanted to list all observations of pulsar J1652-4838 I could use:
 
 ```
-meerdb observations list --target_name J1652-4838
+meerdb observations list --pulsar J1652-4838
 ```
 
 If you're unsure which arguments you require you can use `-h` to list your options.
