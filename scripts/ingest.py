@@ -8,10 +8,10 @@ import json
 import getpass
 from datetime import datetime, timedelta
 
-from tables import *
-from graphql_client import GraphQLClient
-from util import header, ephemeris
-from util import time as util_time
+from meerdb.tables import *
+from meerdb.graphql_client import GraphQLClient
+from meerdb.util import header, ephemeris
+from meerdb.util import time as util_time
 
 CALIBRATIONS_DIR = "../ingest-ajameson/test-data/calibrations"
 RESULTS_DIR = "../ingest-ajameson/test-data/kronos"
@@ -66,7 +66,46 @@ def get_calibration(utc_start):
         return ("pre", "None")
 
 
-def main(beam, utc_start, source, freq, client, url, token):
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Ingest PTUSE fold mode observation")
+    parser.add_argument(
+        "-t",
+        "--token",
+        action="store",
+        help="JWT token. Best configured via env variable INGEST_TOKEN.",
+        default=os.environ.get("INGEST_TOKEN"),
+    )
+    parser.add_argument(
+        "-u",
+        "--url",
+        action="store",
+        default=os.environ.get("INGEST_URL"),
+        help="GraphQL URL. Can be configured via INGEST_URL env variable",
+    )
+    parser.add_argument("beam", type=str, help="beam number")
+    parser.add_argument("utc_start", type=str, help="utc_start of the obs")
+    parser.add_argument("source", type=str, help="source of the obs")
+    parser.add_argument("freq", type=str, help="coarse centre frequency of the obs in MHz")
+    parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase verbosity")
+    parser.add_argument(
+        "-vc", "--verbose_client", action="store_true", default=False, help="Increase graphql client verbosity"
+    )
+    args = parser.parse_args()
+
+    beam = args.beam
+    utc_start = args.utc_start
+    source = args.source
+    freq = args.freq
+    url = args.url
+    token = args.token
+
+    format = "%(asctime)s : %(levelname)s : " + "%s/%s/%s/%s" % (beam, utc_start, source, freq) + " : %(msg)s"
+    # logging.basicConfig(format=format,filename=LOG_FILE,level=logging.INFO)
+    # logging.basicConfig(format=format, level=logging.DEBUG)
+
+    client = GraphQLClient(args.url, args.verbose_client)
 
     obs_type = "fold"
     results_dir = "%s/%s/%s/%s" % (RESULTS_DIR, beam, utc_start, source)
@@ -274,42 +313,4 @@ def main(beam, utc_start, source, freq, client, url, token):
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Ingest PTUSE fold mode observation")
-    parser.add_argument(
-        "-t",
-        "--token",
-        action="store",
-        help="JWT token. Best configured via env variable INGEST_TOKEN.",
-        default=os.environ.get("INGEST_TOKEN"),
-    )
-    parser.add_argument(
-        "-u",
-        "--url",
-        action="store",
-        default=os.environ.get("INGEST_URL"),
-        help="GraphQL URL. Can be configured via INGEST_URL env variable",
-    )
-    parser.add_argument("beam", type=str, help="beam number")
-    parser.add_argument("utc_start", type=str, help="utc_start of the obs")
-    parser.add_argument("source", type=str, help="source of the obs")
-    parser.add_argument("freq", type=str, help="coarse centre frequency of the obs in MHz")
-    parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase verbosity")
-    parser.add_argument(
-        "-vc", "--verbose_client", action="store_true", default=False, help="Increase graphql client verbosity"
-    )
-    args = parser.parse_args()
-
-    beam = args.beam
-    utc_start = args.utc_start
-    source = args.source
-    freq = args.freq
-
-    format = "%(asctime)s : %(levelname)s : " + "%s/%s/%s/%s" % (beam, utc_start, source, freq) + " : %(msg)s"
-    # logging.basicConfig(format=format,filename=LOG_FILE,level=logging.INFO)
-    # logging.basicConfig(format=format, level=logging.DEBUG)
-
-    client = GraphQLClient(args.url, args.verbose_client)
-
-    main(beam, utc_start, source, freq, client, args.url, args.token)
+    main()

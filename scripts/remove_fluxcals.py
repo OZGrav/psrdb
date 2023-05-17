@@ -8,10 +8,10 @@ import json
 import getpass
 from datetime import datetime, timedelta
 
-from tables import *
-from graphql_client import GraphQLClient
-from util import header, ephemeris
-from util import time as util_time
+from meerdb.tables import *
+from meerdb.graphql_client import GraphQLClient
+from meerdb.util import header, ephemeris
+from meerdb.util import time as util_time
 
 # LOG_FILE = "%s/%s" % (LOG_DIRECTORY, time.strftime("%Y-%m-%d_c2g_receiver.log"))
 
@@ -44,7 +44,35 @@ def get_id_from_listing(response, table, listing=None):
     return None
 
 
-def main(source, url, verbose, token):
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Delete PTUSE fluxcal pulsar")
+    parser.add_argument(
+        "-t",
+        "--token",
+        action="store",
+        help="JWT token. Best configured via env variable INGEST_TOKEN.",
+        default=os.environ.get("INGEST_TOKEN"),
+    )
+    parser.add_argument(
+        "-u",
+        "--url",
+        action="store",
+        default=os.environ.get("INGEST_URL"),
+        help="GraphQL URL. Can be configured via INGEST_URL env variable",
+    )
+    parser.add_argument("source", type=str, help="source of the obs")
+    parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase verbosity")
+    parser.add_argument(
+        "-vc", "--verbose_client", action="store_true", default=False, help="Increase graphql client verbosity"
+    )
+    args = parser.parse_args()
+
+    source = args.source
+    url = args.url
+    verbose = args.verbose_client
+    token = args.token
 
     client = GraphQLClient(url, verbose)
 
@@ -156,34 +184,4 @@ def main(source, url, verbose, token):
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Delete PTUSE fluxcal pulsar")
-    parser.add_argument(
-        "-t",
-        "--token",
-        action="store",
-        help="JWT token. Best configured via env variable INGEST_TOKEN.",
-        default=os.environ.get("INGEST_TOKEN"),
-    )
-    parser.add_argument(
-        "-u",
-        "--url",
-        action="store",
-        default=os.environ.get("INGEST_URL"),
-        help="GraphQL URL. Can be configured via INGEST_URL env variable",
-    )
-    parser.add_argument("source", type=str, help="source of the obs")
-    parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase verbosity")
-    parser.add_argument(
-        "-vc", "--verbose_client", action="store_true", default=False, help="Increase graphql client verbosity"
-    )
-    args = parser.parse_args()
-
-    source = args.source
-
-    format = "%(asctime)s : %(levelname)s : " + "%s" % (source) + " : %(msg)s"
-    # logging.basicConfig(format=format,filename=LOG_FILE,level=logging.INFO)
-    # logging.basicConfig(format=format, level=logging.DEBUG)
-
-    main(source, args.url, args.verbose_client, args.token)
+    main()

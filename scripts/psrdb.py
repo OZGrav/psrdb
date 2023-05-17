@@ -1,50 +1,50 @@
 #!/usr/bin/env python
 
-import logging
-from os import environ
+from meerdb.tables.graphql_table import GraphQLTable
+from meerdb.graphql_client import GraphQLClient
+from meerdb.tables import  (Basebandings, Calibrations, Collections, Ephemerides,
+                            Filterbankings, Foldings, Instrumentconfigs, Launches,
+                            Observations, Processingcollections, Processings,
+                            Programs, Projects, Pulsars, Pulsartargets,
+                            Pipelineimages, Pipelinefiles, Pipelines, Sessions,
+                            Targets, Telescopes, Templates, Toas)
+from meerdb.joins import FoldedObservations, ProcessedObservations, ToaedObservations
 
-import tables
-from tables.graphql_table import GraphQLTable
-import joins
-from joins.graphql_join import GraphQLJoin
-from graphql_client import GraphQLClient
-
-if __name__ == "__main__":
-
+def main():
     parser = GraphQLTable.get_default_parser()
     subparsers = parser.add_subparsers(dest="command", help="Database models which can be interrogated")
     subparsers.required = True
 
     tables = [
-        tables.Basebandings,
-        tables.Calibrations,
-        tables.Collections,
-        tables.Ephemerides,
-        tables.Filterbankings,
-        tables.Foldings,
-        tables.Instrumentconfigs,
-        tables.Launches,
-        tables.Observations,
-        tables.Processingcollections,
-        tables.Processings,
-        tables.Programs,
-        tables.Projects,
-        tables.Pulsars,
-        tables.Pulsartargets,
-        tables.Pipelineimages,
-        tables.Pipelinefiles,
-        tables.Pipelines,
-        tables.Sessions,
-        tables.Targets,
-        tables.Telescopes,
-        tables.Templates,
-        tables.Toas,
+        Basebandings,
+        Calibrations,
+        Collections,
+        Ephemerides,
+        Filterbankings,
+        Foldings,
+        Instrumentconfigs,
+        Launches,
+        Observations,
+        Processingcollections,
+        Processings,
+        Programs,
+        Projects,
+        Pulsars,
+        Pulsartargets,
+        Pipelineimages,
+        Pipelinefiles,
+        Pipelines,
+        Sessions,
+        Targets,
+        Telescopes,
+        Templates,
+        Toas,
     ]
 
     joins = [
-        joins.FoldedObservations,
-        joins.ProcessedObservations,
-        joins.ToaedObservations,
+        FoldedObservations,
+        ProcessedObservations,
+        ToaedObservations,
     ]
 
     configured = []
@@ -75,3 +75,7 @@ if __name__ == "__main__":
 
                 print(response.status_code)
                 print(json.loads(response.content))
+
+
+if __name__ == "__main__":
+    main()

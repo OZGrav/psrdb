@@ -8,10 +8,10 @@ import json
 import getpass
 from datetime import datetime, timedelta
 
-from tables import *
-from graphql_client import GraphQLClient
-from util import header, ephemeris
-from util import time as util_time
+from meerdb.tables import *
+from meerdb.graphql_client import GraphQLClient
+from meerdb.util import header, ephemeris
+from meerdb.util import time as util_time
 
 CALIBRATIONS_DIR = "/fred/oz005/users/aparthas/reprocessing_MK/poln_calibration"
 RESULTS_DIR = "/fred/oz005/kronos"
