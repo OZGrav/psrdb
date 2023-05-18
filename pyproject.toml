@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "meerdb"
+name = "psrdb"
 version = "0.1.0"
 description = "CLI for pulsars.org.au"
 authors = ["GWDC"]
@@ -13,7 +13,7 @@ requests = "^2.25.1"
 pytest = "^7.3.1"
 
 [tool.poetry.scripts]
-meerdb = "scripts.meerdb:main"
+psrdb = "scripts.psrdb:main"
 "ingest_ptuse_folded.py" = "scripts.ingest_ptuse_folded:main"
 "ingest_ptuse_search.py" = "scripts.ingest_ptuse_search:main"
 "ingest.py" = "scripts.ingest:main"
