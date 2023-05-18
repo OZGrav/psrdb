@@ -105,7 +105,7 @@ class Pulsartargets(GraphQLTable):
         parser_list = subs.add_parser("list", help="list existing pulsartargets")
         parser_list.add_argument("--id", metavar="ID", type=int, help="list pulsartargets matching the id [int]")
         parser_list.add_argument(
-            "--pulsar", metavar="PSRID", type=int, help="list pulsartargets matching the pulsar id [int]"
+            "--pulsar_id", metavar="PSRID", type=int, help="list pulsartargets matching the pulsar id [int]"
         )
         parser_list.add_argument(
             "--pulsar_jname", metavar="PSRJNAME", type=str, help="list pulsartargets matching the pulsar Jname [str]"

@@ -122,12 +122,12 @@ class Observations(GraphQLTable):
         # Convert dates to correct format
         if utcs == "":
             utcs = None
-        else:
+        elif utcs is not None:
             d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
             utcs = f"{d.date()}T{d.time()}+00:00"
         if utce == "":
             utce = None
-        else:
+        elif utce is not None:
             d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
             utce = f"{d.date()}T{d.time()}+00:00"
         """Return a list of records matching the id and/or any of the arguments."""
