@@ -9,7 +9,41 @@ psrdb modules
 ================
 
 
-psrdb table classes
+psrdb joins classes
+===================
+
+FoldedObservations
+------------------
+
+.. autoclass:: psrdb.joins.folded_observations.FoldedObservations
+   :members:
+
+GraphQLJoin
+-----------
+
+.. autoclass:: psrdb.joins.graphql_join.GraphQLJoin
+   :members:
+
+ProcessedObservations
+---------------------
+
+.. autoclass:: psrdb.joins.processed_observations.ProcessedObservations
+   :members:
+
+PulsarsLaunches
+---------------
+
+.. autoclass:: psrdb.joins.pulsar_launches.PulsarsLaunches
+   :members:
+
+ToaedObservations
+-----------------
+
+.. autoclass:: psrdb.joins.toaed_observations.ToaedObservations
+   :members:
+
+
+psrdb tables classes
 ===================
 
 Basebandings
@@ -23,68 +57,157 @@ Calibrations
 
 .. autoclass:: psrdb.tables.calibrations.Calibrations
    :members:
-   :undoc-members:
 
 Collections
-------------
+-----------
 
 .. autoclass:: psrdb.tables.collections.Collections
    :members:
-   :undoc-members:
+
+Ephemerides
+-----------
+
+.. autoclass:: psrdb.tables.ephemerides.Ephemerides
+   :members:
+
+Filterbankings
+--------------
+
+.. autoclass:: psrdb.tables.filterbankings.Filterbankings
+   :members:
+
+Foldings
+--------
+
+.. autoclass:: psrdb.tables.foldings.Foldings
+   :members:
+
+GraphQLClause
+-------------
+
+.. autoclass:: psrdb.tables.graphql_query.GraphQLClause
+   :members:
+
+GraphQLTable
+------------
+
+.. autoclass:: psrdb.tables.graphql_table.GraphQLTable
+   :members:
+
+Instrumentconfigs
+-----------------
+
+.. autoclass:: psrdb.tables.instrumentconfigs.Instrumentconfigs
+   :members:
+
+Launches
+--------
+
+.. autoclass:: psrdb.tables.launches.Launches
+   :members:
 
 Observations
 ------------
 
 .. autoclass:: psrdb.tables.observations.Observations
    :members:
-   :undoc-members:
 
-Observations
-------------
+Pipelinefiles
+-------------
 
-.. autoclass:: psrdb.tables.observations.Observations
+.. autoclass:: psrdb.tables.pipelinefiles.Pipelinefiles
    :members:
-   :undoc-members:
 
-Observations
-------------
+Pipelineimages
+--------------
 
-.. autoclass:: psrdb.tables.observations.Observations
+.. autoclass:: psrdb.tables.pipelineimages.Pipelineimages
    :members:
-   :undoc-members:
 
-Observations
-------------
+Pipelines
+---------
 
-.. autoclass:: psrdb.tables.observations.Observations
+.. autoclass:: psrdb.tables.pipelines.Pipelines
    :members:
-   :undoc-members:
 
-Observations
-------------
+Processingcollections
+---------------------
 
-.. autoclass:: psrdb.tables.observations.Observations
+.. autoclass:: psrdb.tables.processingcollections.Processingcollections
    :members:
-   :undoc-members:
 
-Observations
-------------
+Processings
+-----------
 
-.. autoclass:: psrdb.tables.observations.Observations
+.. autoclass:: psrdb.tables.processings.Processings
    :members:
-   :undoc-members:
 
-Observations
-------------
+Programs
+--------
 
-.. autoclass:: psrdb.tables.observations.Observations
+.. autoclass:: psrdb.tables.programs.Programs
    :members:
-   :undoc-members:
 
-Observations
-------------
+Projects
+--------
 
-.. autoclass:: psrdb.tables.observations.Observations
+.. autoclass:: psrdb.tables.projects.Projects
    :members:
-   :undoc-members:
 
+Pulsars
+-------
+
+.. autoclass:: psrdb.tables.pulsars.Pulsars
+   :members:
+
+Pulsartargets
+-------------
+
+.. autoclass:: psrdb.tables.pulsartargets.Pulsartargets
+   :members:
+
+Sessions
+--------
+
+.. autoclass:: psrdb.tables.sessions.Sessions
+   :members:
+
+Targets
+-------
+
+.. autoclass:: psrdb.tables.targets.Targets
+   :members:
+
+Telescopes
+----------
+
+.. autoclass:: psrdb.tables.telescopes.Telescopes
+   :members:
+
+Templates
+---------
+
+.. autoclass:: psrdb.tables.templates.Templates
+   :members:
+
+Toas
+----
+
+.. autoclass:: psrdb.tables.toas.Toas
+   :members:
+
+
+psrdb util classes
+==================
+
+Ephemeris
+---------
+
+.. autoclass:: psrdb.util.ephemeris.Ephemeris
+   :members:
+
+KeyValueStore
+-------------
+
+.. autoclass:: psrdb.util.header.KeyValueStore
+   :members:
