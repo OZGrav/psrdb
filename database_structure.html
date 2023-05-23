@@ -74,6 +74,12 @@
              
   <section id="database-structure">
 <h1>Database structure<a class="headerlink" href="#database-structure" title="Permalink to this heading"></a></h1>
+<p>The full database structure and how it relates can be seen <a class="reference external" href="https://dbdocs.io/nickaswainston/meertime_dataportal?view=relationships">here</a>.
+If it is out of date you can update it by running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mysqldump<span class="w"> </span>-u<span class="w"> </span>mysql_user<span class="w"> </span>-p<span class="w"> </span>meertime<span class="w"> </span>--no-data<span class="w"> </span>&gt;<span class="w"> </span>meertime_format.sql
+</pre></div>
+</div>
+<p>To get an up to date SQL format and then you can import it to <a class="reference external" href="https://dbdiagram.io/home">dbdiagram</a></p>
 </section>
 
 
