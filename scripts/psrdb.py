@@ -1,18 +1,40 @@
 #!/usr/bin/env python
 
-from psrdb.tables.graphql_table import GraphQLTable
-from psrdb.graphql_client import GraphQLClient
-from psrdb.tables import  (Basebandings, Calibrations, Collections, Ephemerides,
-                            Filterbankings, Foldings, Instrumentconfigs, Launches,
-                            Observations, Processingcollections, Processings,
-                            Programs, Projects, Pulsars, Pulsartargets,
-                            Pipelineimages, Pipelinefiles, Pipelines, Sessions,
-                            Targets, Telescopes, Templates, Toas)
+from ..psrdb.tables.graphql_table import GraphQLTable
+from ..psrdb.graphql_client import GraphQLClient
+from ..psrdb.tables import (
+    Basebandings,
+    Calibrations,
+    Collections,
+    Ephemerides,
+    Filterbankings,
+    Foldings,
+    Instrumentconfigs,
+    Launches,
+    Observations,
+    Processingcollections,
+    Processings,
+    Programs,
+    Projects,
+    Pulsars,
+    Pulsartargets,
+    Pipelineimages,
+    Pipelinefiles,
+    Pipelines,
+    Sessions,
+    Targets,
+    Telescopes,
+    Templates,
+    Toas,
+)
 from psrdb.joins import FoldedObservations, ProcessedObservations, ToaedObservations
+
 
 def main():
     parser = GraphQLTable.get_default_parser()
-    subparsers = parser.add_subparsers(dest="command", help="Database models which can be interrogated")
+    subparsers = parser.add_subparsers(
+        dest="command", help="Database models which can be interrogated"
+    )
     subparsers.required = True
 
     tables = [

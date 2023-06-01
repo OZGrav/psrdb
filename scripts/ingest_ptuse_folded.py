@@ -7,63 +7,64 @@ import os
 import json
 import getpass
 from datetime import datetime, timedelta
-
+from decouple import config, Csv
 from psrdb.tables import *
 from psrdb.graphql_client import GraphQLClient
 from psrdb.util import header, ephemeris
 from psrdb.util import time as util_time
 
-CALIBRATIONS_DIR = "/fred/oz005/users/aparthas/reprocessing_MK/poln_calibration"
-RESULTS_DIR = "/fred/oz005/kronos"
-FOLDING_DIRS = ["/fred/oz005/timing", "/fred/oz002/timing/meerkat/commissioning"]
-PTUSE_FOLDING_DIR = "/fred/oz005/PTUSE_ephemerides/ptuse_folding/success"
-LOG_DIRECTORY = "logs"
-LOG_FILE = "%s/%s" % (LOG_DIRECTORY, time.strftime("%Y-%m-%d_c2g_receiver.log"))
+CALIBRATIONS_DIR = config("CALIBRATIONS_DIR")
+RESULTS_DIR = config("RESULTS_DIR")
+FOLDING_DIRS = config("FOLDING_DIRS", cast=Csv())
+PTUSE_FOLDING_DIR = config("PTUSE_FOLDING_DIR")
+LOG_DIRECTORY = config("LOG_DIRECTORY")
+LOG_FILE = f"{LOG_DIRECTORY}{time.strftime('%Y-%m-%d')}{config('LOG_FILENAME')}"
 
 
 def get_id(response, table):
     content = json.loads(response.content)
-    if not "errors" in content.keys():
+
+    if "errors" not in content.keys():
         data = content["data"]
         mutation = "create%s" % (table.capitalize())
-        if mutation in data.keys():
-            if table in data[mutation].keys():
-                if "id" in data[mutation][table]:
-                    return int(data[mutation][table]["id"])
-    return None
+        try:
+            return int(data[mutation][table]["id"])
+        except KeyError:
+            return None
 
 
 def get_id_from_listing(response, table, listing=None):
     content = json.loads(response.content)
-    if not "errors" in content.keys():
+    if "errors" not in content.keys():
         data = content["data"]
+
         if listing is None:
-            listing = "all%ss" % (table.capitalize())
-        if listing in data.keys():
-            if "edges" in data[listing]:
-                edge_list = data[listing]["edges"]
-                if len(edge_list) >= 1:
-                    if "node" in edge_list[0].keys():
-                        if "id" in edge_list[0]["node"]:
-                            return edge_list[0]["node"]["id"]
-    return None
+            listing = f"all{table.capitalize()}s"
+
+        try:
+            return data[listing]["edges"][0]["node"]["id"]
+        except (KeyError, IndexError):
+            return None
 
 
 def get_calibration(utc_start):
+    print(config("FOLDING_DIRS", cast=Csv()))
     utc_start_dt = datetime.strptime(utc_start, "%Y-%m-%d-%H:%M:%S")
     auto_cal_epoch = "2020-04-04-00:00:00"
     auto_cal_epoch_dt = datetime.strptime(auto_cal_epoch, "%Y-%m-%d-%H:%M:%S")
-    if utc_start_dt < auto_cal_epoch_dt:
-        cals = sorted(glob.glob(CALIBRATIONS_DIR + "/*.jones"), reverse=True)
-        for cal in cals:
-            cal_file = os.path.basename(cal)
-            cal_epoch = cal_file.rstrip(".jones")
-            cal_epoch_dt = datetime.strptime(cal_epoch, "%Y-%m-%d-%H:%M:%S")
-            if cal_epoch_dt < utc_start_dt:
-                return ("post", cal)
-        raise RuntimeError("Could not find calibration file for utc_start=" + utc_start)
-    else:
+
+    if utc_start_dt > auto_cal_epoch_dt:
         return ("pre", "None")
+
+    cals = sorted(glob.glob(f"{CALIBRATIONS_DIR}/*.jones"), reverse=True)
+    for cal in cals:
+        cal_file = os.path.basename(cal)
+        cal_epoch = cal_file.rstrip(".jones")
+        cal_epoch_dt = datetime.strptime(cal_epoch, "%Y-%m-%d-%H:%M:%S")
+        if cal_epoch_dt < utc_start_dt:
+            return ("post", cal)
+
+    raise RuntimeError(f"Could not find calibration file for utc_start={utc_start}")
 
 
 def regenerate_pngs(in_dir):
@@ -105,6 +106,7 @@ def regenerate_pngs(in_dir):
         os.system(
             "psrplot -p b -x -lpol=0,1 -O -c log=1 " + band_file + lo_res + opts + timestamp + ".band.lo.png/png"
         )
+
 
 def main():
     import argparse
