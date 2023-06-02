@@ -1,5 +1,5 @@
 import json
-from scripts.ingest_ptuse_folded import get_id, get_id_from_listing, get_calibration
+from psrdb.scripts.ingest_obs import get_id, get_id_from_listing, get_calibration
 
 
 class MockResponse:
