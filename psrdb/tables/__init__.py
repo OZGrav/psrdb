@@ -16,7 +16,7 @@ from .processingcollections import Processingcollections
 from .processings import Processings
 from .programs import Programs
 from .projects import Projects
-from .pulsars import Pulsars
+from .pulsar import Pulsar
 from .pulsartargets import Pulsartargets
 from .sessions import Sessions
 from .targets import Targets

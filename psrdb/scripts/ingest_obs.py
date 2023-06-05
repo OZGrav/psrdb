@@ -8,7 +8,7 @@ import json
 import getpass
 from datetime import datetime, timedelta
 from decouple import config, Csv
-from psrdb.tables import *
+from psrdb.tables import Pulsar
 from psrdb.graphql_client import GraphQLClient
 from psrdb.util import header, ephemeris
 from psrdb.util import time as util_time
@@ -67,150 +67,68 @@ def get_calibration(utc_start):
     raise RuntimeError(f"Could not find calibration file for utc_start={utc_start}")
 
 
-def regenerate_pngs(in_dir):
-    """regenerate the PNG files for this fold mode observation"""
-
-    freq_file = in_dir + "/freq.sum"
-    time_file = in_dir + "/time.sum"
-    band_file = in_dir + "/band.last"
-
-    timestamp = datetime.today().strftime("%Y-%m-%d-%H:%M:%S")
-    lo_res = " -g 240x180 -c x:view=0:1 -c y:view=0:1"
-    hi_res = " -g 1024x768"
-    opts = " -c above:l= -c above:c= -D " + in_dir + "/"
-
-    if os.path.exists(freq_file):
-        for png in glob.glob("%s/*.freq.*.png" % (in_dir)):
-            os.remove(png)
-        for png in glob.glob("%s/*.flux.*.png" % (in_dir)):
-            os.remove(png)
-
-        os.system("psrplot -p freq " + freq_file + " -jDp -j 'r 0.5'" + lo_res + opts + timestamp + ".freq.lo.png/png")
-        os.system("psrplot -p freq " + freq_file + " -jDp -j 'r 0.5'" + hi_res + opts + timestamp + ".freq.hi.png/png")
-        os.system(
-            "psrplot -p flux " + freq_file + " -jFDp -j 'r 0.5'" + lo_res + opts + timestamp + ".flux.lo.png/png"
-        )
-        os.system(
-            "psrplot -p flux " + freq_file + " -jFDp -j 'r 0.5'" + hi_res + opts + timestamp + ".flux.hi.png/png"
-        )
-
-    if os.path.exists(time_file):
-        for png in glob.glob("%s/*.time.*.png" % (in_dir)):
-            os.remove(png)
-        os.system("psrplot -p time " + time_file + " -jDp -j 'r 0.5'" + lo_res + opts + timestamp + ".time.lo.png/png")
-        os.system("psrplot -p time " + time_file + " -jDp -j 'r 0.5'" + hi_res + opts + timestamp + ".time.hi.png/png")
-
-    if os.path.exists(band_file):
-        for png in glob.glob("%s/*.band.*.png" % (in_dir)):
-            os.remove(png)
-        os.system(
-            "psrplot -p b -x -lpol=0,1 -O -c log=1 " + band_file + lo_res + opts + timestamp + ".band.lo.png/png"
-        )
-
-
 def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Ingest PTUSE fold mode observation")
+    parser.add_argument("obs_header", type=str, help="obs.header file location")
+    parser.add_argument("beam", type=str, help="beam number of the observation")
     parser.add_argument(
         "-t",
         "--token",
         action="store",
         help="JWT token. Best configured via env variable INGEST_TOKEN.",
-        default=os.environ.get("INGEST_TOKEN"),
+        default=os.environ.get("PSRDB_TOKEN"),
     )
     parser.add_argument(
         "-u",
         "--url",
         action="store",
-        default=os.environ.get("INGEST_URL"),
+        default=os.environ.get("PSRDB_URL"),
         help="GraphQL URL. Can be configured via INGEST_URL env variable",
     )
-    parser.add_argument("beam", type=str, help="beam number")
-    parser.add_argument("utc_start", type=str, help="utc_start of the obs")
-    parser.add_argument("source", type=str, help="source of the obs")
-    parser.add_argument("freq", type=str, help="coarse centre frequency of the obs in MHz")
-    parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase verbosity")
     parser.add_argument(
-        "-vc", "--verbose_client", action="store_true", default=False, help="Increase graphql client verbosity"
+        "-v",
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="Increase verbosity",
+    )
+    parser.add_argument(
+        "-vc",
+        "--verbose_client",
+        action="store_true",
+        default=False,
+        help="Increase graphql client verbosity",
     )
     args = parser.parse_args()
 
-    beam = args.beam
-    utc_start = args.utc_start
-    source = args.source
-    freq = args.freq
-    url = args.url
-    token = args.token
-
-    format = "%(asctime)s : %(levelname)s : " + "%s/%s/%s/%s" % (beam, utc_start, source, freq) + " : %(msg)s"
+    # Set up logger
+    format = "%(asctime)s : %(levelname)s : %(msg)s"
     if args.verbose:
         logging.basicConfig(format=format, level=logging.DEBUG)
     else:
         logging.basicConfig(format=format, filename=LOG_FILE, level=logging.INFO)
 
+    # Load client
+    url = args.url
+    token = args.token
     client = GraphQLClient(args.url, args.verbose_client)
-
-    obs_type = "fold"
-    results_dir = "%s/%s/%s/%s" % (RESULTS_DIR, beam, utc_start, source)
-
-    # results directory
-    obs_header = "%s/obs.header" % (results_dir)
-    if not os.path.isfile(obs_header):
-        error = Exception("%s not found." % obs_header)
-        logging.error(str(error))
-        raise error
-
-    location = None
-    for dir in FOLDING_DIRS:
-        trial_dir = "%s/%s/%s/%s/%s" % (dir, source, utc_start, beam, freq)
-        if os.path.exists(trial_dir):
-            location = trial_dir
-    if location is None:
-        raise RuntimeError("Could not find observation in " + str(FOLDING_DIRS))
-
-    # Get the parent pipeline ID
-    pipelines = Pipelines(client, url, token)
-    response = pipelines.list(None, "None")
-    parent_id = pipelines.decode_id(json.loads(response.content)["data"]["allPipelines"]["edges"][0]["node"]["id"])
-
-    try:
-        hdr = header.PTUSEHeader(obs_header)
-    except Exception as error:
-        logging.error(str(error))
-        raise error
-    hdr.set("BEAM", beam)
-    hdr.parse()
-
-    if not hdr.fold_mode == "PSR":
-        error = Exception("Observing mode [%s] was not PSR." % (hdr.fold_mode))
-        logging.error(str(error))
-        raise error
-
-    try:
-        obs_results = header.KeyValueStore("%s/obs.results" % (results_dir))
-    except Exception as error:
-        logging.error(str(error))
-        raise error
-
+    # Return human readable ID
     literal = False
     quiet = True
 
-    targets = Targets(client, url, token)
-    targets.set_field_names(literal, quiet)
-    response = targets.list(None, hdr.source)
-    encoded_target_id = get_id_from_listing(response, "target")
-    if encoded_target_id:
-        target_id = int(targets.decode_id(encoded_target_id))
-        logging.info("target_id=%d (pre-existing)" % (target_id))
-    else:
-        response = targets.create(hdr.source, hdr.tied_beam_ra, hdr.tied_beam_dec)
-        target_id = get_id(response, "target")
-        logging.info("target_id=%d" % (target_id))
+    # Load data from header
+    obs_data = header.PTUSEHeader(args.obs_header)
+    obs_data.parse()
+    obs_data.set("BEAM", args.beam)
+    print(obs_data)
 
-    pulsars = Pulsars(client, url, token)
+    # Get pulsar
+    pulsars = Pulsar(client, url, token)
     pulsars.set_field_names(literal, quiet)
-    response = pulsars.list(None, hdr.source)
+    response = pulsars.list(None, obs_data.source)
+    print(response)
     encoded_pulsar_id = get_id_from_listing(response, "pulsar")
     if encoded_target_id:
         pulsar_id = int(targets.decode_id(encoded_pulsar_id))
@@ -219,11 +137,21 @@ def main():
         response = pulsars.create(hdr.source, "", "")
         pulsar_id = get_id(response, "pulsar")
         logging.info("pulsar_id=%d" % (pulsar_id))
+    exit()
 
     pulsartargets = Pulsartargets(client, url, token)
     # mutation uses get_or_create so no need to verify if exists
     response = pulsartargets.create(pulsar_id, target_id)
     pulsartargets_id = get_id(response, "pulsartarget")
+
+
+    # Get telescope
+
+
+    # Get project
+
+
+    # Get and update session
 
     telescopes = Telescopes(client, url, token)
     # mutation uses get_or_create so no need to verify if exists

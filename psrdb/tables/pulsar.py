@@ -2,15 +2,15 @@ from psrdb.tables.graphql_table import GraphQLTable
 from psrdb.tables.graphql_query import graphql_query_factory
 
 
-class Pulsars(GraphQLTable):
+class Pulsar(GraphQLTable):
     def __init__(self, client, url, token):
         GraphQLTable.__init__(self, client, url, token)
 
         # create a new record
         self.create_mutation = """
-        mutation ($jname: String!, $state: String!, $comment: String!) {
+        mutation ($name: String!, $state: String!, $comment: String!) {
             createPulsar(input: {
-                jname: $jname, state: $state, comment: $comment
+                name: $name, state: $state, comment: $comment
             }) {
                 pulsar {
                     id
@@ -20,15 +20,15 @@ class Pulsars(GraphQLTable):
         """
         # Update an existing record
         self.update_mutation = """
-        mutation ($id: Int!, $jname: String!, $state: String!, $comment: String!) {
+        mutation ($id: Int!, $name: String!, $state: String!, $comment: String!) {
            updatePulsar(id: $id, input: {
-                jname: $jname,
+                name: $name,
                 state: $state,
                 comment: $comment
             }) {
                 pulsar {
                     id,
-                    jname,
+                    name,
                     state,
                     comment
                 }
@@ -44,33 +44,34 @@ class Pulsars(GraphQLTable):
         }
         """
 
-        self.field_names = ["id", "jname", "state", "comment"]
+        self.field_names = ["id", "name", "comment"]
 
-    def list(self, id=None, jname=None):
-        """Return a list of records matching the id and/or the pulsar jname."""
+    def list(self, id=None, name=None):
+        """Return a list of records matching the id and/or the pulsar name."""
         filters = [
-            {"field": "jname", "value": jname, "join": None},
+            {"field": "name", "value": name, "join": None},
         ]
         graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
+        print(graphql_query)
         return GraphQLTable.list_graphql(self, graphql_query)
 
-    def create(self, jname, state, comment):
-        self.create_variables = {"jname": jname, "state": state, "comment": comment}
+    def create(self, name, state, comment):
+        self.create_variables = {"name": name, "state": state, "comment": comment}
         return self.create_graphql()
 
-    def update(self, id, jname, state, comment):
-        self.update_variables = {"id": id, "jname": jname, "state": state, "comment": comment}
+    def update(self, id, name, state, comment):
+        self.update_variables = {"id": id, "name": name, "state": state, "comment": comment}
         return self.update_graphql()
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""
         self.print_stdout = True
         if args.subcommand == "create":
-            return self.create(args.jname, args.state, args.comment)
+            return self.create(args.name, args.state, args.comment)
         elif args.subcommand == "update":
-            return self.update(args.id, args.jname, args.state, args.comment)
+            return self.update(args.id, args.name, args.state, args.comment)
         elif args.subcommand == "list":
-            return self.list(args.id, args.jname)
+            return self.list(args.id, args.name)
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
@@ -101,11 +102,11 @@ class Pulsars(GraphQLTable):
         # create the parser for the "list" command
         parser_list = subs.add_parser("list", help="list existing Pulsars")
         parser_list.add_argument("--id", metavar="ID", type=int, help="list Pulsars matching the id [int]")
-        parser_list.add_argument("--jname", metavar="JNAME", type=str, help="list Pulsars matching the jname [str]")
+        parser_list.add_argument("--name", metavar="name", type=str, help="list Pulsars matching the name [str]")
 
         # create the parser for the "create" command
         parser_create = subs.add_parser("create", help="create a new pulsar")
-        parser_create.add_argument("jname", metavar="JNAME", type=str, help="jname of the pulsar [str]")
+        parser_create.add_argument("name", metavar="name", type=str, help="name of the pulsar [str]")
         parser_create.add_argument(
             "state", metavar="STATE", type=str, help="state of the pulsar, e.g. new, solved [str]"
         )
@@ -114,7 +115,7 @@ class Pulsars(GraphQLTable):
         # create the parser for the "update" command
         parser_update = subs.add_parser("update", help="update the values of an existing pulsar")
         parser_update.add_argument("id", metavar="ID", type=int, help="database id of the pulsar [int]")
-        parser_update.add_argument("jname", metavar="JNAME", type=str, help="jname of the pulsar [str]")
+        parser_update.add_argument("name", metavar="name", type=str, help="name of the pulsar [str]")
         parser_update.add_argument(
             "state", metavar="STATE", type=str, help="state of the pulsar, e.g. new, solved [str]"
         )

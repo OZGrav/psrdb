@@ -8,17 +8,15 @@ class KeyValueStore:
         self.read_file(fname)
 
     def read_file(self, fname):
-        fptr = open(fname, "r")
-        for line in fptr:
-            # remove all comments
-            line = line.strip()
-            line = re.sub("#.*", "", line)
-            if line:
-                line = re.sub("\s+", " ", line)
-                parts = line.split(" ", 1)
-                if len(parts) == 2:
-                    self.cfg[parts[0]] = parts[1].strip()
-        fptr.close()
+        with open(fname, 'r') as header_file:
+            for line in header_file:
+                # remove all comments
+                line = line.strip()
+                line = re.sub("#.*", "", line)
+                if line:
+                    line = re.sub("\s+", " ", line)
+                    key, value = line.split(" ", 1)
+                    self.cfg[key] = value.strip()
 
     def set(self, key, value):
         self.cfg[key] = str(value)
@@ -53,7 +51,6 @@ class Header(KeyValueStore):
         self.frequency = float(self.cfg["FREQ"])
         self.nchan = int(self.cfg["NCHAN"])
         self.npol = int(self.cfg["NPOL"])
-        self.beam = self.cfg["BEAM"]
 
 
 class PTUSEHeader(Header):
@@ -93,6 +90,13 @@ class PTUSEHeader(Header):
             self.fold_nbin = int(self.get("FOLD_OUTNBIN"))
             self.fold_tsubint = int(self.get("FOLD_OUTTSUBINT"))
             self.fold_mode = self.get("MODE")
+        else:
+            self.fold_dm = None
+            self.fold_nchan = None
+            self.fold_npol = None
+            self.fold_nbin = None
+            self.fold_tsubint = None
+            self.fold_mode = None
 
         if self.get("PERFORM_SEARCH") == "1":
             self.search_nbit = int(self.get("SEARCH_OUTNBIT"))
@@ -100,8 +104,14 @@ class PTUSEHeader(Header):
             self.search_nchan = int(self.get("SEARCH_OUTNCHAN"))
             self.search_tsamp = float(self.get("SEARCH_OUTTSAMP"))
             self.search_dm = float(self.get("SEARCH_DM"))
-            self.search_tsubint = float(10)
             try:
                 self.search_tsubint = float(self.get("SEARCH_OUTTSUBINT"))
             except:
                 self.search_tsubint = float(10)
+        else:
+            self.search_nbit = None
+            self.search_npol = None
+            self.search_nchan = None
+            self.search_tsamp = None
+            self.search_dm = None
+            self.search_tsubint = None

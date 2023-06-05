@@ -38,16 +38,16 @@ class GraphQLTable:
         self.table_name = self.__class__.__name__
 
         # record name is the singular form of the record
-        records = self.__class__.__name__.lower()
+        self.record_name = self.__class__.__name__.lower()
 
-        if records.endswith("ides"):
-            self.record_name = records.rstrip("ides") + "is"
-        elif records.endswith("es"):
-            self.record_name = records.rstrip("es")
-        elif records.endswith("s"):
-            self.record_name = records.rstrip("s")
-        else:
-            raise RuntimeError("Could not determine singular form of record from " + records)
+        # if records.endswith("ides"):
+        #     self.record_name = records.rstrip("ides") + "is"
+        # elif records.endswith("es"):
+        #     self.record_name = records.rstrip("es")
+        # elif records.endswith("s"):
+        #     self.record_name = records.rstrip("s")
+        # else:
+        #     raise RuntimeError("Could not determine singular form of record from " + records)
 
         self.human_readable = True
         self.literal_field_names = []
