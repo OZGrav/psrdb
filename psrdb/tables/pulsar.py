@@ -8,9 +8,9 @@ class Pulsar(GraphQLTable):
 
         # create a new record
         self.create_mutation = """
-        mutation ($name: String!, $state: String!, $comment: String!) {
+        mutation ($name: String!, $comment: String!) {
             createPulsar(input: {
-                name: $name, state: $state, comment: $comment
+                name: $name, comment: $comment
             }) {
                 pulsar {
                     id
@@ -20,16 +20,14 @@ class Pulsar(GraphQLTable):
         """
         # Update an existing record
         self.update_mutation = """
-        mutation ($id: Int!, $name: String!, $state: String!, $comment: String!) {
-           updatePulsar(id: $id, input: {
+        mutation ($id: Int!, $name: String!, $comment: String!) {
+            updatePulsar(id: $id, input: {
                 name: $name,
-                state: $state,
                 comment: $comment
             }) {
                 pulsar {
                     id,
                     name,
-                    state,
                     comment
                 }
             }
@@ -55,21 +53,21 @@ class Pulsar(GraphQLTable):
         print(graphql_query)
         return GraphQLTable.list_graphql(self, graphql_query)
 
-    def create(self, name, state, comment):
-        self.create_variables = {"name": name, "state": state, "comment": comment}
+    def create(self, name, comment):
+        self.create_variables = {"name": name, "comment": comment}
         return self.create_graphql()
 
-    def update(self, id, name, state, comment):
-        self.update_variables = {"id": id, "name": name, "state": state, "comment": comment}
+    def update(self, id, name, comment):
+        self.update_variables = {"id": id, "name": name, "comment": comment}
         return self.update_graphql()
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""
         self.print_stdout = True
         if args.subcommand == "create":
-            return self.create(args.name, args.state, args.comment)
+            return self.create(args.name, args.comment)
         elif args.subcommand == "update":
-            return self.update(args.id, args.name, args.state, args.comment)
+            return self.update(args.id, args.name, args.comment)
         elif args.subcommand == "list":
             return self.list(args.id, args.name)
         elif args.subcommand == "delete":
@@ -79,7 +77,7 @@ class Pulsar(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "pulsars"
+        return "pulsar"
 
     @classmethod
     def get_description(cls):
@@ -88,7 +86,7 @@ class Pulsar(GraphQLTable):
     @classmethod
     def get_parsers(cls):
         """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("Pulsars model parser")
+        parser = GraphQLTable.get_default_parser("Pulsar model parser")
         cls.configure_parsers(parser)
         return parser
 
@@ -107,18 +105,12 @@ class Pulsar(GraphQLTable):
         # create the parser for the "create" command
         parser_create = subs.add_parser("create", help="create a new pulsar")
         parser_create.add_argument("name", metavar="name", type=str, help="name of the pulsar [str]")
-        parser_create.add_argument(
-            "state", metavar="STATE", type=str, help="state of the pulsar, e.g. new, solved [str]"
-        )
         parser_create.add_argument("comment", metavar="COMMENT", type=str, help="description of the pulsar [str]")
 
         # create the parser for the "update" command
         parser_update = subs.add_parser("update", help="update the values of an existing pulsar")
         parser_update.add_argument("id", metavar="ID", type=int, help="database id of the pulsar [int]")
         parser_update.add_argument("name", metavar="name", type=str, help="name of the pulsar [str]")
-        parser_update.add_argument(
-            "state", metavar="STATE", type=str, help="state of the pulsar, e.g. new, solved [str]"
-        )
         parser_update.add_argument("comment", metavar="COMMENT", type=str, help="description of the pulsar [str]")
 
         # create the parser for the "delete" command
@@ -128,7 +120,7 @@ class Pulsar(GraphQLTable):
 
 if __name__ == "__main__":
 
-    parser = Pulsars.get_parsers()
+    parser = Pulsar.get_parsers()
     args = parser.parse_args()
 
     GraphQLTable.configure_logging(args)
@@ -137,5 +129,5 @@ if __name__ == "__main__":
 
     client = GraphQLClient(args.url, args.very_verbose)
 
-    p = Pulsars(client, args.url, args.token)
+    p = Pulsar(client, args.url, args.token)
     p.process(args)

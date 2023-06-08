@@ -2,7 +2,7 @@ from psrdb.tables.graphql_table import GraphQLTable
 from psrdb.tables.graphql_query import graphql_query_factory
 
 
-class Telescopes(GraphQLTable):
+class Telescope(GraphQLTable):
     def __init__(self, client, url, token):
         GraphQLTable.__init__(self, client, url, token)
         self.record_name = "telescope"
@@ -28,7 +28,7 @@ class Telescopes(GraphQLTable):
                 telescope {
                     id,
                     name
-                 }
+                }
             }
         }
         """
@@ -75,7 +75,7 @@ class Telescopes(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "telescopes"
+        return "telescope"
 
     @classmethod
     def get_description(cls):
@@ -84,7 +84,7 @@ class Telescopes(GraphQLTable):
     @classmethod
     def get_parsers(cls):
         """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("Telescopes model parser")
+        parser = GraphQLTable.get_default_parser("Telescope model parser")
         cls.configure_parsers(parser)
         return parser
 
@@ -114,7 +114,7 @@ class Telescopes(GraphQLTable):
 
 
 if __name__ == "__main__":
-    parser = Telescopes.get_parsers()
+    parser = Telescope.get_parsers()
     args = parser.parse_args()
 
     GraphQLTable.configure_logging(args)
@@ -123,5 +123,5 @@ if __name__ == "__main__":
 
     client = GraphQLClient(args.url, args.very_verbose)
 
-    t = Telescopes(client, args.url, args.token)
+    t = Telescope(client, args.url, args.token)
     t.process(args)

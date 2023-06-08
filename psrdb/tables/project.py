@@ -2,15 +2,15 @@ from psrdb.tables.graphql_table import GraphQLTable
 from psrdb.tables.graphql_query import graphql_query_factory
 
 
-class Projects(GraphQLTable):
+class Project(GraphQLTable):
     def __init__(self, client, url, token):
         GraphQLTable.__init__(self, client, url, token)
 
         # create a new record
         self.create_mutation = """
-        mutation ($code: String!, $program_id: Int!, $short: String!, $embargoPeriod: Int!, $description: String!) {
+        mutation ($code: String!, $mainproject: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
             createProject(input: {
-                program_id: $program_id,
+                mainProjectName: $mainproject,
                 code: $code,
                 short: $short,
                 embargoPeriod: $embargoPeriod,
@@ -23,9 +23,9 @@ class Projects(GraphQLTable):
         }
         """
         self.update_mutation = """
-        mutation ($id: Int!, $program_id: Int!, $code: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
+        mutation ($id: Int!, $mainproject: String!, $code: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
             updateProject(id: $id, input: {
-                program_id: $program_id,
+                mainProjectName: $mainproject,
                 code: $code,
                 short: $short,
                 embargoPeriod: $embargoPeriod,
@@ -33,7 +33,7 @@ class Projects(GraphQLTable):
                 }) {
                 project {
                     id,
-                    program {id},
+                    mainProject {name},
                     code,
                     short,
                     embargoPeriod,
@@ -51,21 +51,21 @@ class Projects(GraphQLTable):
         }
         """
 
-        self.literal_field_names = ["id", "program {id}", "code", "short", "embargoPeriod", "description"]
-        self.field_names = ["id", "program {name}", "code", "short", "embargoPeriod", "description"]
+        self.literal_field_names = ["id", "mainProject {id}", "code", "short", "embargoPeriod", "description"]
+        self.field_names = ["id", "mainProject {name}", "code", "short", "embargoPeriod", "description"]
 
-    def list(self, id=None, program=None, code=None):
+    def list(self, id=None, mainProject=None, code=None):
         """Return a list of records matching the id and/or the program id, code."""
         filters = [
-            {"field": "program", "value": program, "join": "Programs"},
+            {"field": "mainProject", "value": mainProject, "join": "mainProject"},
             {"field": "code", "value": code, "join": None},
         ]
         graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
         return GraphQLTable.list_graphql(self, graphql_query)
 
-    def create(self, program, code, short, embargo_period, description):
+    def create(self, mainproject, code, short, embargo_period, description):
         self.create_variables = {
-            "program_id": program,
+            "mainproject": mainproject,
             "code": code,
             "short": short,
             "embargoPeriod": embargo_period,
@@ -73,10 +73,10 @@ class Projects(GraphQLTable):
         }
         return self.create_graphql()
 
-    def update(self, id, program, code, short, embargo_period, description):
+    def update(self, id, mainproject, code, short, embargo_period, description):
         self.update_variables = {
             "id": id,
-            "program_id": program,
+            "mainproject": mainproject,
             "code": code,
             "short": short,
             "embargoPeriod": embargo_period,
@@ -88,11 +88,11 @@ class Projects(GraphQLTable):
         """Parse the arguments collected by the CLI."""
         self.print_stdout = True
         if args.subcommand == "create":
-            return self.create(args.program, args.code, args.short, args.embargo_period, args.description)
+            return self.create(args.mainproject, args.code, args.short, args.embargo_period, args.description)
         elif args.subcommand == "update":
-            return self.update(args.id, args.program, args.code, args.short, args.embargo_period, args.description)
+            return self.update(args.id, args.mainproject, args.code, args.short, args.embargo_period, args.description)
         elif args.subcommand == "list":
-            return self.list(args.id, args.program, args.code)
+            return self.list(args.id, args.mainproject, args.code)
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
@@ -100,7 +100,7 @@ class Projects(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "projects"
+        return "project"
 
     @classmethod
     def get_description(cls):
@@ -109,7 +109,7 @@ class Projects(GraphQLTable):
     @classmethod
     def get_parsers(cls):
         """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("Projects model parser")
+        parser = GraphQLTable.get_default_parser("Project model parser")
         cls.configure_parsers(parser)
         return parser
 
@@ -124,14 +124,14 @@ class Projects(GraphQLTable):
         parser_list = subs.add_parser("list", help="list existing projects")
         parser_list.add_argument("--id", metavar="ID", type=int, help="list projects matching the id [int]")
         parser_list.add_argument(
-            "--program", metavar="PROG", type=int, help="list projects matching the program ID [int]"
+            "--mainproject", metavar="MAIN", type=str, help="list projects matching the mainproject name [str]"
         )
         parser_list.add_argument("--code", metavar="CODE", type=str, help="list projects matching the code [str]")
 
         # create the parser for the "create" command
         parser_create = subs.add_parser("create", help="create a new project")
         parser_create.add_argument(
-            "program", metavar="PROG", type=int, help="ID of the program in which governs the project [int]"
+            "mainproject", metavar="MAIN", type=str, help="ID of the program in which governs the project [str]"
         )
         parser_create.add_argument("code", metavar="CODE", type=str, help="code of the project [str]")
         parser_create.add_argument("short", metavar="SHORT", type=str, help="short name of the project [str]")
@@ -143,7 +143,7 @@ class Projects(GraphQLTable):
         parser_update = subs.add_parser("update", help="update an existing project")
         parser_update.add_argument("id", metavar="ID", type=int, help="id of existing project [int]")
         parser_update.add_argument(
-            "program", metavar="PROG", type=int, help="ID of the program in which governs the project [int]"
+            "mainproject", metavar="MAIN", type=str, help="Name of the mainproject in which governs the project [str]"
         )
         parser_update.add_argument("code", metavar="CODE", type=str, help="code of the project [str]")
         parser_update.add_argument("short", metavar="SHORT", type=str, help="short name of the project [str]")
@@ -158,7 +158,7 @@ class Projects(GraphQLTable):
 
 
 if __name__ == "__main__":
-    parser = Projects.get_parsers()
+    parser = Project.get_parsers()
     args = parser.parse_args()
 
     GraphQLTable.configure_logging(args)
@@ -167,5 +167,5 @@ if __name__ == "__main__":
 
     client = GraphQLClient(args.url, args.very_verbose)
 
-    p = Projects(client, args.url, args.token)
+    p = Project(client, args.url, args.token)
     p.process(args)

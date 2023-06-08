@@ -4,7 +4,7 @@ from psrdb.tables.graphql_table import GraphQLTable
 from psrdb.tables.graphql_query import graphql_query_factory
 
 
-class Observations(GraphQLTable):
+class Observation(GraphQLTable):
     def __init__(self, client, url, token):
         GraphQLTable.__init__(self, client, url, token)
 
@@ -397,7 +397,7 @@ class Observations(GraphQLTable):
 
 
 if __name__ == "__main__":
-    parser = Observations.get_parsers()
+    parser = Observation.get_parsers()
     args = parser.parse_args()
 
     GraphQLTable.configure_logging(args)
@@ -406,5 +406,5 @@ if __name__ == "__main__":
 
     client = GraphQLClient(args.url, args.very_verbose)
 
-    o = Observations(client, args.url, args.token)
+    o = Observation(client, args.url, args.token)
     o.process(args)

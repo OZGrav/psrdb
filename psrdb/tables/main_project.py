@@ -2,32 +2,31 @@ from psrdb.tables.graphql_table import GraphQLTable
 from psrdb.tables.graphql_query import graphql_query_factory
 
 
-class Programs(GraphQLTable):
+class MainProject(GraphQLTable):
     def __init__(self, client, url, token):
         GraphQLTable.__init__(self, client, url, token)
 
         # create a new record
         self.create_mutation = """
-        mutation ($telescope: Int!, $name: String!) {
-            createProgram(input: {
-                telescope_id: $telescope,
+        mutation ($telescope: String!, $name: String!) {
+            createMainProject(input: {
+                telescopeName: $telescope,
                 name: $name,
                 }) {
-                program {
+                mainproject {
                     id
                 }
             }
         }
         """
         self.update_mutation = """
-        mutation ($id: Int!, $telescope: Int!, $name: String!) {
-            updateProgram(id: $id, input: {
-                telescope_id: $telescope,
+        mutation ($id: Int!, $telescope: String!, $name: String!) {
+            updateMainProject(id: $id, input: {
+                telescopeName: $telescope,
                 name: $name,
                 }) {
-                program {
+                mainproject {
                     id,
-                    telescope {id},
                     name,
                 }
             }
@@ -36,7 +35,7 @@ class Programs(GraphQLTable):
 
         self.delete_mutation = """
         mutation ($id: Int!) {
-            deleteProgram(id: $id) {
+            deleteMainProject(id: $id) {
                 ok
             }
         }
@@ -85,16 +84,16 @@ class Programs(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "programs"
+        return "mainproject"
 
     @classmethod
     def get_description(cls):
-        return "A program defined by a code, short name, embargo period and a description"
+        return "A MainProject defined by a code, short name, embargo period and a description"
 
     @classmethod
     def get_parsers(cls):
         """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("Programs model parser")
+        parser = GraphQLTable.get_default_parser("MainProject model parser")
         cls.configure_parsers(parser)
         return parser
 
@@ -106,30 +105,30 @@ class Programs(GraphQLTable):
         subs = parser.add_subparsers(dest="subcommand")
         subs.required = True
 
-        parser_list = subs.add_parser("list", help="list existing programs")
-        parser_list.add_argument("--id", metavar="ID", type=int, help="list programs matching the id [int]")
+        parser_list = subs.add_parser("list", help="list existing MainProject")
+        parser_list.add_argument("--id", metavar="ID", type=int, help="list MainProject matching the id [int]")
         parser_list.add_argument(
-            "--telescope", metavar="TEL", type=int, help="list programs matching the telescope id [int]"
+            "--telescope", metavar="TEL", type=int, help="list MainProject matching the telescope id [int]"
         )
-        parser_list.add_argument("--name", metavar="NAME", type=str, help="list programs matching the name [str]")
+        parser_list.add_argument("--name", metavar="NAME", type=str, help="list MainProject matching the name [str]")
 
         # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new program")
-        parser_create.add_argument("telescope", metavar="TEL", type=int, help="id of the telescope [int]")
-        parser_create.add_argument("name", metavar="NAME", type=str, help="of the program [str]")
+        parser_create = subs.add_parser("create", help="create a new MainProject")
+        parser_create.add_argument("telescope", metavar="TEL", type=str, help="name of the telescope [str]")
+        parser_create.add_argument("name", metavar="NAME", type=str, help="of the MainProject [str]")
 
-        parser_update = subs.add_parser("update", help="update an existing program")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of existing program [int]")
-        parser_update.add_argument("telescope", metavar="TEL", type=int, help="id of the telescope [int]")
-        parser_update.add_argument("name", metavar="NAME", type=str, help="of the program [str]")
+        parser_update = subs.add_parser("update", help="update an existing MainProject")
+        parser_update.add_argument("id", metavar="ID", type=int, help="id of existing MainProject [int]")
+        parser_update.add_argument("telescope", metavar="TEL", type=int, help="name of the telescope [str]")
+        parser_update.add_argument("name", metavar="NAME", type=str, help="of the MainProject [str]")
 
         # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing program")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of existing program [int]")
+        parser_delete = subs.add_parser("delete", help="delete an existing MainProject")
+        parser_delete.add_argument("id", metavar="ID", type=int, help="id of existing MainProject [int]")
 
 
 if __name__ == "__main__":
-    parser = Programs.get_parsers()
+    parser = MainProject.get_parsers()
     args = parser.parse_args()
 
     GraphQLTable.configure_logging(args)
@@ -138,5 +137,5 @@ if __name__ == "__main__":
 
     client = GraphQLClient(args.url, args.very_verbose)
 
-    p = Programs(client, args.url, args.token)
+    p = MainProject(client, args.url, args.token)
     p.process(args)
