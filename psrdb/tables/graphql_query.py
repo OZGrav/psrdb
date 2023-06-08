@@ -111,12 +111,12 @@ class GraphQLQueryId(GraphQLQuery):
 
 class GraphQLQueryAll(GraphQLQuery):
     def __init__(self, table_name):
-        GraphQLQuery.__init__(self, f"all{table_name.title()}")
+        GraphQLQuery.__init__(self, f"all{table_name.title()}s")
 
 
 class GraphQLQueryClauses(GraphQLQuery):
     def __init__(self, table_name, clauses):
-        GraphQLQuery.__init__(self, f"all{table_name.title()}")
+        GraphQLQuery.__init__(self, f"all{table_name.title()}s")
         for clause in clauses:
             self.add_clause(clause)
 

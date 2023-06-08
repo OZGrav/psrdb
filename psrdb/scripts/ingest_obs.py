@@ -8,10 +8,13 @@ import json
 import getpass
 from datetime import datetime, timedelta
 from decouple import config, Csv
-from psrdb.tables import Pulsar
 from psrdb.graphql_client import GraphQLClient
 from psrdb.util import header, ephemeris
 from psrdb.util import time as util_time
+from psrdb.tables import (
+    Pulsar,
+    Observation,
+)
 
 CALIBRATIONS_DIR = config("CALIBRATIONS_DIR")
 RESULTS_DIR = config("RESULTS_DIR")
@@ -124,92 +127,9 @@ def main():
     obs_data.set("BEAM", args.beam)
     print(obs_data)
 
-    # Get pulsar
-    pulsars = Pulsar(client, url, token)
-    pulsars.set_field_names(literal, quiet)
-    response = pulsars.list(None, obs_data.source)
-    print(response)
-    encoded_pulsar_id = get_id_from_listing(response, "pulsar")
-    if encoded_target_id:
-        pulsar_id = int(targets.decode_id(encoded_pulsar_id))
-        logging.info("pulsar_id=%d (pre-existing)" % (pulsar_id))
-    else:
-        response = pulsars.create(hdr.source, "", "")
-        pulsar_id = get_id(response, "pulsar")
-        logging.info("pulsar_id=%d" % (pulsar_id))
-    exit()
-
-    pulsartargets = Pulsartargets(client, url, token)
-    # mutation uses get_or_create so no need to verify if exists
-    response = pulsartargets.create(pulsar_id, target_id)
-    pulsartargets_id = get_id(response, "pulsartarget")
-
-
-    # Get telescope
-
-
-    # Get project
-
-
-    # Get and update session
-
-    telescopes = Telescopes(client, url, token)
-    # mutation uses get_or_create so no need to verify if exists
-    response = telescopes.create(hdr.telescope)
-    telescope_id = get_id(response, "telescope")
-    logging.info("telescope_id=%d" % (telescope_id))
-
-    instrument_configs = Instrumentconfigs(client, url, token)
-    # mutation uses get_or_create so no need to verify if exists
-    response = instrument_configs.create(hdr.machine, hdr.bandwidth, hdr.frequency, hdr.nchan, hdr.npol, hdr.beam)
-    instrument_config_id = get_id(response, "instrumentconfig")
-    logging.info("instrument_config_id=%d" % (instrument_config_id))
-
-    calibrations = Calibrations(client, url, token)
-    (calibration_type, calibration_location) = get_calibration(utc_start)
-    response = calibrations.create(calibration_type, calibration_location)
-    calibration_id = get_id(response, "calibration")
-    logging.info("calibration_id=%d" % (calibration_id))
-
-    if (
-        hdr.proposal_id.startswith("SCI-20180516-MB")
-        or hdr.proposal_id.startswith("SCI-20200222-MB")
-        or hdr.proposal_id.startswith("SCI-2018-0516-MB")
-    ):
-        program = "MeerTIME"
-    elif hdr.proposal_id.startswith("SCI-20180923-MK"):
-        program = "Trapum"
-    elif hdr.proposal_id.startswith("COM-"):
-        program = "Commissioning"
-    else:
-        program = "Unknown"
-
-    programs = Programs(client, url, token)
-    response = programs.create(telescope_id, program)
-    program_id = get_id(response, "program")
-
-    projects = Projects(client, url, token)
-    projects.set_field_names(literal, quiet)
-    # 18 months (548 days) embargo in us:
-    embargo_days = 548
-    response = projects.list(None, program_id, hdr.proposal_id)
-    encoded_project_id = get_id_from_listing(response, "project")
-    if encoded_project_id:
-        project_id = int(projects.decode_id(encoded_project_id))
-        logging.info("project_id=%d (pre-existing)" % project_id)
-    else:
-        response = projects.create(program_id, hdr.proposal_id, "unknown", embargo_days, "")
-        print(response.content)
-        project_id = get_id(response, "project")
-        logging.info("project_id=%d" % project_id)
-
-    # estimate the duration of the observation
-    duration = float(obs_results.get("length"))
-    suspect = False
-    comment = ""
-    observations = Observations(client, url, token)
+    observation = Observation(client, url, token)
     utc_start_dt = datetime.strptime(utc_start, "%Y-%m-%d-%H:%M:%S")
-    response = observations.create(
+    response = observation.create(
         target_id,
         calibration_id,
         telescope_id,

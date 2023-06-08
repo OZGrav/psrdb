@@ -1,32 +1,37 @@
 #!/usr/bin/env python
 
-from ..psrdb.tables.graphql_table import GraphQLTable
-from ..psrdb.graphql_client import GraphQLClient
-from ..psrdb.tables import (
-    Basebandings,
-    Calibrations,
-    Collections,
-    Ephemerides,
-    Filterbankings,
-    Foldings,
-    Instrumentconfigs,
-    Launches,
-    Observations,
-    Processingcollections,
-    Processings,
-    Programs,
-    Projects,
-    Pulsars,
-    Pulsartargets,
-    Pipelineimages,
-    Pipelinefiles,
-    Pipelines,
-    Sessions,
-    Targets,
-    Telescopes,
-    Templates,
-    Toas,
-)
+from psrdb.tables.graphql_table import GraphQLTable
+from psrdb.graphql_client import GraphQLClient
+from psrdb.tables.main_project import MainProject
+from psrdb.tables.project import Project
+from psrdb.tables.telescope import Telescope
+from psrdb.tables.pulsar import Pulsar
+
+#     Basebandings,
+#     Calibrations,
+#     Collections,
+#     Ephemerides,
+#     Filterbankings,
+#     Foldings,
+#     Instrumentconfigs,
+#     Launches,
+#     Observations,
+#     Processingcollections,
+#     Processings,
+#     Programs,
+#     MainProject,
+#     Project,
+#     Pulsar,
+#     Pulsartargets,
+#     Pipelineimages,
+#     Pipelinefiles,
+#     Pipelines,
+#     Sessions,
+#     Targets,
+#     Telescopes,
+#     Templates,
+#     Toas,
+# )
 from psrdb.joins import FoldedObservations, ProcessedObservations, ToaedObservations
 
 
@@ -38,29 +43,10 @@ def main():
     subparsers.required = True
 
     tables = [
-        Basebandings,
-        Calibrations,
-        Collections,
-        Ephemerides,
-        Filterbankings,
-        Foldings,
-        Instrumentconfigs,
-        Launches,
-        Observations,
-        Processingcollections,
-        Processings,
-        Programs,
-        Projects,
-        Pulsars,
-        Pulsartargets,
-        Pipelineimages,
-        Pipelinefiles,
-        Pipelines,
-        Sessions,
-        Targets,
-        Telescopes,
-        Templates,
-        Toas,
+        MainProject,
+        Project,
+        Telescope,
+        Pulsar,
     ]
 
     joins = [
