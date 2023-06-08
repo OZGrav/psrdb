@@ -5,24 +5,18 @@ from psrdb.tables.graphql_table import GraphQLTable
 from psrdb.tables.graphql_query import graphql_query_factory
 
 
-class Ephemerides(GraphQLTable):
+class Ephemeris(GraphQLTable):
     def __init__(self, client, url, token):
         GraphQLTable.__init__(self, client, url, token)
 
         # create a new record
         self.create_mutation = """
-        mutation ($pulsar: Int!, $created_at: DateTime!, $created_by: String!, $ephemeris: JSONString!, $p0: Decimal!, $dm: Float!, $rm: Float!, $comment: String!, $valid_from: DateTime!, $valid_to: DateTime!) {
+        mutation ($pulsar: String!, $ephemeris: String!, $project: String!, $comment: String!) {
             createEphemeris (input: {
-                pulsar_id: $pulsar,
-                created_at: $created_at,
-                created_by: $created_by,
-                ephemeris: $ephemeris,
-                p0: $p0,
-                dm: $dm,
-                rm: $rm,
+                pulsarName: $pulsar,
+                ephemerisLoc: $ephemeris,
+                projectCode: $project,
                 comment: $comment,
-                valid_from: $valid_from,
-                valid_to: $valid_to
                 }) {
                 ephemeris {
                     id
@@ -72,13 +66,12 @@ class Ephemerides(GraphQLTable):
 
         self.field_names = [
             "id",
-            "pulsar {jname}",
+            "pulsar {name}",
             "createdAt",
-            "createdBy",
-            "ephemeris",
+            "createdBy {email}",
+            "ephemerisHash",
             "p0",
             "dm",
-            "rm",
             "comment",
             "validFrom",
             "validTo",
@@ -87,11 +80,10 @@ class Ephemerides(GraphQLTable):
             "id",
             "pulsar {id}",
             "createdAt",
-            "createdBy",
-            "ephemeris",
+            "createdBy {email}",
+            "ephemerisHash",
             "p0",
             "dm",
-            "rm",
             "comment",
             "validFrom",
             "validTo",
@@ -116,7 +108,6 @@ class Ephemerides(GraphQLTable):
             {"field": "pulsar_Id", "value": pulsar_id, "join": "Pulsars"},
             {"field": "p0", "value": p0_filtered, "join": None},
             {"field": "dm", "value": dm, "join": None},
-            {"field": "rm", "value": rm, "join": None},
             {"field": "ephemerisHash", "value": eph_hash, "join": None},
         ]
         graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
@@ -131,25 +122,18 @@ class Ephemerides(GraphQLTable):
             "ephemeris": ephemeris,
             "p0": p0,
             "dm": dm,
-            "rm": rm,
             "comment": comment,
             "valid_from": valid_from,
             "valid_to": valid_to,
         }
         return self.update_graphql()
 
-    def create(self, pulsar, created_at, created_by, ephemeris, p0, dm, rm, comment, valid_from, valid_to):
+    def create(self, pulsar, ephemeris, project, comment):
         self.create_variables = {
             "pulsar": pulsar,
-            "created_at": created_at,
-            "created_by": created_by,
             "ephemeris": ephemeris,
-            "p0": p0,
-            "dm": dm,
-            "rm": rm,
+            "project": project,
             "comment": comment,
-            "valid_from": valid_from,
-            "valid_to": valid_to,
         }
         return self.create_graphql()
 
@@ -159,15 +143,9 @@ class Ephemerides(GraphQLTable):
         if args.subcommand == "create":
             return self.create(
                 args.pulsar,
-                args.created_at,
-                args.created_by,
-                args.ephemeris,
-                args.p0,
-                args.dm,
-                args.rm,
+                args.ephemeris_loc,
+                args.project_code,
                 args.comment,
-                args.valid_from,
-                args.valid_to,
             )
         elif args.subcommand == "update":
             return self.update(
@@ -192,7 +170,7 @@ class Ephemerides(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "ephemerides"
+        return "ephemeris"
 
     @classmethod
     def get_description(cls):
@@ -201,7 +179,7 @@ class Ephemerides(GraphQLTable):
     @classmethod
     def get_parsers(cls):
         """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("Ephemerides model parser")
+        parser = GraphQLTable.get_default_parser("Ephemeris model parser")
         cls.configure_parsers(parser)
         return parser
 
@@ -232,26 +210,11 @@ class Ephemerides(GraphQLTable):
         # create the parser for the "create" command
         parser_create = subs.add_parser("create", help="create a new ephemeris")
         parser_create.add_argument(
-            "pulsar", metavar="PSR", type=int, help="id of the pulsar to which this ephemeris relates [int]"
+            "pulsar", metavar="PSR", type=str, help="Name of the pulsar to which this ephemeris relates [str]"
         )
-        parser_create.add_argument(
-            "created_at", metavar="DATE", type=str, help="creation date of the ephemeris [YYYY-MM-DDTHH:MM:SS+HH:MM]"
-        )
-        parser_create.add_argument("created_by", metavar="AUTHOR", type=str, help="creator of the ephemeris [str]")
-        parser_create.add_argument("ephemeris", metavar="EPHEM", type=str, help="JSON containing the ephemeris [str]")
-        parser_create.add_argument("p0", metavar="P0", type=float, help="period in the ephemeris [float]")
-        parser_create.add_argument("dm", metavar="DM", type=float, help="DM in the ephemeris [float]")
-        parser_create.add_argument("rm", metavar="RM", type=float, help="RM in the ephemeris [float]")
+        parser_create.add_argument("ephemeris_loc", metavar="EPHEM", type=str, help="Location of the ephemeris file [str]")
+        parser_create.add_argument("project_code", metavar="PROJ", type=str, help="Project code (e.g. SCI-20180516-MB-05) [str]")
         parser_create.add_argument("comment", metavar="COMMENT", type=str, help="comment about the ephemeris [str]")
-        parser_create.add_argument(
-            "valid_from",
-            metavar="FROM",
-            type=str,
-            help="start of the validity of the ephemeris [YYYY-MM-DDTHH:MM:SS+HH:MM]",
-        )
-        parser_create.add_argument(
-            "valid_to", metavar="TO", type=str, help="end of the validity of the ephemeris [YYYY-MM-DDTHH:MM:SS+HH:MM]"
-        )
 
         # create the parser for the "update" command
         parser_update = subs.add_parser("update", help="update an existing ephemeris")
@@ -285,7 +248,7 @@ class Ephemerides(GraphQLTable):
 
 
 if __name__ == "__main__":
-    parser = Ephemerides.get_parsers()
+    parser = Ephemeris.get_parsers()
     args = parser.parse_args()
 
     GraphQLTable.configure_logging(args)
@@ -294,5 +257,5 @@ if __name__ == "__main__":
 
     client = GraphQLClient(args.url, args.very_verbose)
 
-    e = Ephemerides(client, args.url, args.token)
+    e = Ephemeris(client, args.url, args.token)
     e.process(args)

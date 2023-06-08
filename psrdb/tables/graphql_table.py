@@ -85,8 +85,8 @@ class GraphQLTable:
         self,
     ):
 
-        logging.debug(f"Using mutation {self.create_mutation}")
-        logging.debug(f"Using mutation vars in a dict {self.create_variables}")
+        print(f"Using mutation {self.create_mutation}")
+        print(f"Using mutation vars in a dict {self.create_variables}")
 
         payload = {"query": self.create_mutation, "variables": json.dumps(self.create_variables)}
         response = self.client.post(self.url, payload, **self.header)
