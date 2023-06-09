@@ -2,12 +2,10 @@
 
 import glob
 import logging
-import time
 import os
 import json
-import getpass
-from datetime import datetime, timedelta
-from decouple import config, Csv
+from datetime import datetime
+from decouple import config
 import shlex
 import subprocess
 
@@ -18,10 +16,6 @@ from psrdb.util import header
 
 CALIBRATIONS_DIR = config("CALIBRATIONS_DIR")
 RESULTS_DIR = config("RESULTS_DIR")
-FOLDING_DIRS = config("FOLDING_DIRS", cast=Csv())
-PTUSE_FOLDING_DIR = config("PTUSE_FOLDING_DIR")
-LOG_DIRECTORY = config("LOG_DIRECTORY")
-LOG_FILE = f"{LOG_DIRECTORY}{time.strftime('%Y-%m-%d')}{config('LOG_FILENAME')}"
 
 
 def generate_obs_length(freq_summed_archive):
@@ -97,7 +91,7 @@ def main():
     if args.verbose:
         logging.basicConfig(format=format, level=logging.DEBUG)
     else:
-        logging.basicConfig(format=format, filename=LOG_FILE, level=logging.INFO)
+        logging.basicConfig(format=format, level=logging.INFO)
 
     # Load data from header
     obs_data = header.PTUSEHeader(args.obs_header)
