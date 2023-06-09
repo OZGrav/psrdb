@@ -11,10 +11,11 @@ from decouple import config, Csv
 from psrdb.graphql_client import GraphQLClient
 from psrdb.util import header, ephemeris
 from psrdb.util import time as util_time
-from psrdb.tables import (
-    Pulsar,
-    Observation,
-)
+
+from psrdb.tables.pulsar import Pulsar
+from psrdb.tables.ephemeris import Ephemeris
+from psrdb.tables.calibration import Calibration
+from psrdb.tables.observation import Observation
 
 CALIBRATIONS_DIR = config("CALIBRATIONS_DIR")
 RESULTS_DIR = config("RESULTS_DIR")
@@ -75,6 +76,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Ingest PTUSE fold mode observation")
     parser.add_argument("obs_header", type=str, help="obs.header file location")
+    parser.add_argument("obs_results", type=str, help="obs.results file location")
     parser.add_argument("beam", type=str, help="beam number of the observation")
     parser.add_argument(
         "-t",
@@ -125,23 +127,48 @@ def main():
     obs_data = header.PTUSEHeader(args.obs_header)
     obs_data.parse()
     obs_data.set("BEAM", args.beam)
-    print(obs_data)
+    obs_results = header.KeyValueStore(args.obs_results)
 
+    # Get or upload calibration
+    cal_type, cal_location = get_calibration(obs_data.utc_start)
+    calibration = Calibration(client, url, token)
+    cal_response = calibration.create(
+        delay_cald_id=obs_data["DELAYCAL_ID "],
+        type=cal_type,
+        location=cal_location,
+    )
+    cal_id = get_id(response, "calibration")
+
+    # Upload observation
     observation = Observation(client, url, token)
-    utc_start_dt = datetime.strptime(utc_start, "%Y-%m-%d-%H:%M:%S")
     response = observation.create(
-        target_id,
-        calibration_id,
-        telescope_id,
-        instrument_config_id,
-        project_id,
-        hdr.configuration,
-        utc_start_dt.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        duration,
-        hdr.nant,
-        hdr.nant_eff,
-        suspect,
-        comment,
+        pulsarName=obs_data.source,
+        telescopeName=obs_data.telescope,
+        projectCode=obs_data.proposal_id,
+        calibrationId=cal_id,
+        frequency=obs_data.frequency,
+        bandwidth=obs_data.bandwidth,
+        nchan=obs_data.nchan,
+        beam=args.beam,
+        nant=obs_data.nant,
+        nantEff=obs_data.nant_eff,
+        npol=obs_data.npol,
+        obsType=obs_data.obs_type,
+        utcStart=obs_data.utc_start,
+        raj=obs_data.ra,
+        decj=obs_data.dec,
+        duration=float(obs_results.get("length")),
+        nbit=obs_data.nbit,
+        tsamp=obs_data.tsamp,
+        # ephemerisLoc=obs_data.,
+        foldNbin=obs_data.fold_nbin,
+        foldNchan=obs_data.fold_nchan,
+        foldTsubint=obs_data.fold_tsubint,
+        filterbankNbit=obs_data.search_nbit,
+        filterbankNpol=obs_data.search_npol,
+        filterbankNchan=obs_data.search_nchan,
+        filterbankTsamp=obs_data.search_tsamp,
+        filterbankDm=obs_data.search_dm,
     )
     observation_id = get_id(response, "observation")
     logging.info("observation_id=%d" % (observation_id))

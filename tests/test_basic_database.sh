@@ -48,3 +48,12 @@ psrdb project create Unknown         EXT-20220714-SG-01      unknown         548
 psrdb project create MONSPSR         MONSPSR_TIMING          MONSPSR_TIMING  548 ""
 psrdb project create Unknown         ENG-20221026-PK-01      unknown         548 ""
 psrdb project create Unknown         EXT-20230510-SB-01      unknown         548 ""
+
+# Pulsar
+psrdb pulsar create J1705-1903 ""
+
+# Ephemeris
+psrdb ephemeris create J1705-1903 /home/nick/code/meertime_dataportal/backend/dataportal/tests/test_data/ephem_J1705-1903_same_1.eph SCI-20180516-MB-05 ""
+psrdb ephemeris create J1705-1903 /home/nick/code/meertime_dataportal/backend/dataportal/tests/test_data/ephem_J1705-1903_same_2.eph SCI-20180516-MB-05 ""
+psrdb ephemeris create J1705-1903 /home/nick/code/meertime_dataportal/backend/dataportal/tests/test_data/ephem_J1705-1903_diff.eph SCI-20180516-MB-05 ""
+

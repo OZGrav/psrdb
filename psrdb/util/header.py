@@ -34,6 +34,8 @@ class Header(KeyValueStore):
 
     def parse(self):
         self.source = self.cfg["SOURCE"]
+        self.utc_start = self.cfg["UTC_START"]
+        self.delaycal_id = self.cfg["DELAYCAL_ID"]
         self.ra = self.cfg["RA"]
         self.dec = self.cfg["DEC"]
         if "TIED_BEAM_RA" in self.cfg.keys():
@@ -51,6 +53,8 @@ class Header(KeyValueStore):
         self.frequency = float(self.cfg["FREQ"])
         self.nchan = int(self.cfg["NCHAN"])
         self.npol = int(self.cfg["NPOL"])
+        self.nbit = int(self.cfg["NBIT"])
+        self.tsamp = int(self.cfg["TSAMP"])
 
 
 class PTUSEHeader(Header):
@@ -89,7 +93,7 @@ class PTUSEHeader(Header):
             self.fold_npol = int(self.get("FOLD_OUTNPOL"))
             self.fold_nbin = int(self.get("FOLD_OUTNBIN"))
             self.fold_tsubint = int(self.get("FOLD_OUTTSUBINT"))
-            self.fold_mode = self.get("MODE")
+            self.obs_type = "fold"
         else:
             self.fold_dm = None
             self.fold_nchan = None
@@ -108,6 +112,7 @@ class PTUSEHeader(Header):
                 self.search_tsubint = float(self.get("SEARCH_OUTTSUBINT"))
             except:
                 self.search_tsubint = float(10)
+            self.obs_type = "search"
         else:
             self.search_nbit = None
             self.search_npol = None

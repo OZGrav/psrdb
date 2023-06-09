@@ -7,6 +7,7 @@ from psrdb.tables.project import Project
 from psrdb.tables.telescope import Telescope
 from psrdb.tables.pulsar import Pulsar
 from psrdb.tables.ephemeris import Ephemeris
+from psrdb.tables.calibration import Calibration
 
 #     Basebandings,
 #     Calibrations,
@@ -48,6 +49,7 @@ def main():
         Telescope,
         Pulsar,
         Ephemeris,
+        Calibration,
     ]
 
     joins = [
