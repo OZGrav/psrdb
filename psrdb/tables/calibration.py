@@ -2,15 +2,16 @@ from psrdb.tables.graphql_table import GraphQLTable
 from psrdb.tables.graphql_query import graphql_query_factory
 
 
-class Calibrations(GraphQLTable):
+class Calibration(GraphQLTable):
     def __init__(self, client, url, token):
         GraphQLTable.__init__(self, client, url, token)
 
         # create a new record
         self.create_mutation = """
-        mutation ($calibration_type: String!, $location: String!) {
+        mutation ($delay_cald_id: String!, $calibration_type: String!, $location: String!) {
             createCalibration(input: {
-                calibration_type: $calibration_type,
+                delayCalId: $delay_cald_id,
+                calibrationType: $calibration_type,
                 location: $location
                 }) {
                 calibration {
@@ -24,7 +25,7 @@ class Calibrations(GraphQLTable):
         self.update_mutation = """
         mutation ($id: Int!, $calibration_type: String!, $location: String!) {
            updateCalibration(id: $id, input: {
-                calibration_type: $calibration_type,
+                calibrationType: $calibration_type,
                 location: $location
            }) {
                calibration {
@@ -44,7 +45,7 @@ class Calibrations(GraphQLTable):
         }
         """
 
-        self.field_names = ["id", "calibrationType", "location"]
+        self.field_names = ["id", "delayCalId", "calibrationType", "location"]
 
     def list(self, id=None, type=None):
         """Return a list of records matching the id and/or the type."""
@@ -54,8 +55,8 @@ class Calibrations(GraphQLTable):
         graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
         return GraphQLTable.list_graphql(self, graphql_query)
 
-    def create(self, type, location):
-        self.create_variables = {"calibration_type": type, "location": location}
+    def create(self, delay_cald_id, type, location):
+        self.create_variables = {"delay_cald_id": delay_cald_id, "calibration_type": type, "location": location}
         return self.create_graphql()
 
     def update(self, id, type, location):
@@ -66,7 +67,7 @@ class Calibrations(GraphQLTable):
         """Parse the arguments collected by the CLI."""
         self.print_stdout = True
         if args.subcommand == "create":
-            return self.create(args.type, args.location)
+            return self.create(args.delay_cal_id, args.type, args.location)
         elif args.subcommand == "list":
             return self.list(args.id, args.type)
         elif args.subcommand == "update":
@@ -78,7 +79,7 @@ class Calibrations(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "calibrations"
+        return "calibration"
 
     @classmethod
     def get_description(cls):
@@ -87,7 +88,7 @@ class Calibrations(GraphQLTable):
     @classmethod
     def get_parsers(cls):
         """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("Calibrations model parser")
+        parser = GraphQLTable.get_default_parser("Calibration model parser")
         cls.configure_parsers(parser)
         return parser
 
@@ -105,6 +106,9 @@ class Calibrations(GraphQLTable):
 
         # create the parser for the "create" command
         parser_create = subs.add_parser("create", help="create a new calibration")
+        parser_create.add_argument(
+            "delay_cal_id", type=str, metavar="CALID", help="ID of the calibration (e.g. 20201022-0018) [str]"
+        )
         parser_create.add_argument("type", type=str, metavar="TYPE", help="type of the calibration [pre, post, none]")
         parser_create.add_argument(
             "location", type=str, metavar="LOCATION", help="location of the calibration on the filesystem [str]"
@@ -124,7 +128,7 @@ class Calibrations(GraphQLTable):
 
 if __name__ == "__main__":
 
-    parser = Calibrations.get_parsers()
+    parser = Calibration.get_parsers()
     args = parser.parse_args()
 
     GraphQLTable.configure_logging(args)
@@ -133,5 +137,5 @@ if __name__ == "__main__":
 
     client = GraphQLClient(args.url, args.very_verbose)
 
-    c = Calibrations(client, args.url, args.token)
+    c = Calibration(client, args.url, args.token)
     c.process(args)
