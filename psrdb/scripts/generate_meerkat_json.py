@@ -37,13 +37,12 @@ def generate_obs_length(freq_summed_archive):
 
 
 def get_calibration(utc_start):
-    print(config("FOLDING_DIRS", cast=Csv()))
     utc_start_dt = datetime.strptime(utc_start, "%Y-%m-%d-%H:%M:%S")
     auto_cal_epoch = "2020-04-04-00:00:00"
     auto_cal_epoch_dt = datetime.strptime(auto_cal_epoch, "%Y-%m-%d-%H:%M:%S")
 
     if utc_start_dt > auto_cal_epoch_dt:
-        return ("pre", "None")
+        return ("pre", None)
 
     cals = sorted(glob.glob(f"{CALIBRATIONS_DIR}/*.jones"), reverse=True)
     for cal in cals:
@@ -65,6 +64,10 @@ def get_archive_ephemeris(freq_summed_archive):
     proc = subprocess.Popen(args,stdout=subprocess.PIPE)
     proc.wait()
     ephemeris_text = proc.stdout.read().decode("utf-8")
+
+    if ephemeris_text.startswith('\n'):
+        # Remove newline character at start of output
+        ephemeris_text = ephemeris_text.lstrip('\n')
     return ephemeris_text
 
 def main():
@@ -72,7 +75,14 @@ def main():
 
     parser = argparse.ArgumentParser(description="Ingest PTUSE fold mode observation")
     parser.add_argument("obs_header", type=str, help="obs.header file location")
-    parser.add_argument("beam", type=str, help="beam number of the observation")
+    parser.add_argument("beam", type=int, help="beam number of the observation")
+    parser.add_argument(
+        "-o",
+        "--output_dir",
+        type=str,
+        default="./",
+        help="Output directory of the meertime.json file",
+    )
     parser.add_argument(
         "-v",
         "--verbose",
@@ -133,8 +143,8 @@ def main():
         "ephemerisText": ephemeris_text,
     }
 
-    with open("meertime.json" 'w') as json_file:
-        json.dump(meertime_dict, json_file)
+    with open(os.path.join(args.output_dir, "meertime.json"), 'w') as json_file:
+        json.dump(meertime_dict, json_file, indent=1)
 
 
 if __name__ == "__main__":

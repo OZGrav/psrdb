@@ -54,7 +54,7 @@ class Header(KeyValueStore):
         self.nchan = int(self.cfg["NCHAN"])
         self.npol = int(self.cfg["NPOL"])
         self.nbit = int(self.cfg["NBIT"])
-        self.tsamp = int(self.cfg["TSAMP"])
+        self.tsamp = float(self.cfg["TSAMP"])
 
 
 class PTUSEHeader(Header):
