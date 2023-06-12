@@ -27,8 +27,12 @@ LOG_FILE = f"{LOG_DIRECTORY}{time.strftime('%Y-%m-%d')}{config('LOG_FILENAME')}"
 
 def get_id(response, table):
     content = json.loads(response.content)
+    print(content.keys())
 
-    if "errors" not in content.keys():
+    if "errors" in content.keys():
+        print(f"Error in GraphQL response: {content['errors']}")
+        return None
+    else:
         data = content["data"]
         mutation = "create%s" % (table.capitalize())
         try:
@@ -75,9 +79,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Ingest PTUSE fold mode observation")
-    parser.add_argument("obs_header", type=str, help="obs.header file location")
-    parser.add_argument("obs_results", type=str, help="obs.results file location")
-    parser.add_argument("beam", type=str, help="beam number of the observation")
+    parser.add_argument("json", type=str, help="meertime.json file location")
     parser.add_argument(
         "-t",
         "--token",
@@ -123,176 +125,55 @@ def main():
     literal = False
     quiet = True
 
-    # Load data from header
-    obs_data = header.PTUSEHeader(args.obs_header)
-    obs_data.parse()
-    obs_data.set("BEAM", args.beam)
-    obs_results = header.KeyValueStore(args.obs_results)
+    # Load data from json
+    with open(args.json, 'r') as json_file:
+        meertime_data = json.load(json_file)
+    utc_start_dt = datetime.strptime(f"{meertime_data['utcStart']} +0000", "%Y-%m-%d-%H:%M:%S %z").strftime("%Y-%m-%dT%H:%M:%S")
 
     # Get or upload calibration
-    cal_type, cal_location = get_calibration(obs_data.utc_start)
     calibration = Calibration(client, url, token)
     cal_response = calibration.create(
-        delay_cald_id=obs_data["DELAYCAL_ID "],
-        type=cal_type,
-        location=cal_location,
+        delay_cald_id=meertime_data["delaycal_id"],
+        type=meertime_data["cal_type"],
+        location=meertime_data["cal_location"],
     )
-    cal_id = get_id(response, "calibration")
+    cal_id = get_id(cal_response, "calibration")
 
     # Upload observation
     observation = Observation(client, url, token)
     response = observation.create(
-        pulsarName=obs_data.source,
-        telescopeName=obs_data.telescope,
-        projectCode=obs_data.proposal_id,
+        pulsarName=meertime_data["pulsarName"],
+        telescopeName=meertime_data["telescopeName"],
+        projectCode=meertime_data["projectCode"],
         calibrationId=cal_id,
-        frequency=obs_data.frequency,
-        bandwidth=obs_data.bandwidth,
-        nchan=obs_data.nchan,
-        beam=args.beam,
-        nant=obs_data.nant,
-        nantEff=obs_data.nant_eff,
-        npol=obs_data.npol,
-        obsType=obs_data.obs_type,
-        utcStart=obs_data.utc_start,
-        raj=obs_data.ra,
-        decj=obs_data.dec,
-        duration=float(obs_results.get("length")),
-        nbit=obs_data.nbit,
-        tsamp=obs_data.tsamp,
-        # ephemerisLoc=obs_data.,
-        foldNbin=obs_data.fold_nbin,
-        foldNchan=obs_data.fold_nchan,
-        foldTsubint=obs_data.fold_tsubint,
-        filterbankNbit=obs_data.search_nbit,
-        filterbankNpol=obs_data.search_npol,
-        filterbankNchan=obs_data.search_nchan,
-        filterbankTsamp=obs_data.search_tsamp,
-        filterbankDm=obs_data.search_dm,
+        ephemerisText=meertime_data["ephemerisText"],
+        utcStart=utc_start_dt,
+        frequency=meertime_data["frequency"],
+        bandwidth=meertime_data["bandwidth"],
+        nchan=meertime_data["nchan"],
+        beam=meertime_data["beam"],
+        nant=meertime_data["nant"],
+        nantEff=meertime_data["nantEff"],
+        npol=meertime_data["npol"],
+        obsType=meertime_data["obsType"],
+        raj=meertime_data["raj"],
+        decj=meertime_data["decj"],
+        duration=meertime_data["duration"],
+        nbit=meertime_data["nbit"],
+        tsamp=meertime_data["tsamp"],
+        foldNbin=meertime_data["foldNbin"],
+        foldNchan=meertime_data["foldNchan"],
+        foldTsubint=meertime_data["foldTsubint"],
+        filterbankNbit=meertime_data["filterbankNbit"],
+        filterbankNpol=meertime_data["filterbankNpol"],
+        filterbankNchan=meertime_data["filterbankNchan"],
+        filterbankTsamp=meertime_data["filterbankTsamp"],
+        filterbankDm=meertime_data["filterbankDm"],
     )
     observation_id = get_id(response, "observation")
+    print(observation_id)
     logging.info("observation_id=%d" % (observation_id))
-
-    eph = ephemeris.Ephemeris()
-    freq_sum_fn = "%s/%s/%s/%s/freq.sum" % (RESULTS_DIR, beam, utc_start, source)
-    time_sum_fn = "%s/%s/%s/%s/time.sum" % (RESULTS_DIR, beam, utc_start, source)
-    eph_fname = "%s/%s/%s/%s/pulsar.eph" % (RESULTS_DIR, beam, utc_start, source)
-    par_fname = "%s/%s.par" % (PTUSE_FOLDING_DIR, source)
-    if os.path.exists(freq_sum_fn):
-        eph.load_from_archive_as_str(freq_sum_fn)
-    elif os.path.exists(time_sum_fn):
-        eph.load_from_archive_as_str(time_sum_fn)
-    elif os.path.exists(eph_fname):
-        eph.load_from_file(eph_fname)
-    elif os.path.exists(par_fname):
-        eph.load_from_file(par_fname)
-    else:
-        eph.load_from_string("")
-
-    created_at = util_time.get_current_time()
-    created_by = getpass.getuser()
-    valid_from = util_time.get_time(0)
-    valid_to = util_time.get_time(4294967295)
-    comment = "Created by tables.ephemeris.new"
-
-    # get_or_create in the mutation always creates, since the created_at, valid from times are always different
-    # TODO filter on the actual ephemeris, but JSONfield filtering doesn't seem to work
-    ephemerides = Ephemerides(client, url, token)
-    ephemerides.set_field_names(literal, quiet)
-    response = ephemerides.list(None, pulsar_id, None, eph.dm, eph.rm)
-    encoded_ephemeris_id = get_id_from_listing(response, "ephemeris", listing="allEphemerides")
-    if encoded_ephemeris_id:
-        ephemeris_id = int(ephemerides.decode_id(encoded_ephemeris_id))
-        logging.info("ephemeris_id=%d (pre-existing)" % ephemeris_id)
-    else:
-        response = ephemerides.create(
-            pulsar_id,
-            created_at,
-            created_by,
-            json.dumps(eph.ephem),
-            eph.p0,
-            eph.dm,
-            eph.rm,
-            comment,
-            valid_from,
-            valid_to,
-        )
-        ephemeris_id = get_id(response, "ephemeris")
-        logging.info("ephemeris_id=%d" % (ephemeris_id))
-
-    # TODO check existing / understand why gein the mutation always creates
-    response = pipelines.create(hdr.machine, "None", hdr.machine_version, created_at, created_by, hdr.machine_config)
-    pipeline_id = get_id(response, "pipeline")
-    logging.info("pipeline_id=%d" % (pipeline_id))
-
-    embargo_us = 1e6 * 60 * 60 * 24 * 548
-    results = json.dumps({"snr": float(obs_results.get("snr"))})
-
-    processings = Processings(client, url, token)
-    # TODO check existing / understand why the mutation always creates
-    parent_processing_id = 3
-    utc_dt = datetime.strptime(f"{utc_start} +0000", "%Y-%m-%d-%H:%M:%S %z")
-    embargo_end_dt = utc_dt + timedelta(microseconds=embargo_us)
-    embargo_end = embargo_end_dt.strftime("%Y-%m-%dT%H:%M:%S")
-
-    response = processings.create(
-        observation_id, pipeline_id, parent_processing_id, embargo_end, location, "{}", "{}", results
-    )
-
-    processing_id = get_id(response, "processing")
-    logging.info("processing_id=%d" % (processing_id))
-
-    foldings = Foldings(client, url, token)
-    # TODO check existing / understand why gein the mutation always creates
-    response = foldings.create(
-        processing_id, ephemeris_id, hdr.fold_nbin, hdr.fold_npol, hdr.fold_nchan, hdr.fold_dm, hdr.fold_tsubint
-    )
-    folding_id = get_id(response, "folding")
-    logging.info("folding_id=%d" % (folding_id))
-
-    # force regeneration of PNG images
-    regenerate_pngs(results_dir)
-
-    image_ranks = {
-        "flux.hi": 0,
-        "freq.hi": 1,
-        "time.hi": 2,
-        "band.hi": 3,
-        "snrt.hi": 4,
-        "flux.lo": 5,
-        "freq.lo": 6,
-        "time.lo": 7,
-        "band.lo": 8,
-        "snrt.lo": 9,
-    }
-
-    # process image results for this observations
-    pipelineimages = Pipelineimages(client, url, token)
-    # TODO check existing / understand why the mutation always creates
-    for png in glob.glob("%s/*.*.png" % (results_dir)):
-        image_type = png[-11:-4]
-        # check image size
-        if os.stat(png).st_size > 0 and image_type in image_ranks.keys():
-            rank = image_ranks[image_type]
-            logging.debug("processing file=%s image_type=%s rank=%d" % (png, image_type, rank))
-            response = pipelineimages.create(png, image_type, rank, processing_id)
-            pipeline_image_id = get_id(response, "pipelineimage")
-            rank += 1
-            logging.info("pipeline_image_id=%d" % (pipeline_image_id))
-        else:
-            logging.info("Ignoring empty pipeline image %s" % (png))
-
-    # update the foldings, to ensure the web cache is triggered with the new pipeline images
-    foldings.update(
-        folding_id,
-        processing_id,
-        ephemeris_id,
-        hdr.fold_nbin,
-        hdr.fold_npol,
-        hdr.fold_nchan,
-        hdr.fold_dm,
-        hdr.fold_tsubint,
-    )
+    exit()
 
     # update sessions
     sessions = Sessions(client, url, token)
