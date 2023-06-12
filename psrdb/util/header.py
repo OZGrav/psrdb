@@ -35,8 +35,17 @@ class Header(KeyValueStore):
     def parse(self):
         self.source = self.cfg["SOURCE"]
         self.utc_start = self.cfg["UTC_START"]
-        self.delaycal_id = self.cfg["DELAYCAL_ID"]
-        self.ra = self.cfg["RA"]
+        self.telescope = self.cfg["TELESCOPE"]
+        if "DELAYCAL_ID" in self.cfg.keys():
+            self.delaycal_id = self.cfg["DELAYCAL_ID"]
+        else:
+            self.delaycal_id = None
+        if "PHASEUP_ID" in self.cfg.keys():
+            self.phaseup_id  = self.cfg["PHASEUP_ID"]
+        else:
+            self.phaseup_id  = None
+
+        self.ra  = self.cfg["RA"]
         self.dec = self.cfg["DEC"]
         if "TIED_BEAM_RA" in self.cfg.keys():
             self.tied_beam_ra = self.cfg["TIED_BEAM_RA"]
@@ -46,7 +55,6 @@ class Header(KeyValueStore):
             self.tied_beam_dec = self.cfg["TIED_BEAM_DEC"]
         else:
             self.tied_beam_dec = self.dec
-        self.telescope = self.cfg["TELESCOPE"]
 
         # Instrument Config
         self.bandwidth = float(self.cfg["BW"])
@@ -69,7 +77,7 @@ class PTUSEHeader(Header):
         self.nant = len(self.get("ANTENNAE").split(","))
 
         h_weights = self.get("WEIGHTS_POLH").split(",")
-        v_weights = self.get("WEIGHTS_POLV").split(",")
+        v_weights = self.get("WEIGHTS_POLV").rstrip(",").split(",")
         if self.get("WEIGHTS_POLH") == "Unknown" or self.get("WEIGHTS_POLV") == "Unknown":
             self.nant_eff = self.nant
         else:
