@@ -78,6 +78,13 @@ def main():
         help="Output directory of the meertime.json file",
     )
     parser.add_argument(
+        "-n",
+        "--output_name",
+        type=str,
+        default="meertime.json",
+        help="Output name of the json file. Default is meertime.json",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -138,7 +145,7 @@ def main():
         "ephemerisText": ephemeris_text,
     }
 
-    with open(os.path.join(args.output_dir, "meertime.json"), 'w') as json_file:
+    with open(os.path.join(args.output_dir, args.output_name), 'w') as json_file:
         json.dump(meertime_dict, json_file, indent=1)
 
 
