@@ -1,5 +1,6 @@
 import json
-from psrdb.scripts.ingest_obs import get_id, get_id_from_listing, get_calibration
+import logging
+from psrdb.scripts.ingest_obs import get_id
 
 
 class MockResponse:
@@ -8,24 +9,11 @@ class MockResponse:
 
 
 def test_get_id():
-    response = MockResponse({"data": {"createPulsars": {"pulsars": {"id": 1}}}})
-    assert get_id(response, "pulsars") == 1
-
-
-def test_get_id_from_listing():
-    response = MockResponse({"data": {"allPulsars": {"edges": [{"node": {"id": 1}}]}}})
-    assert get_id_from_listing(response, "pulsar") == 1
-
-
-def test_get_id_from_listing_with_listing():
-    response = MockResponse({"data": {"customList": {"edges": [{"node": {"id": 1}}]}}})
-    assert get_id_from_listing(response, "pulsar", "customList") == 1
-
-
-def test_get_id_from_listing_no_edges():
-    response = MockResponse({"data": {"customList": {"edges": []}}})
-    assert get_id_from_listing(response, "pulsar", "customList") is None
-
-
-def test_get_calibration():
-    assert get_calibration("2023-01-01-12:44:50") is False
+    logger = logging.getLogger(__name__)
+    tests = [
+        ("calibration", {"data": {"createCalibration": {"calibration": {"id": 1}}}}, 1),
+        ("observation", {"data": {"createObservation": {"observation": {"id": 1}}}}, 1),
+    ]
+    for table, response_data, expected in tests:
+        response = MockResponse(response_data)
+        assert get_id(response, table, logger) == expected
