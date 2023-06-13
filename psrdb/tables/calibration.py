@@ -6,6 +6,27 @@ class Calibration(GraphQLTable):
     def __init__(self, client, url, token):
         GraphQLTable.__init__(self, client, url, token)
 
+        # Create a new record
+        self.create_mutation = """
+        mutation (
+            $delay_cal_id: String,
+            $phase_up_id: String,
+            $calibration_type: String!,
+            $location: String!,
+        ) {
+            createCalibration(input: {
+                delayCalId: $delay_cal_id,
+                phaseUpId: $phase_up_id,
+                calibrationType: $calibration_type,
+                location: $location
+                }) {
+                calibration {
+                    id
+                }
+            }
+        }
+        """
+
         # Update an existing record
         self.update_mutation = """
         mutation ($id: Int!, $calibration_type: String!, $location: String!) {
@@ -30,7 +51,7 @@ class Calibration(GraphQLTable):
         }
         """
 
-        self.field_names = ["id", "delayCalId", "calibrationType", "location"]
+        self.field_names = ["id", "delayCalId", "phaseUpId", "calibrationType", "location"]
 
     def list(self, id=None, type=None):
         """Return a list of records matching the id and/or the type."""
@@ -40,36 +61,13 @@ class Calibration(GraphQLTable):
         graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
         return GraphQLTable.list_graphql(self, graphql_query)
 
-    def create(self, delay_cald_id, type, location):
-        if type == "post":
-            self.create_variables = {"delay_cald_id": delay_cald_id, "calibration_type": type, "location": location}
-            self.create_mutation = """
-            mutation ($delay_cald_id: String!, $calibration_type: String!, $location: String!) {
-                createCalibration(input: {
-                    delayCalId: $delay_cald_id,
-                    calibrationType: $calibration_type,
-                    location: $location
-                    }) {
-                    calibration {
-                        id
-                    }
-                }
-            }
-            """
-        elif "pre":
-            self.create_variables = {"delay_cald_id": delay_cald_id, "calibration_type": type}
-            self.create_mutation = """
-            mutation ($delay_cald_id: String!, $calibration_type: String!) {
-                createCalibration(input: {
-                    delayCalId: $delay_cald_id,
-                    calibrationType: $calibration_type,
-                    }) {
-                    calibration {
-                        id
-                    }
-                }
-            }
-            """
+    def create(self, delay_cal_id, phase_up_id, type, location):
+        self.create_variables = {
+            "delay_cal_id": delay_cal_id,
+            "phase_up_id": phase_up_id,
+            "calibration_type": type,
+            "location": location,
+        }
         return self.create_graphql()
 
     def update(self, id, delay_cald_id, type, location):

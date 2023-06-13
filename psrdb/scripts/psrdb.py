@@ -2,6 +2,7 @@
 
 from psrdb.tables.graphql_table import GraphQLTable
 from psrdb.graphql_client import GraphQLClient
+
 from psrdb.tables.main_project import MainProject
 from psrdb.tables.project import Project
 from psrdb.tables.telescope import Telescope

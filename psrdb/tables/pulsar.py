@@ -8,7 +8,7 @@ class Pulsar(GraphQLTable):
 
         # create a new record
         self.create_mutation = """
-        mutation ($name: String!, $comment: String!) {
+        mutation ($name: String!, $comment: String) {
             createPulsar(input: {
                 name: $name, comment: $comment
             }) {
@@ -20,7 +20,7 @@ class Pulsar(GraphQLTable):
         """
         # Update an existing record
         self.update_mutation = """
-        mutation ($id: Int!, $name: String!, $comment: String!) {
+        mutation ($id: Int!, $name: String!, $comment: String) {
             updatePulsar(id: $id, input: {
                 name: $name,
                 comment: $comment
@@ -53,7 +53,7 @@ class Pulsar(GraphQLTable):
         print(graphql_query)
         return GraphQLTable.list_graphql(self, graphql_query)
 
-    def create(self, name, comment):
+    def create(self, name, comment=None):
         self.create_variables = {"name": name, "comment": comment}
         return self.create_graphql()
 
@@ -105,7 +105,7 @@ class Pulsar(GraphQLTable):
         # create the parser for the "create" command
         parser_create = subs.add_parser("create", help="create a new pulsar")
         parser_create.add_argument("name", metavar="name", type=str, help="name of the pulsar [str]")
-        parser_create.add_argument("comment", metavar="COMMENT", type=str, help="description of the pulsar [str]")
+        parser_create.add_argument("--comment", metavar="COMMENT", type=str, help="description of the pulsar [str]")
 
         # create the parser for the "update" command
         parser_update = subs.add_parser("update", help="update the values of an existing pulsar")
