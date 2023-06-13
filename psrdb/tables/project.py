@@ -1,5 +1,5 @@
-from psrdb.tables.graphql_table import GraphQLTable
-from psrdb.tables.graphql_query import graphql_query_factory
+from psrdb.graphql_table import GraphQLTable
+from psrdb.graphql_query import graphql_query_factory
 
 
 class Project(GraphQLTable):
