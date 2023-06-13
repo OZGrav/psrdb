@@ -34,7 +34,6 @@ from psrdb.tables.calibration import Calibration
 #     Templates,
 #     Toas,
 # )
-from psrdb.joins import FoldedObservations, ProcessedObservations, ToaedObservations
 
 
 def main():
@@ -53,12 +52,6 @@ def main():
         Calibration,
     ]
 
-    joins = [
-        FoldedObservations,
-        ProcessedObservations,
-        ToaedObservations,
-    ]
-
     configured = []
     for t in tables:
         n = t.get_name()
@@ -66,14 +59,11 @@ def main():
         t.configure_parsers(p)
         configured.append({"name": n, "parser": p, "table": t})
 
-    for j in joins:
-        n = j.get_name()
-        p = subparsers.add_parser(n, help=j.get_description())
-        j.configure_parsers(p)
-        configured.append({"name": n, "parser": p, "table": j})
-
     args = parser.parse_args()
-    GraphQLTable.configure_logging(args)
+    if args.url is None:
+        raise RuntimeError("GraphQL URL must be provided in $PSRDB_URL or via -u option")
+    if args.token is None:
+        raise RuntimeError("GraphQL Token must be provided in $PSRDB_TOKEN or via -t option")
 
     for c in configured:
         if args.command == c["name"]:

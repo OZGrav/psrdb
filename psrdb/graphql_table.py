@@ -9,7 +9,7 @@ from psrdb.graphql_client import GraphQLClient
 class GraphQLTable:
     """Abstract base class to perform create, update and select GraphQL queries"""
 
-    def __init__(self, client, url, token):
+    def __init__(self, client, url, token, logger=None):
 
         # the graphQL client may also be a djangodb mock endpoint
         self.client = client
@@ -19,6 +19,11 @@ class GraphQLTable:
             self.header = {"Authorization": f"JWT {token}"}
         else:
             self.header = {"HTTP_AUTHORIZATION": f"JWT {token}"}
+
+        if logger is None:
+            self.logger = logging.getLogger(__name__)
+        else:
+            self.logger = logger
 
         self.get_dicts = False
         self.print_stdout = False
@@ -85,8 +90,8 @@ class GraphQLTable:
         self,
     ):
 
-        logging.debug(f"Using mutation {self.create_mutation}")
-        logging.debug(f"Using mutation vars in a dict {self.create_variables}")
+        self.logger.debug(f"Using mutation {self.create_mutation}")
+        self.logger.debug(f"Using mutation vars in a dict {self.create_variables}")
 
         payload = {"query": self.create_mutation, "variables": json.dumps(self.create_variables)}
         response = self.client.post(self.url, payload, **self.header)
@@ -99,17 +104,17 @@ class GraphQLTable:
                         if self.print_stdout:
                             print(record_set[self.record_name]["id"])
                     else:
-                        logging.warning(f"Record {self.record_name} did not exist in returned json")
+                        self.logger.warning(f"Record {self.record_name} did not exist in returned json")
             else:
-                logging.warning(f"Errors returned in content {content['errors']}")
+                self.logger.warning(f"Errors returned in content {content['errors']}")
         else:
-            logging.warning(f"Bad response status_code={response.status_code}")
+            self.logger.warning(f"Bad response status_code={response.status_code}")
         return response
 
     def update_graphql(self, delim="\t"):
 
-        logging.debug(f"Using mutation {self.update_mutation}")
-        logging.debug(f"Using mutation vars dict {self.update_variables}")
+        self.logger.debug(f"Using mutation {self.update_mutation}")
+        self.logger.debug(f"Using mutation vars dict {self.update_variables}")
 
         payload = {"query": self.update_mutation, "variables": json.dumps(self.update_variables)}
         response = self.client.post(self.url, payload, **self.header)
@@ -123,7 +128,7 @@ class GraphQLTable:
                     if record_set.get(self.record_name):
                         self.print_record_set(record_set[self.record_name], delim)
                     else:
-                        logging.warning(f"No record matching the update query was found, check the primary ID")
+                        self.logger.warning(f"No record matching the update query was found, check the primary ID")
         return response
 
     def list_graphql(self, graphql_query, delim="\t"):
@@ -135,7 +140,7 @@ class GraphQLTable:
         result = []
         while has_next_page:
             query = graphql_query.paginate(cursor)
-            logging.debug(f"Using query {query}")
+            self.logger.debug(f"Using query {query}")
             payload = {"query": query}
             response = self.client.post(self.url, payload, **self.header)
             has_next_page = False
@@ -166,13 +171,12 @@ class GraphQLTable:
     def get_graphql(self, graphql_query):
         graphql_query.set_field_list(self.field_names)
         graphql_query.set_use_pagination(self.paginate)
-        print_headers = True
         cursor = None
         has_next_page = True
         result = {}
         while has_next_page:
             query = graphql_query.paginate(cursor)
-            logging.debug(f"Using query {query}")
+            self.logger.debug(f"Using query {query}")
             payload = {"query": query}
             response = self.client.post(self.url, payload, **self.header)
             has_next_page = False
@@ -194,8 +198,8 @@ class GraphQLTable:
         return result
 
     def delete_graphql(self):
-        logging.debug(f"Using mutation {self.delete_mutation}")
-        logging.debug(f"Using mutation vars dict {self.delete_variables}")
+        self.logger.debug(f"Using mutation {self.delete_mutation}")
+        self.logger.debug(f"Using mutation vars dict {self.delete_variables}")
 
         payload = {"query": self.delete_mutation, "variables": json.dumps(self.delete_variables)}
         response = self.client.post(self.url, payload, **self.header)
@@ -207,9 +211,9 @@ class GraphQLTable:
                     if self.record_name in record_set.keys():
                         print(record_set[self.record_name]["id"])
                     else:
-                        logging.debug(f"Record {self.record_name} did not exist in returned json")
+                        self.logger.debug(f"Record {self.record_name} did not exist in returned json")
         else:
-            logging.warning(f"Bad response status_code={response.status_code}")
+            self.logger.warning(f"Bad response status_code={response.status_code}")
         return response
 
     def print_record_set_fields(self, prefix, record_set, delim):
@@ -296,16 +300,3 @@ class GraphQLTable:
         parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase verbosity")
         parser.add_argument("-vv", "--very_verbose", action="store_true", default=False, help="Increase verbosity")
         return parser
-
-    @classmethod
-    def configure_logging(cls, args):
-        format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        if args.verbose or args.very_verbose:
-            logging.basicConfig(format=format, level=logging.DEBUG)
-        else:
-            logging.basicConfig(format=format, level=logging.INFO)
-
-        if args.url is None:
-            raise RuntimeError("GraphQL URL must be provided in $PSRDB_URL or via -u option")
-        if args.token is None:
-            raise RuntimeError("GraphQL Token must be provided in $PSRDB_TOKEN or via -t option")

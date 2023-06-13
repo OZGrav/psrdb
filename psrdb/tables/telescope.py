@@ -117,8 +117,6 @@ if __name__ == "__main__":
     parser = Telescope.get_parsers()
     args = parser.parse_args()
 
-    GraphQLTable.configure_logging(args)
-
     from psrdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
