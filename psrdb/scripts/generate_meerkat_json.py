@@ -110,6 +110,7 @@ def main():
         "telescopeName": obs_data.telescope,
         "projectCode": obs_data.proposal_id,
         "delaycal_id": obs_data.delaycal_id,
+        "phaseup_id": obs_data.phaseup_id,
         "cal_type": cal_type,
         "cal_location": cal_location,
         "frequency": obs_data.frequency,

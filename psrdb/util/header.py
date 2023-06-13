@@ -35,7 +35,14 @@ class Header(KeyValueStore):
     def parse(self):
         self.source = self.cfg["SOURCE"]
         self.utc_start = self.cfg["UTC_START"]
-        self.delaycal_id = self.cfg["DELAYCAL_ID"]
+        if "DELAYCAL_ID" in self.cfg.keys():
+            self.delaycal_id = self.cfg["DELAYCAL_ID"]
+        else:
+            self.delaycal_id = None
+        if "PHASEUP_ID" in self.cfg.keys():
+            self.phaseup_id = self.cfg["PHASEUP_ID"]
+        else:
+            self.phaseup_id = None
         self.ra = self.cfg["RA"]
         self.dec = self.cfg["DEC"]
         if "TIED_BEAM_RA" in self.cfg.keys():
@@ -93,7 +100,10 @@ class PTUSEHeader(Header):
             self.fold_npol = int(self.get("FOLD_OUTNPOL"))
             self.fold_nbin = int(self.get("FOLD_OUTNBIN"))
             self.fold_tsubint = int(self.get("FOLD_OUTTSUBINT"))
-            self.obs_type = "fold"
+            if self.source.endswith(("_N", "_S", "_O")):
+                self.obs_type = "cal"
+            else:
+                self.obs_type = "fold"
         else:
             self.fold_dm = None
             self.fold_nchan = None

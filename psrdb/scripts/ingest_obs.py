@@ -110,6 +110,7 @@ def main():
             location=meertime_data["cal_location"],
         )
         cal_id = get_id(cal_response, "calibration", logger)
+        logger.debug(f"Completed ingesting cal_id: {cal_id}")
 
         # Upload observation
         observation = Observation(client, url, token)
