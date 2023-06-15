@@ -5,8 +5,8 @@ from psrdb.graphql_query import graphql_query_factory
 
 
 class Observation(GraphQLTable):
-    def __init__(self, client, url, token):
-        GraphQLTable.__init__(self, client, url, token)
+    def __init__(self, client, url, token, logger=None):
+        GraphQLTable.__init__(self, client, url, token, logger)
 
         # create a new record
         self.create_mutation = """
@@ -122,45 +122,34 @@ class Observation(GraphQLTable):
 
         self.field_names = [
             "id",
-            "target { name }",
-            "calibration { location }",
+            "pulsar { name }",
+            "calibration { id }",
             "telescope { name }",
-            "instrumentConfig { name }",
             "project { code }",
+            "project { short }",
             "utcStart",
+            "band",
             "duration",
-            "nant",
-            "nantEff",
-            "suspect",
-            "comment",
         ]
         self.literal_field_names = [
             "id",
-            "target { id }",
+            "pulsar { id }",
             "calibration { id }",
             "telescope { id }",
-            "instrumentConfig { id }",
             "project { id }",
-            "config",
+            "project { id }",
             "utcStart",
+            "band",
             "duration",
-            "nant",
-            "nantEff",
-            "suspect",
-            "comment",
         ]
 
     def list(
         self,
         id=None,
-        target_id=None,
-        pulsar=None,
-        telescope_id=None,
+        pulsar_name=None,
         telescope_name=None,
         project_id=None,
-        project_code=None,
-        instrumentconfig_id=None,
-        instrumentconfig_name=None,
+        project_short=None,
         utcs=None,
         utce=None,
     ):
@@ -177,14 +166,10 @@ class Observation(GraphQLTable):
             utce = f"{d.date()}T{d.time()}+00:00"
         """Return a list of records matching the id and/or any of the arguments."""
         filters = [
-            {"field": "target_Id", "value": target_id, "join": "Targets"},
-            {"field": "target_Name", "value": pulsar, "join": "Targets"},
-            {"field": "telescope_Id", "value": telescope_id, "join": "Telescopes"},
+            {"field": "pulsar_Name", "value": pulsar_name, "join": "Pulsar"},
             {"field": "telescope_Name", "value": telescope_name, "join": "Telescopes"},
             {"field": "project_Id", "value": project_id, "join": "Projects"},
-            {"field": "project_Code", "value": project_code, "join": "Projects"},
-            {"field": "instrumentConfig_Id", "value": instrumentconfig_id, "join": "InstrumentConfigs"},
-            {"field": "instrumentConfig_Name", "value": instrumentconfig_name, "join": "InstrumentConfigs"},
+            {"field": "project_Short", "value": project_short, "join": "Projects"},
             {"field": "utcStart_Gte", "value": utcs, "join": None},
             {"field": "utcStart_Lte", "value": utce, "join": None},
         ]

@@ -12,7 +12,7 @@ class Calibration(GraphQLTable):
             $delay_cal_id: String,
             $phase_up_id: String,
             $calibration_type: String!,
-            $location: String!,
+            $location: String,
         ) {
             createCalibration(input: {
                 delayCalId: $delay_cal_id,
