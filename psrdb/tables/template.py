@@ -1,3 +1,5 @@
+import requests
+
 from psrdb.graphql_table import GraphQLTable
 from psrdb.graphql_query import graphql_query_factory
 
@@ -6,6 +8,7 @@ class Template(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
         self.record_name = "template"
+        self.client = client
 
         # create a new record
         self.create_mutation = """
@@ -131,10 +134,9 @@ class Template(GraphQLTable):
                 "template_upload": file,
             }
             # Post to the rest api
-            response = requests.post('http://127.0.0.1:8000/upload/template/', data=variables, files=files)
+            response = requests.post(f'{self.client.rest_api_url}template/', data=variables, files=files)
 
-        data = json.loads(response.text)
-        return self.create_graphql()
+        return response
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""
@@ -142,8 +144,8 @@ class Template(GraphQLTable):
         if args.subcommand == "create":
             return self.create(
                 args.pulsar,
-                args.band,
                 args.project_code,
+                args.band,
                 args.template_path,
             )
         elif args.subcommand == "update":
@@ -248,12 +250,12 @@ class Template(GraphQLTable):
 
 
 if __name__ == "__main__":
-    parser = Templates.get_parsers()
+    parser = Template.get_parsers()
     args = parser.parse_args()
 
     from psrdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 
-    t = Templates(client, args.url, args.token)
+    t = Template(client, args.url, args.token)
     t.process(args)
