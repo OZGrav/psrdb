@@ -2,28 +2,26 @@ from psrdb.graphql_table import GraphQLTable
 from psrdb.graphql_query import graphql_query_factory
 
 
-class Templates(GraphQLTable):
-    def __init__(self, client, url, token):
-        GraphQLTable.__init__(self, client, url, token)
+class Template(GraphQLTable):
+    def __init__(self, client, token):
+        GraphQLTable.__init__(self, client, token)
         self.record_name = "template"
 
         # create a new record
         self.create_mutation = """
-        mutation ($pulsar: Int!,  $frequency: Float!, $bandwidth: Float!, $created_at: DateTime!, $created_by: String!, $location: String!, $method: String!, $type: String!, $comment: String!) {
+        mutation (
+            $pulsar_name: String!,
+            $project_code: String!,
+            $band: String!,
+        ) {
             createTemplate (input: {
-                pulsar_id: $pulsar,
-                frequency: $frequency,
-                bandwidth: $bandwidth,
-                created_at: $created_at,
-                created_by: $created_by,
-                location: $location,
-                method: $method,
-                type: $type,
-                comment: $comment
+                pulsarName: $pulsar_name,
+                projectCode: $project_code,
+                band: $band,
             }) {
-               template {
-                   id,
-               }
+                template {
+                    id,
+                }
             }
         }
         """
@@ -42,16 +40,16 @@ class Templates(GraphQLTable):
                 comment: $comment
             }) {
                 template {
-                   id,
-                   pulsar {id},
-                   frequency,
-                   bandwidth,
-                   createdAt,
-                   createdBy,
-                   location,
-                   method,
-                   type,
-                   comment
+                    id,
+                    pulsar {id},
+                    frequency,
+                    bandwidth,
+                    createdAt,
+                    createdBy,
+                    location,
+                    method,
+                    type,
+                    comment
                 }
             }
         }
@@ -115,18 +113,27 @@ class Templates(GraphQLTable):
         }
         return self.update_graphql()
 
-    def create(self, pulsar, frequency, bandwidth, created_at, created_by, location, method, type, comment):
-        self.create_variables = {
-            "pulsar": pulsar,
-            "frequency": frequency,
-            "bandwidth": bandwidth,
-            "created_at": created_at,
-            "created_by": created_by,
-            "location": location,
-            "method": method,
-            "type": type,
-            "comment": comment,
-        }
+    def create(
+            self,
+            pulsar_name,
+            project_code,
+            band,
+            template_path,
+        ):
+        # Open the file in binary mode
+        with open(template_path, 'rb') as file:
+            variables = {
+                "pulsar_name": pulsar_name,
+                "project_code": project_code,
+                "band": band,
+            }
+            files = {
+                "template_upload": file,
+            }
+            # Post to the rest api
+            response = requests.post('http://127.0.0.1:8000/upload/template/', data=variables, files=files)
+
+        data = json.loads(response.text)
         return self.create_graphql()
 
     def process(self, args):
@@ -135,14 +142,9 @@ class Templates(GraphQLTable):
         if args.subcommand == "create":
             return self.create(
                 args.pulsar,
-                args.frequency,
-                args.bandwidth,
-                args.created_at,
-                args.created_by,
-                args.location,
-                args.method,
-                args.type,
-                args.comment,
+                args.band,
+                args.project_code,
+                args.template_path,
             )
         elif args.subcommand == "update":
             return self.update(
@@ -166,7 +168,7 @@ class Templates(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "templates"
+        return "template"
 
     @classmethod
     def get_description(cls):
@@ -175,7 +177,7 @@ class Templates(GraphQLTable):
     @classmethod
     def get_parsers(cls):
         """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("Templates model parser")
+        parser = GraphQLTable.get_default_parser("Template model parser")
         cls.configure_parsers(parser)
         return parser
 
@@ -205,24 +207,17 @@ class Templates(GraphQLTable):
         # create the parser for the "create" command
         parser_create = subs.add_parser("create", help="create a new template")
         parser_create.add_argument(
-            "pulsar", metavar="ID", type=int, help="id of the pulsar for which this template applies [int]"
+            "pulsar", metavar="PULSAR", type=str, help="Name of the pulsar for which this template applies [int]"
         )
         parser_create.add_argument(
-            "frequency", metavar="FREQ", type=float, help="frequency of this template in MHz [float]"
+            "band", metavar="BAND", type=str, help="Band of this template (e.g. LBAND) [str]"
         )
         parser_create.add_argument(
-            "bandwidth", metavar="BW", type=float, help="bandwidth of this template in MHz [float]"
+            "project_code", metavar="PROJECT", type=str, help="Code of the project [str]"
         )
         parser_create.add_argument(
-            "created_at", metavar="DATE", type=str, help="template creation date [YYYY-MM-DDTHH:MM:SS+000:00]"
+            "template_path", metavar="PATH", type=str, help="Path to the template file [str]"
         )
-        parser_create.add_argument("created_by", metavar="AUTHOR", type=str, help="creator of the template [str]")
-        parser_create.add_argument(
-            "location", metavar="LOC", type=str, help="filesystem location of the template [str]"
-        )
-        parser_create.add_argument("method", metavar="METHOD", type=str, help="method (TBC) of the template [str]")
-        parser_create.add_argument("type", metavar="TYPE", type=str, help="type (TBC) of the template [str]")
-        parser_create.add_argument("comment", metavar="COMMENT", type=str, help="comment about the template [str]")
 
         # create the parser for the "update" command
         parser_update = subs.add_parser("update", help="update an existing template")

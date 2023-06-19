@@ -3,8 +3,8 @@ from psrdb.graphql_query import graphql_query_factory
 
 
 class MainProject(GraphQLTable):
-    def __init__(self, client, url, token):
-        GraphQLTable.__init__(self, client, url, token)
+    def __init__(self, client, token):
+        GraphQLTable.__init__(self, client, token)
 
         # create a new record
         self.create_mutation = """

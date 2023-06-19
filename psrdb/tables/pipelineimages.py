@@ -26,8 +26,8 @@ def prepare_image(img_fn):
 
 
 class Pipelineimages(GraphQLTable):
-    def __init__(self, client, url, token):
-        GraphQLTable.__init__(self, client, url, token)
+    def __init__(self, client, token):
+        GraphQLTable.__init__(self, client, token)
         self.record_name = "pipelineimage"
 
         # create a new record

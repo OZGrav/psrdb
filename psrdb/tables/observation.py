@@ -5,8 +5,8 @@ from psrdb.graphql_query import graphql_query_factory
 
 
 class Observation(GraphQLTable):
-    def __init__(self, client, url, token, logger=None):
-        GraphQLTable.__init__(self, client, url, token, logger)
+    def __init__(self, client, token, logger=None):
+        GraphQLTable.__init__(self, client, token, logger)
 
         # create a new record
         self.create_mutation = """

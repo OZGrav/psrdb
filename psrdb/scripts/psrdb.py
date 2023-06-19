@@ -9,6 +9,7 @@ from psrdb.tables.telescope import Telescope
 from psrdb.tables.pulsar import Pulsar
 from psrdb.tables.ephemeris import Ephemeris
 from psrdb.tables.calibration import Calibration
+from psrdb.tables.template import Template
 
 #     Basebandings,
 #     Calibrations,
@@ -50,6 +51,7 @@ def main():
         Pulsar,
         Ephemeris,
         Calibration,
+        Template
     ]
 
     configured = []
@@ -68,7 +70,7 @@ def main():
     for c in configured:
         if args.command == c["name"]:
             client = GraphQLClient(args.url, args.very_verbose)
-            table = c["table"](client, args.url, args.token)
+            table = c["table"](client, args.token)
             table.set_field_names(args.literal, args.quiet)
             table.set_use_pagination(True)
             response = table.process(args)

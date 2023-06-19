@@ -3,8 +3,8 @@ from psrdb.graphql_query import graphql_query_factory
 
 
 class Calibration(GraphQLTable):
-    def __init__(self, client, url, token):
-        GraphQLTable.__init__(self, client, url, token)
+    def __init__(self, client, token):
+        GraphQLTable.__init__(self, client, token)
 
         # Create a new record
         self.create_mutation = """
@@ -30,14 +30,14 @@ class Calibration(GraphQLTable):
         # Update an existing record
         self.update_mutation = """
         mutation ($id: Int!, $calibration_type: String!, $location: String!) {
-           updateCalibration(id: $id, input: {
+             updateCalibration(id: $id, input: {
                 calibrationType: $calibration_type,
                 location: $location
-           }) {
-               calibration {
-                   id
-                   calibrationType,
-                   location
+            }) {
+                calibration {
+                    id
+                    calibrationType,
+                    location
                 }
             }
         }

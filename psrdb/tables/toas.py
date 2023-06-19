@@ -3,8 +3,8 @@ from psrdb.graphql_query import graphql_query_factory
 
 
 class Toas(GraphQLTable):
-    def __init__(self, client, url, token):
-        GraphQLTable.__init__(self, client, url, token)
+    def __init__(self, client, token):
+        GraphQLTable.__init__(self, client, token)
         self.record_name = "toa"
 
         # create a new record
@@ -23,9 +23,9 @@ class Toas(GraphQLTable):
                 quality: $quality,
                 comment: $comment
             }) {
-               toa {
-                   id,
-               }
+                toa {
+                    id,
+                }
             }
         }
         """
@@ -46,18 +46,18 @@ class Toas(GraphQLTable):
                 comment: $comment
             }) {
                 toa {
-                   id,
-                   processing {id},
-                   inputFolding {id},
-                   timingEphemeris {id},
-                   template {id},
-                   flags,
-                   frequency,
-                   mjd,
-                   site,
-                   uncertainty,
-                   quality,
-                   comment
+                    id,
+                    processing {id},
+                    inputFolding {id},
+                    timingEphemeris {id},
+                    template {id},
+                    flags,
+                    frequency,
+                    mjd,
+                    site,
+                    uncertainty,
+                    quality,
+                    comment
                 }
             }
         }
