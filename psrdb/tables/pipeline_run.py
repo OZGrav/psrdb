@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from psrdb.graphql_table import GraphQLTable
@@ -12,19 +13,19 @@ class PipelineRun(GraphQLTable):
         self.create_mutation = """
         mutation (
             $observationId: Int!,
-            $ephemerisLoc: Str!,
-            $templateLoc: Str!,
-            $pipelineName: Str!,
-            $pipelineDescription: Str!,
-            $pipelineVersion: Str!,
-            $jobState: Str!,
-            $location: Str!,
-            $configuration: JSONString!,
+            $ephemerisId: Int!,
+            $templateId: Int!,
+            $pipelineName: String!,
+            $pipelineDescription: String!,
+            $pipelineVersion: String!,
+            $jobState: String!,
+            $location: String!,
+            $configuration: String!,
             $dm: Float,
-            $dmErr: Float,
-            $dmEpoch: Float,
-            $dmChi2r: Float,
-            $dmTres: Float,
+            $dm_err: Float,
+            $dm_epoch: Float,
+            $dm_chi2r: Float,
+            $dm_tres: Float,
             $sn: Float,
             $flux: Float,
             $rm: Float,
@@ -32,8 +33,8 @@ class PipelineRun(GraphQLTable):
         ) {
             createPipelineRun(input: {
                 observationId: $observationId,
-                ephemerisLoc: $ephemerisLoc,
-                templateLoc: $templateLoc,
+                ephemerisId: $ephemerisId,
+                templateId: $templateId,
                 pipelineName: $pipelineName,
                 pipelineDescription: $pipelineDescription,
                 pipelineVersion: $pipelineVersion,
@@ -41,10 +42,10 @@ class PipelineRun(GraphQLTable):
                 location: $location,
                 configuration: $configuration,
                 dm: $dm,
-                dmErr: $dmErr,
-                dmEpoch: $dmEpoch,
-                dmChi2r: $dmChi2r,
-                dmTres: $dmTres,
+                dm_err: $dm_err,
+                dm_epoch: $dm_epoch,
+                dm_chi2r: $dm_chi2r,
+                dm_tres: $dm_tres,
                 sn: $sn,
                 flux: $flux,
                 rm: $rm,
@@ -185,8 +186,8 @@ class PipelineRun(GraphQLTable):
     def create(
         self,
         observationId,
-        ephemerisLoc,
-        templateLoc,
+        ephemerisId,
+        templateId,
         pipelineName,
         pipelineDescription,
         pipelineVersion,
@@ -196,46 +197,36 @@ class PipelineRun(GraphQLTable):
         results_dict=None,
     ):
         if results_dict is None:
-            dm = None
-            dmErr = None
-            dmEpoch = None
-            dmChi2r = None
-            dmTres = None
-            sn = None
-            flux = None
-            rm = None
-            percent_rfi_zapped = None
-        else:
-            # Unpack dictionary
-            dm = results_dict["dm"]
-            dmErr = results_dict["dmErr"]
-            dmEpoch = results_dict["dmEpoch"]
-            dmChi2r = results_dict["dmChi2r"]
-            dmTres = results_dict["dmTres"]
-            sn = results_dict["sn"]
-            flux = results_dict["flux"]
-            rm = results_dict["rm"]
-            percent_rfi_zapped = results_dict["percent_rfi_zapped"]
-
+            results_dict = {
+                "dm": None,
+                "dm_err": None,
+                "dm_epoch": None,
+                "dm_chi2r": None,
+                "dm_tres": None,
+                "sn": None,
+                "flux": None,
+                "rm": None,
+                "percent_rfi_zapped": None,
+            }
         self.create_variables = {
             "observationId": observationId,
-            "ephemerisLoc": ephemerisLoc,
-            "templateLoc": templateLoc,
+            "ephemerisId": ephemerisId,
+            "templateId": templateId,
             "pipelineName": pipelineName,
             "pipelineDescription": pipelineDescription,
             "pipelineVersion": pipelineVersion,
             "jobState": jobState,
             "location": location,
             "configuration": json.dumps(configuration),
-            "dm": dm,
-            "dmErr": dmErr,
-            "dmEpoch": dmEpoch,
-            "dmChi2r": dmChi2r,
-            "dmTres": dmTres,
-            "sn": sn,
-            "flux": flux,
-            "rm": rm,
-            "percent_rfi_zapped": percent_rfi_zapped,
+            "dm": results_dict["dm"],
+            "dm_err": results_dict["dm_err"],
+            "dm_epoch": results_dict["dm_epoch"],
+            "dm_chi2r": results_dict["dm_chi2r"],
+            "dm_tres": results_dict["dm_tres"],
+            "sn": results_dict["sn"],
+            "flux": results_dict["flux"],
+            "rm": results_dict["rm"],
+            "percent_rfi_zapped": results_dict["percent_rfi_zapped"],
         }
         return self.create_graphql()
 
