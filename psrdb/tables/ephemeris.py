@@ -11,10 +11,10 @@ class Ephemeris(GraphQLTable):
 
         # create a new record
         self.create_mutation = """
-        mutation ($pulsar: String!, $ephemeris: String!, $project: String!, $comment: String!) {
+        mutation ($pulsar: String!, $ephemerisText: String!, $project: String!, $comment: String!) {
             createEphemeris (input: {
                 pulsarName: $pulsar,
-                ephemerisLoc: $ephemeris,
+                ephemerisText: $ephemerisText,
                 projectCode: $project,
                 comment: $comment,
                 }) {
@@ -129,9 +129,12 @@ class Ephemeris(GraphQLTable):
         return self.update_graphql()
 
     def create(self, pulsar, ephemeris, project, comment):
+        # Read ephemeris file
+        with open(ephemeris, "r") as f:
+            ephemeris_str = f.read()
         self.create_variables = {
             "pulsar": pulsar,
-            "ephemeris": ephemeris,
+            "ephemerisText": ephemeris_str,
             "project": project,
             "comment": comment,
         }
