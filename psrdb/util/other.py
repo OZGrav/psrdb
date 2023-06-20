@@ -1,5 +1,7 @@
 import os
+import json
 import logging
+
 
 def setup_logging(
         console=True,
@@ -60,3 +62,33 @@ def setup_logging(
                 f.write("\n")
 
     return logger
+
+
+def get_graphql_id(response, table, logger):
+    content = json.loads(response.content)
+    logger.debug(content.keys())
+
+    if "errors" in content.keys():
+        logger.error(f"Error in GraphQL response: {content['errors']}")
+        return None
+    else:
+        data = content["data"]
+        mutation = "create%s" % (table.capitalize())
+        try:
+            return int(data[mutation][table]["id"])
+        except KeyError:
+            return None
+
+
+def get_rest_api_id(response, logger):
+    content = json.loads(response.content)
+    logger.debug(content.keys())
+
+    if content["errors"] is None:
+        try:
+            return int(content["id"])
+        except KeyError:
+            return None
+    else:
+        logger.error(f"Error in GraphQL response: {content['errors']}")
+        return None
