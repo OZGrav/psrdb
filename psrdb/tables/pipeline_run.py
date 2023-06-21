@@ -42,14 +42,14 @@ class PipelineRun(GraphQLTable):
                 location: $location,
                 configuration: $configuration,
                 dm: $dm,
-                dm_err: $dm_err,
-                dm_epoch: $dm_epoch,
-                dm_chi2r: $dm_chi2r,
-                dm_tres: $dm_tres,
+                dmErr: $dm_err,
+                dmEpoch: $dm_epoch,
+                dmChi2r: $dm_chi2r,
+                dmTres: $dm_tres,
                 sn: $sn,
                 flux: $flux,
                 rm: $rm,
-                percent_rfi_zapped: $percent_rfi_zapped,
+                percentRfiZapped: $percent_rfi_zapped,
             }) {
                 pipelineRun {
                     id
@@ -318,7 +318,7 @@ class PipelineRun(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "observations"
+        return "pipelinerun"
 
     @classmethod
     def get_description(cls):
@@ -327,7 +327,7 @@ class PipelineRun(GraphQLTable):
     @classmethod
     def get_parsers(cls):
         """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("Observations model parser")
+        parser = GraphQLTable.get_default_parser("PipelineRun model parser")
         cls.configure_parsers(parser)
         return parser
 
@@ -339,49 +339,49 @@ class PipelineRun(GraphQLTable):
         subs = parser.add_subparsers(dest="subcommand")
         subs.required = True
 
-        parser_list = subs.add_parser("list", help="list existing observations")
-        parser_list.add_argument("--id", metavar="ID", type=int, help="list observations matching the id [int]")
+        parser_list = subs.add_parser("list", help="list existing PipelineRun")
+        parser_list.add_argument("--id", metavar="ID", type=int, help="list PipelineRun matching the id [int]")
         parser_list.add_argument(
-            "--target_id", metavar="TGTID", type=int, help="list observations matching the target (pulsar) id [int]"
+            "--target_id", metavar="TGTID", type=int, help="list PipelineRun matching the target (pulsar) id [int]"
         )
         parser_list.add_argument(
-            "--pulsar", metavar="TGTNAME", type=str, help="list observations matching the target (pulsar) name [str]"
+            "--pulsar", metavar="TGTNAME", type=str, help="list PipelineRun matching the target (pulsar) name [str]"
         )
         parser_list.add_argument(
-            "--telescope_id", metavar="TELID", type=int, help="list observations matching the telescope id [int]"
+            "--telescope_id", metavar="TELID", type=int, help="list PipelineRun matching the telescope id [int]"
         )
         parser_list.add_argument(
-            "--telescope_name", metavar="TELNAME", type=str, help="list observations matching the telescope name [int]"
+            "--telescope_name", metavar="TELNAME", type=str, help="list PipelineRun matching the telescope name [int]"
         )
         parser_list.add_argument(
             "--instrumentconfig_id",
             metavar="ICID",
             type=int,
-            help="list observations matching the instrument_config id [int]",
+            help="list PipelineRun matching the instrument_config id [int]",
         )
         parser_list.add_argument(
             "--instrumentconfig_name",
             metavar="ICNAME",
             type=str,
-            help="list observations matching the instrument_config name [str]",
+            help="list PipelineRun matching the instrument_config name [str]",
         )
         parser_list.add_argument(
-            "--project_id", metavar="PROJID", type=int, help="list observations matching the project id [id]"
+            "--project_id", metavar="PROJID", type=int, help="list PipelineRun matching the project id [id]"
         )
         parser_list.add_argument(
-            "--project_code", metavar="PROJCODE", type=str, help="list observations matching the project code [str]"
+            "--project_code", metavar="PROJCODE", type=str, help="list PipelineRun matching the project code [str]"
         )
         parser_list.add_argument(
             "--utcs",
             metavar="UTCGTE",
             type=str,
-            help="list observations with utc_start greater than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+            help="list PipelineRun with utc_start greater than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
         )
         parser_list.add_argument(
             "--utce",
             metavar="UTCLET",
             type=str,
-            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+            help="list PipelineRun with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
         )
 
         # create the parser for the "create" command

@@ -15,6 +15,7 @@ def test_get_graphql_id():
         ("calibration", {"data": {"createCalibration": {"calibration": {"id": 1}}}}, 1),
         ("observation", {"data": {"createObservation": {"observation": {"id": 1}}}}, 1),
         ("ephemeris",   {"data": {"createEphemeris":   {"ephemeris":   {"id": 1}}}}, 1),
+        ('pipelineRun', {'data': {'createPipelineRun': {'pipelineRun': {'id': 1}}}}, 1),
     ]
     for table, response_data, expected in tests:
         response = MockResponse(response_data)

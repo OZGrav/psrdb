@@ -65,19 +65,24 @@ def setup_logging(
 
 
 def get_graphql_id(response, table, logger):
+    """
+    Parses the graphql response to return the id of the newly created object
+    """
     content = json.loads(response.content)
     logger.debug(content.keys())
 
     if "errors" in content.keys():
         logger.error(f"Error in GraphQL response: {content['errors']}")
-        return None
+        raise ValueError(f"Error in GraphQL response: {content['errors']}")
     else:
         data = content["data"]
-        mutation = "create%s" % (table.capitalize())
+        # Only capitlise first character to preserve camel case
+        capitalised = table[:1].capitalize() + table[1:]
+        mutation = f"create{capitalised}"
         try:
             return int(data[mutation][table]["id"])
         except KeyError:
-            return None
+            raise KeyError(f"No key ['{mutation}']['{table}']['id'] in {data}")
 
 
 def get_rest_api_id(response, logger):
