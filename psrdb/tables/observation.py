@@ -306,17 +306,13 @@ class Observation(GraphQLTable):
             )
         elif args.subcommand == "list":
             return self.list(
-                args.id,
-                args.target_id,
-                args.pulsar,
-                args.telescope_id,
-                args.telescope_name,
-                args.project_id,
-                args.project_code,
-                args.instrumentconfig_id,
-                args.instrumentconfig_name,
-                args.utcs,
-                args.utce,
+                id=args.id,
+                pulsar_name=args.pulsar,
+                telescope_name=args.telescope_name,
+                project_id=args.project_id,
+                project_short=args.project_code,
+                utcs=args.utcs,
+                utce=args.utce,
             )
         elif args.subcommand == "delete":
             return self.delete(args.id)
@@ -325,7 +321,7 @@ class Observation(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "observations"
+        return "observation"
 
     @classmethod
     def get_description(cls):

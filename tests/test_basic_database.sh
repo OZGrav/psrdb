@@ -32,6 +32,8 @@ psrdb project create Commissioning   COM-20201001-DH-01      unknown         548
 psrdb project create Commissioning   COM-20180614-MG-01      unknown         548 ""
 psrdb project create MeerTIME        SCI-20180516-MB-06      ngc6440         548 "Measuring the Shapiro delay in PSR J1748-2021B"
 psrdb project create MeerTIME        SCI-20180516-MB-99      phaseups        548 "MeerTIME Phase Up observations"
+psrdb project create MeerTIME        SCI-20180516-MB-95      phaseups2       548 "MeerTIME Phase Up observations"
+psrdb project create MeerTIME        SCI-20180516-MB-93      phaseups3       548 "MeerTIME Phase Up observations"
 psrdb project create Commissioning   COM-20190912-MS-01      unknown         548 ""
 psrdb project create MeerTIME        SCI-2018-0516-MB-03     unknown         548 ""
 psrdb project create MeerTIME        SCI-2018-0516-MB-02     unknown         548 ""

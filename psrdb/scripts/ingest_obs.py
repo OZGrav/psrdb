@@ -80,13 +80,13 @@ def main():
         utc_start_dt = utc_start_dt.strftime("%Y-%m-%dT%H:%M:%S+0000")
 
         # Create pulsar if it doesn't already exist
-        pulsar = Pulsar(client, url, token)
+        pulsar = Pulsar(client, token)
         pulsar.create(
             name=meertime_data["pulsarName"],
         )
 
         # Get or upload calibration
-        calibration = Calibration(client, url, token)
+        calibration = Calibration(client, token)
         cal_response = calibration.create(
             delay_cal_id=meertime_data["delaycal_id"],
             phase_up_id=meertime_data["phaseup_id"],
@@ -97,7 +97,7 @@ def main():
         logger.debug(f"Completed ingesting cal_id: {cal_id}")
 
         # Upload observation
-        observation = Observation(client, url, token)
+        observation = Observation(client, token)
         response = observation.create(
             pulsarName=meertime_data["pulsarName"],
             telescopeName=meertime_data["telescopeName"],

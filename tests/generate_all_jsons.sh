@@ -1,3 +1,5 @@
+#!/bin/bash
+
 set -e
 
 for path in $(find /fred/oz005/timing -type f -name "obs.header"); do

@@ -30,7 +30,7 @@ class Calibration(GraphQLTable):
         # Update an existing record
         self.update_mutation = """
         mutation ($id: Int!, $calibration_type: String!, $location: String!) {
-             updateCalibration(id: $id, input: {
+            updateCalibration(id: $id, input: {
                 calibrationType: $calibration_type,
                 location: $location
             }) {
