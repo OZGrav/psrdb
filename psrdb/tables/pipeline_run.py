@@ -59,35 +59,34 @@ class PipelineRun(GraphQLTable):
         """
 
         self.update_mutation = """
-        mutation ($id: Int!, $target: Int!, $calibration: Int!, $telescope: Int!, $instrument_config: Int!, $project: Int!, $config: JSONString!, $duration: Float!, $utc_start: DateTime!, $nant: Int!,   $nant_eff: Int!, $suspect: Boolean!, $comment: String) {
-            updateObservation(id: $id, input: {
-                target_id: $target,
-                calibration_id: $calibration,
-                telescope_id: $telescope,
-                instrument_config_id: $instrument_config,
-                project_id: $project,
-                config: $config,
-                utcStart: $utc_start,
-                duration: $duration,
-                nant: $nant,
-                nantEff: $nant_eff,
-                suspect: $suspect,
-                comment: $comment
+        mutation (
+            $id: Int!,
+            $jobState: String!,
+            $dm: Float,
+            $dm_err: Float,
+            $dm_epoch: Float,
+            $dm_chi2r: Float,
+            $dm_tres: Float,
+            $sn: Float,
+            $flux: Float,
+            $rm: Float,
+            $percent_rfi_zapped: Float,
+
+        ) {
+            updatePipelineRun(id: $id, input: {
+                jobState: $jobState,
+                dm: $dm,
+                dmErr: $dm_err,
+                dmEpoch: $dm_epoch,
+                dmChi2r: $dm_chi2r,
+                dmTres: $dm_tres,
+                sn: $sn,
+                flux: $flux,
+                rm: $rm,
+                percentRfiZapped: $percent_rfi_zapped,
             }) {
-                observation {
-                    id,
-                    target { id },
-                    calibration { id },
-                    telescope { id },
-                    instrumentConfig { id },
-                    project { id },
-                    config,
-                    utcStart,
-                    duration,
-                    nant,
-                    nantEff,
-                    suspect,
-                    comment
+                pipelineRun {
+                    id
                 }
             }
         }
@@ -95,14 +94,14 @@ class PipelineRun(GraphQLTable):
 
         self.delete_mutation = """
         mutation ($id: Int!) {
-            deleteObservation(id: $id) {
+            deletePipelineRun(id: $id) {
                 ok
             }
         }
         """
 
         self.field_names = [
-            "observation { id }",
+            "PipelineRun { id }",
             "ephemeris { id }",
             "template { id }",
             "pipelineName",
@@ -119,10 +118,10 @@ class PipelineRun(GraphQLTable):
             "sn",
             "flux",
             "rm",
-            "percent_rfi_zapped",
+            "percentRfiZapped",
         ]
         self.literal_field_names = [
-            "observation { id }",
+            "PipelineRun { id }",
             "ephemeris { id }",
             "template { id }",
             "pipelineName",
@@ -139,7 +138,7 @@ class PipelineRun(GraphQLTable):
             "sn",
             "flux",
             "rm",
-            "percent_rfi_zapped",
+            "percentRfiZapped",
         ]
 
     def list(
@@ -233,34 +232,35 @@ class PipelineRun(GraphQLTable):
     def update(
         self,
         id,
-        target,
-        calibration,
-        telescope,
-        instrument_config,
-        project,
-        config,
-        utc,
-        duration,
-        nant,
-        nanteff,
-        suspect,
-        comment,
+        jobState,
+        results_dict=None,
     ):
+        if results_dict is None:
+            results_dict = {
+                "dm": None,
+                "dm_err": None,
+                "dm_epoch": None,
+                "dm_chi2r": None,
+                "dm_tres": None,
+                "sn": None,
+                "flux": None,
+                "rm": None,
+                "percent_rfi_zapped": None,
+            }
         self.update_variables = {
             "id": id,
-            "target": target,
-            "calibration": calibration,
-            "telescope": telescope,
-            "instrument_config": instrument_config,
-            "project": project,
-            "config": config,
-            "utc_start": utc,
-            "duration": duration,
-            "nant": nant,
-            "nant_eff": nanteff,
-            "suspect": suspect,
-            "comment": comment,
+            "jobState": jobState,
+            "dm": results_dict["dm"],
+            "dm_err": results_dict["dm_err"],
+            "dm_epoch": results_dict["dm_epoch"],
+            "dm_chi2r": results_dict["dm_chi2r"],
+            "dm_tres": results_dict["dm_tres"],
+            "sn": results_dict["sn"],
+            "flux": results_dict["flux"],
+            "percent_rfi_zapped": results_dict["percent_rfi_zapped"],
         }
+        if "rm" in results_dict.keys():
+            self.update_variables["rm"] = results_dict["rm"]
         return self.update_graphql()
 
     def process(self, args):
@@ -322,7 +322,7 @@ class PipelineRun(GraphQLTable):
 
     @classmethod
     def get_description(cls):
-        return "Observation details."
+        return "PipelineRun details."
 
     @classmethod
     def get_parsers(cls):
@@ -385,77 +385,77 @@ class PipelineRun(GraphQLTable):
         )
 
         # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new observation")
-        parser_create.add_argument("target", metavar="TGT", type=int, help="target id of the observation [int]")
+        parser_create = subs.add_parser("create", help="create a new PipelineRun")
+        parser_create.add_argument("target", metavar="TGT", type=int, help="target id of the PipelineRun [int]")
         parser_create.add_argument(
-            "calibration", metavar="CAL", type=int, help="calibration id of the observation [int]"
+            "calibration", metavar="CAL", type=int, help="calibration id of the PipelineRun [int]"
         )
-        parser_create.add_argument("telescope", metavar="TEL", type=int, help="telescope id of the observation [int]")
+        parser_create.add_argument("telescope", metavar="TEL", type=int, help="telescope id of the PipelineRun [int]")
         parser_create.add_argument(
-            "instrument_config", metavar="IC", type=int, help="instrument config id of the observation [int]"
+            "instrument_config", metavar="IC", type=int, help="instrument config id of the PipelineRun [int]"
         )
-        parser_create.add_argument("project", metavar="PROJ", type=int, help="project id of the observation [int]")
-        parser_create.add_argument("config", metavar="CFG", type=str, help="json config of the observation [json]")
+        parser_create.add_argument("project", metavar="PROJ", type=int, help="project id of the PipelineRun [int]")
+        parser_create.add_argument("config", metavar="CFG", type=str, help="json config of the PipelineRun [json]")
         parser_create.add_argument(
-            "utc", metavar="UTC", type=str, help="start utc of the observation [YYYY-MM-DDTHH:MM:SS+00:00]"
-        )
-        parser_create.add_argument(
-            "duration", metavar="DUR", type=float, help="duration of the observation in seconds [float]"
+            "utc", metavar="UTC", type=str, help="start utc of the PipelineRun [YYYY-MM-DDTHH:MM:SS+00:00]"
         )
         parser_create.add_argument(
-            "nant", metavar="NANT", type=int, help="number of antennas used during the observation [int]"
+            "duration", metavar="DUR", type=float, help="duration of the PipelineRun in seconds [float]"
+        )
+        parser_create.add_argument(
+            "nant", metavar="NANT", type=int, help="number of antennas used during the PipelineRun [int]"
         )
         parser_create.add_argument(
             "nanteff",
             metavar="NANTEFF",
             type=int,
-            help="effective number of antennas used during the observation [int]",
+            help="effective number of antennas used during the PipelineRun [int]",
         )
-        parser_create.add_argument("suspect", metavar="SUS", type=bool, help="status of the observation [bool]")
-        parser_create.add_argument("comment", metavar="COM", type=str, help="any comment on the observation [str]")
+        parser_create.add_argument("suspect", metavar="SUS", type=bool, help="status of the PipelineRun [bool]")
+        parser_create.add_argument("comment", metavar="COM", type=str, help="any comment on the PipelineRun [str]")
 
-        parser_update = subs.add_parser("update", help="create a new observation")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of the existing observation [int]")
-        parser_update.add_argument("target", metavar="TGT", type=int, help="target id of the observation [int]")
+        parser_update = subs.add_parser("update", help="create a new PipelineRun")
+        parser_update.add_argument("id", metavar="ID", type=int, help="id of the existing PipelineRun [int]")
+        parser_update.add_argument("target", metavar="TGT", type=int, help="target id of the PipelineRun [int]")
         parser_update.add_argument(
-            "calibration", metavar="CAL", type=int, help="calibration id of the observation [int]"
+            "calibration", metavar="CAL", type=int, help="calibration id of the PipelineRun [int]"
         )
-        parser_update.add_argument("telescope", metavar="TEL", type=int, help="telescope id of the observation [int]")
+        parser_update.add_argument("telescope", metavar="TEL", type=int, help="telescope id of the PipelineRun [int]")
         parser_update.add_argument(
-            "instrument_config", metavar="IC", type=int, help="instrument config id of the observation [int]"
+            "instrument_config", metavar="IC", type=int, help="instrument config id of the PipelineRun [int]"
         )
-        parser_update.add_argument("project", metavar="PROJ", type=int, help="project id of the observation [int]")
-        parser_update.add_argument("config", metavar="CFG", type=str, help="json config of the observation [json]")
+        parser_update.add_argument("project", metavar="PROJ", type=int, help="project id of the PipelineRun [int]")
+        parser_update.add_argument("config", metavar="CFG", type=str, help="json config of the PipelineRun [json]")
         parser_update.add_argument(
-            "utc", metavar="UTC", type=str, help="start utc of the observation [YYYY-MM-DDTHH:MM:SS+00:00]"
-        )
-        parser_update.add_argument(
-            "duration", metavar="DUR", type=float, help="duration of the observation in seconds [float]"
+            "utc", metavar="UTC", type=str, help="start utc of the PipelineRun [YYYY-MM-DDTHH:MM:SS+00:00]"
         )
         parser_update.add_argument(
-            "nant", metavar="NANT", type=int, help="number of antennas used during the observation [int]"
+            "duration", metavar="DUR", type=float, help="duration of the PipelineRun in seconds [float]"
+        )
+        parser_update.add_argument(
+            "nant", metavar="NANT", type=int, help="number of antennas used during the PipelineRun [int]"
         )
         parser_update.add_argument(
             "nanteff",
             metavar="NANTEFF",
             type=int,
-            help="effective number of antennas used during the observation [int]",
+            help="effective number of antennas used during the PipelineRun [int]",
         )
-        parser_update.add_argument("suspect", metavar="SUS", type=bool, help="status of the observation [bool]")
-        parser_update.add_argument("comment", metavar="COM", type=str, help="any comment on the observation [str]")
+        parser_update.add_argument("suspect", metavar="SUS", type=bool, help="status of the PipelineRun [bool]")
+        parser_update.add_argument("comment", metavar="COM", type=str, help="any comment on the PipelineRun [str]")
 
         # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing observation")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of the existing observation [int]")
+        parser_delete = subs.add_parser("delete", help="delete an existing PipelineRun")
+        parser_delete.add_argument("id", metavar="ID", type=int, help="id of the existing PipelineRun [int]")
 
 
 if __name__ == "__main__":
-    parser = Observation.get_parsers()
+    parser = PipelineRun.get_parsers()
     args = parser.parse_args()
 
     from psrdb.graphql_client import GraphQLClient
 
     client = GraphQLClient(args.url, args.very_verbose)
 
-    o = Observation(client, args.url, args.token)
+    o = PipelineRun(client, args.url, args.token)
     o.process(args)
