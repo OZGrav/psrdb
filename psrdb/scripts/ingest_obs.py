@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 from decouple import config
 from psrdb.graphql_client import GraphQLClient
-from psrdb.util.other import setup_logging, get_graphql_id
+from psrdb.utils.other import setup_logging, get_graphql_id
 
 from psrdb.tables.pulsar import Pulsar
 from psrdb.tables.calibration import Calibration

@@ -1,6 +1,6 @@
 import json
 import logging
-from psrdb.util.other import get_graphql_id, get_rest_api_id
+from psrdb.utils.other import get_graphql_id, get_rest_api_id
 
 
 class MockResponse:

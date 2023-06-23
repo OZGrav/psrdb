@@ -11,7 +11,7 @@ import subprocess
 
 import psrchive as psr
 
-from psrdb.util import header
+from psrdb.utils import header
 
 
 CALIBRATIONS_DIR = config("CALIBRATIONS_DIR")

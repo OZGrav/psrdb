@@ -2,7 +2,7 @@ import json
 import logging
 import copy
 import requests as r
-from requests.packages.urllib3.util.retry import Retry
+from requests.packages.urllib3.utils.retry import Retry
 
 
 class GraphQLClient:
