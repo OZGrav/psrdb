@@ -282,20 +282,12 @@ class PipelineRun(GraphQLTable):
                 args.comment,
             )
         elif args.subcommand == "update":
+            with open(args.results_json, "r") as json_file:
+                results_dict = json.load(json_file)
             return self.update(
                 args.id,
-                args.target,
-                args.calibration,
-                args.telescope,
-                args.instrument_config,
-                args.project,
-                args.config,
-                args.utc,
-                args.duration,
-                args.nant,
-                args.nanteff,
-                args.suspect,
-                args.comment,
+                args.job_state,
+                results_dict,
             )
         elif args.subcommand == "list":
             return self.list(
@@ -415,34 +407,9 @@ class PipelineRun(GraphQLTable):
         parser_create.add_argument("comment", metavar="COM", type=str, help="any comment on the PipelineRun [str]")
 
         parser_update = subs.add_parser("update", help="create a new PipelineRun")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of the existing PipelineRun [int]")
-        parser_update.add_argument("target", metavar="TGT", type=int, help="target id of the PipelineRun [int]")
-        parser_update.add_argument(
-            "calibration", metavar="CAL", type=int, help="calibration id of the PipelineRun [int]"
-        )
-        parser_update.add_argument("telescope", metavar="TEL", type=int, help="telescope id of the PipelineRun [int]")
-        parser_update.add_argument(
-            "instrument_config", metavar="IC", type=int, help="instrument config id of the PipelineRun [int]"
-        )
-        parser_update.add_argument("project", metavar="PROJ", type=int, help="project id of the PipelineRun [int]")
-        parser_update.add_argument("config", metavar="CFG", type=str, help="json config of the PipelineRun [json]")
-        parser_update.add_argument(
-            "utc", metavar="UTC", type=str, help="start utc of the PipelineRun [YYYY-MM-DDTHH:MM:SS+00:00]"
-        )
-        parser_update.add_argument(
-            "duration", metavar="DUR", type=float, help="duration of the PipelineRun in seconds [float]"
-        )
-        parser_update.add_argument(
-            "nant", metavar="NANT", type=int, help="number of antennas used during the PipelineRun [int]"
-        )
-        parser_update.add_argument(
-            "nanteff",
-            metavar="NANTEFF",
-            type=int,
-            help="effective number of antennas used during the PipelineRun [int]",
-        )
-        parser_update.add_argument("suspect", metavar="SUS", type=bool, help="status of the PipelineRun [bool]")
-        parser_update.add_argument("comment", metavar="COM", type=str, help="any comment on the PipelineRun [str]")
+        parser_update.add_argument("id", metavar="ID", type=int, help="ID of the existing PipelineRun [int]")
+        parser_update.add_argument("job_state", metavar="STATE", type=str, help="State of the job from ('started', 'finished', 'error') [str]")
+        parser_update.add_argument("results_json", metavar="JSON", type=str, help="Path to the results.json file [str]", default="results.json")
 
         # create the parser for the "delete" command
         parser_delete = subs.add_parser("delete", help="delete an existing PipelineRun")
