@@ -101,8 +101,8 @@ class PipelineRun(GraphQLTable):
         """
 
         self.field_names = [
-            "PipelineRun { id }",
-            "ephemeris { id }",
+            "id",
+            "observation { id }",
             "template { id }",
             "pipelineName",
             "pipelineDescription",
@@ -121,7 +121,8 @@ class PipelineRun(GraphQLTable):
             "percentRfiZapped",
         ]
         self.literal_field_names = [
-            "PipelineRun { id }",
+            "id",
+            "observation { id }",
             "ephemeris { id }",
             "template { id }",
             "pipelineName",
@@ -144,40 +145,42 @@ class PipelineRun(GraphQLTable):
     def list(
         self,
         id=None,
-        target_id=None,
-        pulsar=None,
-        telescope_id=None,
-        telescope_name=None,
-        project_id=None,
-        project_code=None,
-        instrumentconfig_id=None,
-        instrumentconfig_name=None,
-        utcs=None,
-        utce=None,
+        observation_id=None,
+        ephemeris_id=None,
+        template_id=None,
+        pipelineName=None,
+        pipelineDescription=None,
+        pipelineVersion=None,
+        jobState=None,
+        location=None,
+        dm=None,
+        dmErr=None,
+        dmEpoch=None,
+        dmChi2r=None,
+        dmTres=None,
+        sn=None,
+        flux=None,
+        rm=None,
+        percentRfiZapped=None,
     ):
-        # Convert dates to correct format
-        if utcs == "":
-            utcs = None
-        elif utcs is not None:
-            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
-            utcs = f"{d.date()}T{d.time()}+00:00"
-        if utce == "":
-            utce = None
-        elif utce is not None:
-            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
-            utce = f"{d.date()}T{d.time()}+00:00"
-        """Return a list of records matching the id and/or any of the arguments."""
         filters = [
-            {"field": "target_Id", "value": target_id, "join": "Targets"},
-            {"field": "target_Name", "value": pulsar, "join": "Targets"},
-            {"field": "telescope_Id", "value": telescope_id, "join": "Telescopes"},
-            {"field": "telescope_Name", "value": telescope_name, "join": "Telescopes"},
-            {"field": "project_Id", "value": project_id, "join": "Projects"},
-            {"field": "project_Code", "value": project_code, "join": "Projects"},
-            {"field": "instrumentConfig_Id", "value": instrumentconfig_id, "join": "InstrumentConfigs"},
-            {"field": "instrumentConfig_Name", "value": instrumentconfig_name, "join": "InstrumentConfigs"},
-            {"field": "utcStart_Gte", "value": utcs, "join": None},
-            {"field": "utcStart_Lte", "value": utce, "join": None},
+            {"field": "observation_Id", "value": observation_id, "join": "Observation"},
+            {"field": "ephemeris_Id", "value": ephemeris_id, "join": "Ephemeris"},
+            {"field": "template_Id", "value": template_id, "join": "Template"},
+            {"field": "pipelineName", "value": pipelineName, "join": None},
+            {"field": "pipelineDescription", "value": pipelineDescription, "join": None},
+            {"field": "pipelineVersion", "value": pipelineVersion, "join": None},
+            {"field": "jobState", "value": jobState, "join": None},
+            {"field": "location", "value": location, "join": None},
+            {"field": "dm", "value": dm, "join": None},
+            {"field": "dmErr", "value": dmErr, "join": None},
+            {"field": "dmEpoch", "value": dmEpoch, "join": None},
+            {"field": "dmChi2r", "value": dmChi2r, "join": None},
+            {"field": "dmTres", "value": dmTres, "join": None},
+            {"field": "sn", "value": sn, "join": None},
+            {"field": "flux", "value": flux, "join": None},
+            {"field": "rm", "value": rm, "join": None},
+            {"field": "percentRfiZapped", "value": percentRfiZapped, "join": None},
         ]
         graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
         return GraphQLTable.list_graphql(self, graphql_query)
@@ -292,16 +295,23 @@ class PipelineRun(GraphQLTable):
         elif args.subcommand == "list":
             return self.list(
                 args.id,
-                args.target_id,
-                args.pulsar,
-                args.telescope_id,
-                args.telescope_name,
-                args.project_id,
-                args.project_code,
-                args.instrumentconfig_id,
-                args.instrumentconfig_name,
-                args.utcs,
-                args.utce,
+                args.observation_id,
+                args.ephemeris_id,
+                args.template_id,
+                args.pipelineName,
+                args.pipelineDescription,
+                args.pipelineVersion,
+                args.jobState,
+                args.location,
+                args.dm,
+                args.dmErr,
+                args.dmEpoch,
+                args.dmChi2r,
+                args.dmTres,
+                args.sn,
+                args.flux,
+                args.rm,
+                args.percentRfiZapped,
             )
         elif args.subcommand == "delete":
             return self.delete(args.id)
@@ -332,49 +342,25 @@ class PipelineRun(GraphQLTable):
         subs.required = True
 
         parser_list = subs.add_parser("list", help="list existing PipelineRun")
-        parser_list.add_argument("--id", metavar="ID", type=int, help="list PipelineRun matching the id [int]")
-        parser_list.add_argument(
-            "--target_id", metavar="TGTID", type=int, help="list PipelineRun matching the target (pulsar) id [int]"
-        )
-        parser_list.add_argument(
-            "--pulsar", metavar="TGTNAME", type=str, help="list PipelineRun matching the target (pulsar) name [str]"
-        )
-        parser_list.add_argument(
-            "--telescope_id", metavar="TELID", type=int, help="list PipelineRun matching the telescope id [int]"
-        )
-        parser_list.add_argument(
-            "--telescope_name", metavar="TELNAME", type=str, help="list PipelineRun matching the telescope name [int]"
-        )
-        parser_list.add_argument(
-            "--instrumentconfig_id",
-            metavar="ICID",
-            type=int,
-            help="list PipelineRun matching the instrument_config id [int]",
-        )
-        parser_list.add_argument(
-            "--instrumentconfig_name",
-            metavar="ICNAME",
-            type=str,
-            help="list PipelineRun matching the instrument_config name [str]",
-        )
-        parser_list.add_argument(
-            "--project_id", metavar="PROJID", type=int, help="list PipelineRun matching the project id [id]"
-        )
-        parser_list.add_argument(
-            "--project_code", metavar="PROJCODE", type=str, help="list PipelineRun matching the project code [str]"
-        )
-        parser_list.add_argument(
-            "--utcs",
-            metavar="UTCGTE",
-            type=str,
-            help="list PipelineRun with utc_start greater than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
-        )
-        parser_list.add_argument(
-            "--utce",
-            metavar="UTCLET",
-            type=str,
-            help="list PipelineRun with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
-        )
+
+        parser_list.add_argument("--id", metavar="ID", type=int, help="List pipeline run with matching pipeline_run_id [int]")
+        parser_list.add_argument("--observation_id", metavar="OBS", type=int, help="List pipeline run with matching observation_id [int]")
+        parser_list.add_argument("--ephemeris_id", metavar="EPHEM", type=int, help="List pipeline run with matching ephemeris_id [int]")
+        parser_list.add_argument("--template_id", metavar="TEMP", type=int, help="List pipeline run with matching template_id [int]")
+        parser_list.add_argument("--pipelineName", metavar="NAME", type=str, help="List pipeline run with matching pipelineName [str]")
+        parser_list.add_argument("--pipelineDescription", metavar="DESC", type=str, help="List pipeline run with matching pipelineDescription [str]")
+        parser_list.add_argument("--pipelineVersion", metavar="VER", type=str, help="List pipeline run with matching pipelineVersion [str]")
+        parser_list.add_argument("--jobState", metavar="STATE", type=str, help="List pipeline run with matching jobState [str]")
+        parser_list.add_argument("--location", metavar="LOC", type=str, help="List pipeline run with matching location [str]")
+        parser_list.add_argument("--dm", metavar="DM", type=float, help="List pipeline run with matching dm [float]")
+        parser_list.add_argument("--dmErr", metavar="DMERR", type=float, help="List pipeline run with matching dmErr [float]")
+        parser_list.add_argument("--dmEpoch", metavar="DMEPOCH", type=float, help="List pipeline run with matching dmEpoch [float]")
+        parser_list.add_argument("--dmChi2r", metavar="DMCHI2R", type=float, help="List pipeline run with matching dmChi2r [float]")
+        parser_list.add_argument("--dmTres", metavar="DMTRES", type=float, help="List pipeline run with matching dmTres [float]")
+        parser_list.add_argument("--sn", metavar="SN", type=float, help="List pipeline run with matching sn [float]")
+        parser_list.add_argument("--flux", metavar="FLUX", type=float, help="List pipeline run with matching flux [float]")
+        parser_list.add_argument("--rm", metavar="RM", type=float, help="List pipeline run with matching rm [float]")
+        parser_list.add_argument("--percentRfiZapped", metavar="RFI", type=float, help="List pipeline run with matching percentRfiZapped [float]")
 
         # create the parser for the "create" command
         parser_create = subs.add_parser("create", help="create a new PipelineRun")

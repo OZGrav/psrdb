@@ -77,7 +77,7 @@ def get_graphql_id(response, table, logger):
     else:
         data = content["data"]
         # Only capitlise first character to preserve camel case
-        capitalised = table[:1].capitalize() + table[1:]
+        capitalised = table.capitalize()
         mutation = f"create{capitalised}"
         try:
             return int(data[mutation][table]["id"])

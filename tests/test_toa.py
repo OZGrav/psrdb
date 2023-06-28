@@ -17,4 +17,5 @@ def test_toa_line_to_dict_to_line():
             output_toa_line = toa_dict_to_line(toa_dict)
             print(input_toa_line)
             print(output_toa_line)
+            print(toa_dict)
             assert input_toa_line == output_toa_line

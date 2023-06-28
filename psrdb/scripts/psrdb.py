@@ -16,7 +16,7 @@ from psrdb.tables.pipeline_run import PipelineRun
 # from psrdb.tables.fold_pulsar_summary import FoldPulsarSummary
 from psrdb.tables.pipeline_image import PipelineImage
 # from psrdb.tables.pipeline_file import PipelineFile
-# from psrdb.tables.toa import Toa
+from psrdb.tables.toa import Toa
 # from psrdb.tables.residual import Residual
 
 
@@ -41,7 +41,7 @@ def main():
         # FoldPulsarSummary,
         PipelineImage,
         # PipelineFile,
-        # Toa,
+        Toa,
         # Residual,
     ]
 

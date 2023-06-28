@@ -42,7 +42,7 @@ class GraphQLTable:
         self.table_name = self.__class__.__name__
 
         # record name is the singular form of the record
-        self.record_name = self.__class__.__name__[0].lower() + self.__class__.__name__[1:]
+        self.record_name = self.__class__.__name__.lower()
 
         # if records.endswith("ides"):
         #     self.record_name = records.rstrip("ides") + "is"

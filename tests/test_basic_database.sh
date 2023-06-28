@@ -59,3 +59,4 @@ psrdb ephemeris create J1705-1903 /home/nick/code/meertime_dataportal/backend/da
 psrdb ephemeris create J1705-1903 /home/nick/code/meertime_dataportal/backend/dataportal/tests/test_data/ephem_J1705-1903_same_2.eph SCI-20180516-MB-05 ""
 psrdb ephemeris create J1705-1903 /home/nick/code/meertime_dataportal/backend/dataportal/tests/test_data/ephem_J1705-1903_diff.eph SCI-20180516-MB-05 ""
 
+psrdb toa create 21 4 8 *tim
