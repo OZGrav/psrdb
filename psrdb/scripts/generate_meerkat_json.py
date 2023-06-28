@@ -16,6 +16,7 @@ from psrdb.util import header
 
 CALIBRATIONS_DIR = config("CALIBRATIONS_DIR")
 RESULTS_DIR = config("RESULTS_DIR")
+FOLDING_DIR = config("FOLDING_DIR")
 
 
 def generate_obs_length(freq_summed_archive):
@@ -104,8 +105,20 @@ def main():
     obs_data = header.PTUSEHeader(args.obs_header)
     obs_data.parse()
     obs_data.set("BEAM", args.beam)
-    # Grab observation length from the frequency summed archive
+
+    # Check if ther are freq.sum and archive files
     freq_summed_archive = f"{RESULTS_DIR}/{args.beam}/{obs_data.utc_start}/{obs_data.source}/freq.sum"
+    archive_files = glob.glob(f"{FOLDING_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.ar")
+    if not os.path.exists(freq_summed_archive):
+        logging.error(f"Could not find freq.sum file for {obs_data.source} {obs_data.utc_start} {args.beam}")
+    if len(archive_files) == 0:
+        logging.error(f"Could not find archive file for {obs_data.source} {obs_data.utc_start} {args.beam}")
+    if not os.path.exists(freq_summed_archive) and len(archive_files) == 0:
+        logging.error(f"Could not find freq.sum and archive files for {obs_data.source} {obs_data.utc_start} {args.beam}")
+        exit()
+
+
+    # Grab observation length from the frequency summed archive
     obs_length = generate_obs_length(freq_summed_archive)
 
     cal_type, cal_location = get_calibration(obs_data.utc_start)
