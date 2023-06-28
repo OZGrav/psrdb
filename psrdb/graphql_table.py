@@ -9,11 +9,10 @@ from psrdb.graphql_client import GraphQLClient
 class GraphQLTable:
     """Abstract base class to perform create, update and select GraphQL queries"""
 
-    def __init__(self, client, url, token, logger=None):
+    def __init__(self, client, token, logger=None):
 
         # the graphQL client may also be a djangodb mock endpoint
         self.client = client
-        self.url = url
         self.token = token
         if type(self.client) == GraphQLClient:
             self.header = {"Authorization": f"JWT {token}"}
@@ -86,15 +85,13 @@ class GraphQLTable:
         self.delete_variables = {"id": id}
         return self.delete_graphql()
 
-    def create_graphql(
-        self,
-    ):
+    def create_graphql(self):
 
         self.logger.debug(f"Using mutation {self.create_mutation}")
         self.logger.debug(f"Using mutation vars in a dict {self.create_variables}")
 
         payload = {"query": self.create_mutation, "variables": json.dumps(self.create_variables)}
-        response = self.client.post(self.url, payload, **self.header)
+        response = self.client.post(payload, **self.header)
         if response.status_code == 200:
             content = json.loads(response.content)
             if not "errors" in content.keys():
@@ -117,7 +114,7 @@ class GraphQLTable:
         self.logger.debug(f"Using mutation vars dict {self.update_variables}")
 
         payload = {"query": self.update_mutation, "variables": json.dumps(self.update_variables)}
-        response = self.client.post(self.url, payload, **self.header)
+        response = self.client.post(payload, **self.header)
         if response.status_code == 200:
             content = json.loads(response.content)
             if not "errors" in content.keys():
@@ -142,7 +139,7 @@ class GraphQLTable:
             query = graphql_query.paginate(cursor)
             self.logger.debug(f"Using query {query}")
             payload = {"query": query}
-            response = self.client.post(self.url, payload, **self.header)
+            response = self.client.post(payload, **self.header)
             has_next_page = False
             if response.status_code == 200:
                 content = json.loads(response.content)
@@ -178,7 +175,7 @@ class GraphQLTable:
             query = graphql_query.paginate(cursor)
             self.logger.debug(f"Using query {query}")
             payload = {"query": query}
-            response = self.client.post(self.url, payload, **self.header)
+            response = self.client.post(payload, **self.header)
             has_next_page = False
             if response.status_code == 200:
                 content = json.loads(response.content)
@@ -202,7 +199,7 @@ class GraphQLTable:
         self.logger.debug(f"Using mutation vars dict {self.delete_variables}")
 
         payload = {"query": self.delete_mutation, "variables": json.dumps(self.delete_variables)}
-        response = self.client.post(self.url, payload, **self.header)
+        response = self.client.post(payload, **self.header)
         if response.status_code == 200:
             content = json.loads(response.content)
             if not "errors" in content.keys():

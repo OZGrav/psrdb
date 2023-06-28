@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 from decouple import config
 from psrdb.graphql_client import GraphQLClient
-from psrdb.util.other import setup_logging
+from psrdb.utils.other import setup_logging, get_graphql_id
 
 from psrdb.tables.pulsar import Pulsar
 from psrdb.tables.calibration import Calibration
@@ -15,22 +15,6 @@ from psrdb.tables.observation import Observation
 
 LOG_DIRECTORY = config("LOG_DIRECTORY")
 LOG_FILE = f"{time.strftime('%Y-%m-%d')}{config('LOG_FILENAME')}"
-
-
-def get_id(response, table, logger):
-    content = json.loads(response.content)
-    logger.debug(content.keys())
-
-    if "errors" in content.keys():
-        logger.error(f"Error in GraphQL response: {content['errors']}")
-        return None
-    else:
-        data = content["data"]
-        mutation = "create%s" % (table.capitalize())
-        try:
-            return int(data[mutation][table]["id"])
-        except KeyError:
-            return None
 
 
 def main():
@@ -96,24 +80,24 @@ def main():
         utc_start_dt = utc_start_dt.strftime("%Y-%m-%dT%H:%M:%S+0000")
 
         # Create pulsar if it doesn't already exist
-        pulsar = Pulsar(client, url, token)
+        pulsar = Pulsar(client, token)
         pulsar.create(
             name=meertime_data["pulsarName"],
         )
 
         # Get or upload calibration
-        calibration = Calibration(client, url, token)
+        calibration = Calibration(client, token)
         cal_response = calibration.create(
             delay_cal_id=meertime_data["delaycal_id"],
             phase_up_id=meertime_data["phaseup_id"],
             type=meertime_data["cal_type"],
             location=meertime_data["cal_location"],
         )
-        cal_id = get_id(cal_response, "calibration", logger)
+        cal_id = get_graphql_id(cal_response, "calibration", logger)
         logger.debug(f"Completed ingesting cal_id: {cal_id}")
 
         # Upload observation
-        observation = Observation(client, url, token)
+        observation = Observation(client, token)
         response = observation.create(
             pulsarName=meertime_data["pulsarName"],
             telescopeName=meertime_data["telescopeName"],
@@ -143,7 +127,7 @@ def main():
             filterbankTsamp=meertime_data["filterbankTsamp"],
             filterbankDm=meertime_data["filterbankDm"],
         )
-        observation_id = get_id(response, "observation", logger)
+        observation_id = get_graphql_id(response, "observation", logger)
         logger.info(f"Completed ingesting observation_id: {observation_id}")
 
 

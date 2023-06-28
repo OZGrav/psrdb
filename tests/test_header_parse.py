@@ -1,6 +1,6 @@
 import os
 
-from psrdb.util import header
+from psrdb.utils import header
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 

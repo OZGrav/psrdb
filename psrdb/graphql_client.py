@@ -10,7 +10,8 @@ class GraphQLClient:
 
     def __init__(self, url, verbose, logger=None):
         """Initialise GraphQL connection for the url."""
-        self.graphql_url = url
+        self.graphql_url = f"{url}/graphql/"
+        self.rest_api_url = f"{url}/upload/"
         self.connect(verbose)
 
         if logger is None:
@@ -45,16 +46,16 @@ class GraphQLClient:
                 message = content["errors"][0]["message"]
             self.logger.error(f"Error: {message}")
 
-    def post(self, url, payload, **header):
+    def post(self, payload, **header):
         """Post the payload and header to the GraphQL URL."""
-        self.logger.debug(f"Using url: {url}")
+        self.logger.debug(f"Using url: {self.graphql_url}")
         self.logger.debug(f"Using payload: {payload}")
         header_log = copy.deepcopy(header)
         if "Authorization" in header.keys():
             if "JWT" in header_log["Authorization"]:
                 header_log["Authorization"] = "JWT [redacted]"
         self.logger.debug(f"Using header: {header_log}")
-        response = self.graphql_session.post(url, headers=header, json=payload, timeout=(15, 15))
+        response = self.graphql_session.post(self.graphql_url, headers=header, json=payload, timeout=(15, 15))
         content = json.loads(response.content)
 
         if response.status_code != 200:

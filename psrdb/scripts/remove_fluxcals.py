@@ -10,8 +10,8 @@ from datetime import datetime, timedelta
 
 from psrdb.tables import *
 from psrdb.graphql_client import GraphQLClient
-from psrdb.util import header, ephemeris
-from psrdb.util import time as util_time
+from psrdb.utils import header, ephemeris
+from psrdb.utils import time as util_time
 
 # LOG_FILE = "%s/%s" % (LOG_DIRECTORY, time.strftime("%Y-%m-%d_c2g_receiver.log"))
 

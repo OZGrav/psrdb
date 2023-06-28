@@ -3,8 +3,8 @@ from psrdb.graphql_query import graphql_query_factory
 
 
 class Telescope(GraphQLTable):
-    def __init__(self, client, url, token):
-        GraphQLTable.__init__(self, client, url, token)
+    def __init__(self, client, token):
+        GraphQLTable.__init__(self, client, token)
         self.record_name = "telescope"
 
         # create a new record

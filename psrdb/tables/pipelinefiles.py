@@ -31,8 +31,8 @@ def prepare_file(file_fn):
 
 
 class Pipelinefiles(GraphQLTable):
-    def __init__(self, client, url, token):
-        GraphQLTable.__init__(self, client, url, token)
+    def __init__(self, client, token):
+        GraphQLTable.__init__(self, client, token)
         self.record_name = "pipelinefile"
 
         # create a new record
