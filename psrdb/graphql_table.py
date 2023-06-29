@@ -39,7 +39,7 @@ class GraphQLTable:
         self.cli_name = None
         self.cli_description = None
         self.quiet = False
-        self.table_name = self.__class__.__name__
+        self.table_name = self.__class__.__name__[0].lower() + self.__class__.__name__[1:]
 
         # record name is the singular form of the record
         self.record_name = self.__class__.__name__.lower()

@@ -166,7 +166,7 @@ class Observation(GraphQLTable):
             utce = f"{d.date()}T{d.time()}+00:00"
         """Return a list of records matching the id and/or any of the arguments."""
         filters = [
-            {"field": "pulsar_Name", "value": pulsar_name, "join": "Pulsar"},
+            {"field": "pulsar", "value": pulsar_name, "join": "Pulsar"},
             {"field": "telescope_Name", "value": telescope_name, "join": "Telescopes"},
             {"field": "project_Id", "value": project_id, "join": "Projects"},
             {"field": "project_Short", "value": project_short, "join": "Projects"},
