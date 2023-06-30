@@ -85,6 +85,24 @@ class GraphQLTable:
         self.delete_variables = {"id": id}
         return self.delete_graphql()
 
+    def parse_mutation_response(self, response, record_name):
+        """Parse the response from a create or update mutation and return the id of the record"""
+        if response.status_code == 200:
+            content = json.loads(response.content)
+            if not "errors" in content.keys():
+                for key in content["data"].keys():
+                    record_set = content["data"][key]
+                    if record_set.get(record_name):
+                        if self.print_stdout:
+                            print(record_set[record_name]["id"])
+                    else:
+                        self.logger.warning(f"Record {record_name} did not exist in returned json")
+            else:
+                self.logger.warning(f"Errors returned in content {content['errors']}")
+        else:
+            self.logger.warning(f"Bad response status_code={response.status_code}")
+        return None
+
     def create_graphql(self):
 
         self.logger.debug(f"Using mutation {self.create_mutation}")
@@ -92,20 +110,7 @@ class GraphQLTable:
 
         payload = {"query": self.create_mutation, "variables": json.dumps(self.create_variables)}
         response = self.client.post(payload, **self.header)
-        if response.status_code == 200:
-            content = json.loads(response.content)
-            if not "errors" in content.keys():
-                for key in content["data"].keys():
-                    record_set = content["data"][key]
-                    if record_set.get(self.record_name):
-                        if self.print_stdout:
-                            print(record_set[self.record_name]["id"])
-                    else:
-                        self.logger.warning(f"Record {self.record_name} did not exist in returned json")
-            else:
-                self.logger.warning(f"Errors returned in content {content['errors']}")
-        else:
-            self.logger.warning(f"Bad response status_code={response.status_code}")
+        self.parse_mutation_response(self, response, self.record_name)
         return response
 
     def update_graphql(self, delim="\t"):
@@ -115,17 +120,16 @@ class GraphQLTable:
 
         payload = {"query": self.update_mutation, "variables": json.dumps(self.update_variables)}
         response = self.client.post(payload, **self.header)
-        if response.status_code == 200:
-            content = json.loads(response.content)
-            if not "errors" in content.keys():
-                for key in content["data"].keys():
-                    record_set = content["data"][key]
-                    if "edges" in record_set.keys():
-                        record_set = record_set["edges"]
-                    if record_set.get(self.record_name):
-                        self.print_record_set(record_set[self.record_name], delim)
-                    else:
-                        self.logger.warning(f"No record matching the update query was found, check the primary ID")
+        self.parse_mutation_response(self, response, self.record_name)
+        return response
+
+    def delete_graphql(self):
+        self.logger.debug(f"Using mutation {self.delete_mutation}")
+        self.logger.debug(f"Using mutation vars dict {self.delete_variables}")
+
+        payload = {"query": self.delete_mutation, "variables": json.dumps(self.delete_variables)}
+        response = self.client.post(payload, **self.header)
+        self.parse_mutation_response(self, response, self.record_name)
         return response
 
     def list_graphql(self, graphql_query, delim="\t"):
@@ -164,54 +168,6 @@ class GraphQLTable:
             return result
         else:
             return response
-
-    def get_graphql(self, graphql_query):
-        graphql_query.set_field_list(self.field_names)
-        graphql_query.set_use_pagination(self.paginate)
-        cursor = None
-        has_next_page = True
-        result = {}
-        while has_next_page:
-            query = graphql_query.paginate(cursor)
-            self.logger.debug(f"Using query {query}")
-            payload = {"query": query}
-            response = self.client.post(payload, **self.header)
-            has_next_page = False
-            if response.status_code == 200:
-                content = json.loads(response.content)
-                result.update(content)
-                if not "errors" in content.keys():
-                    for key in content["data"].keys():
-                        record_set = content["data"][key]
-                        if record_set is None:
-                            continue
-                        if type(record_set) == dict:
-                            if "pageInfo" in record_set.keys():
-                                if content["data"][key]["pageInfo"]["hasNextPage"]:
-                                    cursor = content["data"][key]["pageInfo"]["endCursor"]
-                                    has_next_page = True
-                            if "edges" in record_set.keys():
-                                record_set = record_set["edges"]
-        return result
-
-    def delete_graphql(self):
-        self.logger.debug(f"Using mutation {self.delete_mutation}")
-        self.logger.debug(f"Using mutation vars dict {self.delete_variables}")
-
-        payload = {"query": self.delete_mutation, "variables": json.dumps(self.delete_variables)}
-        response = self.client.post(payload, **self.header)
-        if response.status_code == 200:
-            content = json.loads(response.content)
-            if not "errors" in content.keys():
-                for key in content["data"].keys():
-                    record_set = content["data"][key]
-                    if self.record_name in record_set.keys():
-                        print(record_set[self.record_name]["id"])
-                    else:
-                        self.logger.debug(f"Record {self.record_name} did not exist in returned json")
-        else:
-            self.logger.warning(f"Bad response status_code={response.status_code}")
-        return response
 
     def print_record_set_fields(self, prefix, record_set, delim):
         fields = []

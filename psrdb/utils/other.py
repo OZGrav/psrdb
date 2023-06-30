@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import logging
 
@@ -64,6 +65,16 @@ def setup_logging(
     return logger
 
 
+def to_snake_case(text):
+    snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', text).lower()
+    return snake_case
+
+
+def to_camel_case(text):
+    words = re.split(r'[_\s]+', text)
+    return words[0].lower() + ''.join(word.title() for word in words[1:])
+
+
 def get_graphql_id(response, table, logger):
     """
     Parses the graphql response to return the id of the newly created object
@@ -76,13 +87,13 @@ def get_graphql_id(response, table, logger):
         raise ValueError(f"Error in GraphQL response: {content['errors']}")
     else:
         data = content["data"]
-        # Only capitlise first character to preserve camel case
-        capitalised = table.capitalize()
-        mutation = f"create{capitalised}"
+        # Convert from snake_case to CamelCase
+        mutation_name = to_camel_case(f"create_{table}")
+        table_name = to_camel_case(table)
         try:
-            return int(data[mutation][table]["id"])
+            return int(data[mutation_name][table_name]["id"])
         except KeyError:
-            raise KeyError(f"No key ['{mutation}']['{table}']['id'] in {data}")
+            raise KeyError(f"No key ['{mutation_name}']['{table_name}']['id'] in {data}")
 
 
 def get_rest_api_id(response, logger):
