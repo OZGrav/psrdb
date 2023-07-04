@@ -29,6 +29,7 @@ class PipelineRun(GraphQLTable):
             $sn: Float,
             $flux: Float,
             $rm: Float,
+            $rm_err: Float,
             $percent_rfi_zapped: Float,
         ) {
             createPipelineRun(input: {
@@ -49,6 +50,7 @@ class PipelineRun(GraphQLTable):
                 sn: $sn,
                 flux: $flux,
                 rm: $rm,
+                rmErr: $rm_err,
                 percentRfiZapped: $percent_rfi_zapped,
             }) {
                 pipelineRun {
@@ -70,6 +72,7 @@ class PipelineRun(GraphQLTable):
             $sn: Float,
             $flux: Float,
             $rm: Float,
+            $rm_err: Float,
             $percent_rfi_zapped: Float,
 
         ) {
@@ -83,6 +86,7 @@ class PipelineRun(GraphQLTable):
                 sn: $sn,
                 flux: $flux,
                 rm: $rm,
+                rmErr: $rm_err,
                 percentRfiZapped: $percent_rfi_zapped,
             }) {
                 pipelineRun {
@@ -208,8 +212,13 @@ class PipelineRun(GraphQLTable):
                 "sn": None,
                 "flux": None,
                 "rm": None,
+                "rm_err": None,
                 "percent_rfi_zapped": None,
             }
+        if results_dict["rm"] == "None":
+            results_dict["rm"] = None
+        if results_dict["rm_err"] == "None":
+            results_dict["rm_err"] = None
         self.create_variables = {
             "observationId": observationId,
             "ephemerisId": ephemerisId,
@@ -228,6 +237,7 @@ class PipelineRun(GraphQLTable):
             "sn": results_dict["sn"],
             "flux": results_dict["flux"],
             "rm": results_dict["rm"],
+            "rm_err": results_dict["rm_err"],
             "percent_rfi_zapped": results_dict["percent_rfi_zapped"],
         }
         return self.create_graphql()
@@ -248,8 +258,13 @@ class PipelineRun(GraphQLTable):
                 "sn": None,
                 "flux": None,
                 "rm": None,
+                "rm_err": None,
                 "percent_rfi_zapped": None,
             }
+        if results_dict["rm"] == "None":
+            results_dict["rm"] = None
+        if results_dict["rm_err"] == "None":
+            results_dict["rm_err"] = None
         self.update_variables = {
             "id": id,
             "jobState": jobState,
@@ -260,10 +275,10 @@ class PipelineRun(GraphQLTable):
             "dm_tres": results_dict["dm_tres"],
             "sn": results_dict["sn"],
             "flux": results_dict["flux"],
+            "rm": results_dict["rm"],
+            "rm_err": results_dict["rm_err"],
             "percent_rfi_zapped": results_dict["percent_rfi_zapped"],
         }
-        if "rm" in results_dict.keys():
-            self.update_variables["rm"] = results_dict["rm"]
         return self.update_graphql()
 
     def process(self, args):
