@@ -15,49 +15,13 @@ class Toa(GraphQLTable):
             $pipelineRunId: Int!,
             $ephemerisId: Int!,
             $templateId: Int!,
-            $archive: String!,
-            $freqMHz: Float!,
-            $mjd: Decimal!,
-            $mjdErr: Float!,
-            $telescope: String!,
-            $fe: String,
-            $be: String,
-            $f: String,
-            $bw: Int,
-            $tobs: Int,
-            $tmplt: String,
-            $gof: Float,
-            $nbin: Int,
-            $nch: Int,
-            $chan: Int,
-            $rcvr: String,
-            $snr: Float,
-            $length: Int,
-            $subint: Int,
+            $toaText: String!,
         ) {
             createToa (input: {
                 pipelineRunId: $pipelineRunId,
                 ephemerisId: $ephemerisId,
                 templateId: $templateId,
-                archive: $archive,
-                freqMHz: $freqMHz,
-                mjd: $mjd,
-                mjdErr: $mjdErr,
-                telescope: $telescope,
-                fe: $fe,
-                be: $be,
-                f: $f,
-                bw: $bw,
-                tobs: $tobs,
-                tmplt: $tmplt,
-                gof: $gof,
-                nbin: $nbin,
-                nch: $nch,
-                chan: $chan,
-                rcvr: $rcvr,
-                snr: $snr,
-                length: $length,
-                subint: $subint,
+                toaText: $toaText,
             }) {
                 toa {
                     id,
@@ -183,38 +147,14 @@ class Toa(GraphQLTable):
         pipeline_run_id,
         ephemeris_id,
         template_id,
-        input_toa_line,
+        toa_text,
     ):
-        # Loop over toa lines and turn into a dict
-        toa_dict = toa_line_to_dict(input_toa_line)
-        # Revert it back to a line and check it matches before uploading
-        output_toa_line = toa_dict_to_line(toa_dict)
-        assert input_toa_line == output_toa_line
         # Upload the toa
         self.create_variables = {
             'pipelineRunId': pipeline_run_id,
             'ephemerisId': ephemeris_id,
             'templateId': template_id,
-            'archive': toa_dict['archive'],
-            'freqMHz': toa_dict['freq_MHz'],
-            # Convert decimal type to string so it can be json encoded
-            'mjd': str(toa_dict['mjd']),
-            'mjdErr': toa_dict['mjd_err'],
-            'telescope': toa_dict['telescope'],
-            'fe': toa_dict['fe'],
-            'be': toa_dict['be'],
-            'f': toa_dict['f'],
-            'bw': toa_dict['bw'],
-            'tobs': toa_dict['tobs'],
-            'tmplt': toa_dict['tmplt'],
-            'gof': toa_dict['gof'],
-            'nbin': toa_dict['nbin'],
-            'nch': toa_dict['nch'],
-            'chan': toa_dict['chan'],
-            'rcvr': toa_dict['rcvr'],
-            'snr': toa_dict['snr'],
-            'length': toa_dict['length'],
-            'subint': toa_dict['subint'],
+            'toaText': toa_text,
         }
         return self.create_graphql()
 
