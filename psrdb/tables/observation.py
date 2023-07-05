@@ -164,14 +164,16 @@ class Observation(GraphQLTable):
         elif utce is not None:
             d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
             utce = f"{d.date()}T{d.time()}+00:00"
+        if project_short == "":
+            project_short = None
         """Return a list of records matching the id and/or any of the arguments."""
         filters = [
-            {"field": "pulsar", "value": pulsar_name, "join": "Pulsar"},
+            {"field": "pulsar_Name", "value": pulsar_name, "join": "Pulsar"},
             {"field": "telescope_Name", "value": telescope_name, "join": "Telescopes"},
             {"field": "project_Id", "value": project_id, "join": "Projects"},
             {"field": "project_Short", "value": project_short, "join": "Projects"},
-            {"field": "utcStart_Gte", "value": utcs, "join": None},
-            {"field": "utcStart_Lte", "value": utce, "join": None},
+            {"field": "utcStart_gte", "value": utcs, "join": None},
+            {"field": "utcStart_lte", "value": utce, "join": None},
         ]
         graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
         return GraphQLTable.list_graphql(self, graphql_query)

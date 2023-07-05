@@ -3,7 +3,55 @@ import logging
 import requests as r
 from base64 import b64decode, b64encode
 import binascii
+
 from psrdb.graphql_client import GraphQLClient
+from psrdb.utils.other import to_camel_case
+
+
+def generate_graphql_query(table_name, filters, conection_fields, node_fields):
+    """Generate a GraphQL query for a table"""
+
+    # From filter create query arguments
+    arguments = []
+    for f in filters:
+        field = f["field"]
+        value = f["value"]
+        if value is not None:
+            # if field.lower().endswith("id") or type(value) == int:
+            #     # Convert encoded graphql id to an integer
+            #     value = b64encode(f"{join}Node:{value}".encode("ascii")).decode("utf-8")
+            if type(value) == str:
+                arguments.append(f'{field}: "{value}"')
+            else:
+                arguments.append(f"{field}: {value}")
+    # Prepare the arguments to the template format
+    if len(arguments) > 0:
+        arguments = ',\n        '.join(arguments)
+        query_arguments = f"(\n        {arguments}\n    )"
+    else:
+        query_arguments = ""
+
+    # Prepare the fields to the template format
+    node_fields = "\n                ".join(node_fields)
+    conection_fields= "\n        ".join(conection_fields)
+
+    # Convert table name to camel case to match graphql query
+    query_name = to_camel_case(table_name)
+
+    # Combine everything into a query
+    query = f"""query {{
+    {query_name} {query_arguments} {{
+        {conection_fields}
+        edges {{
+            node {{
+                {node_fields}
+            }}
+        }}
+    }}
+}}
+    """
+    return query
+
 
 
 class GraphQLTable:
@@ -110,7 +158,7 @@ class GraphQLTable:
 
         payload = {"query": self.create_mutation, "variables": json.dumps(self.create_variables)}
         response = self.client.post(payload, **self.header)
-        self.parse_mutation_response(self, response, self.record_name)
+        self.parse_mutation_response(response, self.record_name)
         return response
 
     def update_graphql(self, delim="\t"):
@@ -120,7 +168,7 @@ class GraphQLTable:
 
         payload = {"query": self.update_mutation, "variables": json.dumps(self.update_variables)}
         response = self.client.post(payload, **self.header)
-        self.parse_mutation_response(self, response, self.record_name)
+        self.parse_mutation_response(response, self.record_name)
         return response
 
     def delete_graphql(self):
@@ -129,40 +177,46 @@ class GraphQLTable:
 
         payload = {"query": self.delete_mutation, "variables": json.dumps(self.delete_variables)}
         response = self.client.post(payload, **self.header)
-        self.parse_mutation_response(self, response, self.record_name)
+        self.parse_mutation_response(response, self.record_name)
         return response
 
-    def list_graphql(self, graphql_query, delim="\t"):
-        graphql_query.set_field_list(self.field_names)
-        graphql_query.set_use_pagination(self.paginate)
+    def list_graphql(self, table_name, input_filters, input_connection_fields, input_node_fields):
         print_headers = True
         cursor = None
         has_next_page = True
         result = []
         while has_next_page:
-            query = graphql_query.paginate(cursor)
-            self.logger.debug(f"Using query {query}")
+            # Append page information to input filters and fields
+            filters = input_filters
+            filters.append({"field": "first", "value": 100})
+            if cursor is not None:
+                filters.append({"field": "fiafterrst", "value": cursor})
+            connection_fields = input_connection_fields
+            connection_fields.append("pageInfo { hasNextPage endCursor }")
+
+            # Generate the query
+            query = generate_graphql_query(table_name, filters, connection_fields, input_node_fields)
+            self.logger.debug(f"Using query: {query}")
+
+            # Send the query
             payload = {"query": query}
             response = self.client.post(payload, **self.header)
             has_next_page = False
             if response.status_code == 200:
                 content = json.loads(response.content)
-                if not "errors" in content.keys():
-                    for key in content["data"].keys():
-                        record_set = content["data"][key]
-                        if record_set is None:
-                            continue
-                        if type(record_set) == dict:
-                            if "pageInfo" in record_set.keys():
-                                if content["data"][key]["pageInfo"]["hasNextPage"]:
-                                    cursor = content["data"][key]["pageInfo"]["endCursor"]
-                                    has_next_page = True
-                            if "edges" in record_set.keys():
-                                record_set = record_set["edges"]
-                            if self.get_dicts:
-                                result = result + record_set
-                            self.print_record_set(record_set, delim, print_headers=print_headers)
-                            print_headers = cursor is None
+                self.logger.debug(f"Response content: {content}")
+                if "errors" not in content.keys():
+                    data = content["data"][to_camel_case(table_name)]
+                    # Get next page info (if available)
+                    if data["pageInfo"]["hasNextPage"]:
+                        cursor = data["pageInfo"]["endCursor"]
+                        has_next_page = True
+
+                    for node in data["edges"]:
+                        if self.get_dicts:
+                            result.append(node["node"])
+                        self.print_record_set(node["node"], "\t", print_headers=print_headers)
+                        print_headers = cursor is None
 
         if self.get_dicts:
             return result

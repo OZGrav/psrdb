@@ -2,6 +2,7 @@ import os
 import re
 import json
 import logging
+from base64 import b64decode, b64encode
 
 
 def setup_logging(
@@ -108,3 +109,8 @@ def get_rest_api_id(response, logger):
     else:
         logger.error(f"Error in GraphQL response: {content['errors']}")
         return None
+
+
+def decode_id(encoded):
+        decoded = b64decode(encoded).decode("ascii")
+        return decoded.split(":")[1]

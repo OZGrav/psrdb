@@ -1,5 +1,7 @@
 from base64 import b64encode
 
+from psrdb.utils.other import to_camel_case
+
 
 class GraphQLClause:
     def __init__(self, field, value, join):
@@ -78,14 +80,21 @@ class GraphQLQuery:
     def build_clauses_from_args(cls, filters):
         clauses = []
         for f in filters:
-            if not f["value"] is None:
+            if f["value"] is not None:
+                # Generate a ID encoded join if a join table is specified AND we have a field that ends in ID
+                if not join is None and (field.lower().endswith("id") or type(value) == int):
+                    value = b64encode(f"{join}Node:{value}".encode("ascii")).decode("utf-8")
+                if type(value) == str:
+                    self.clause = f'{field}: "{value}"'
+                else:
+                    self.clause = f"{field}: {value}"
                 clauses.append(GraphQLClause(f["field"], f["value"], f["join"]))
         return clauses
 
 
 class GraphQLQueryId(GraphQLQuery):
     def __init__(self, record_name, table_name, table_id):
-        GraphQLQuery.__init__(self, record_name.lower())
+        GraphQLQuery.__init__(self, record_name[0].lower() + record_name[1:])
         self.add_clause(GraphQLClause("id", table_id, table_name.title()))
 
         # use a simpler query template
@@ -130,3 +139,5 @@ def graphql_query_factory(table_name, record_name, id, filters):
         return GraphQLQueryClauses(table_name, clauses)
     else:
         return GraphQLQueryAll(table_name)
+
+

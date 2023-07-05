@@ -8,6 +8,8 @@ from psrdb.graphql_query import graphql_query_factory
 class PipelineRun(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
+        self.table_name = "pipeline_run"
+        self.client = client
 
         # create a new record
         self.create_mutation = """
@@ -113,7 +115,6 @@ class PipelineRun(GraphQLTable):
             "pipelineVersion",
             "jobState",
             "location",
-            "configuration",
             "dm",
             "dmErr",
             "dmEpoch",
@@ -123,6 +124,7 @@ class PipelineRun(GraphQLTable):
             "flux",
             "rm",
             "percentRfiZapped",
+            "configuration",
         ]
         self.literal_field_names = [
             "id",
@@ -134,7 +136,6 @@ class PipelineRun(GraphQLTable):
             "pipelineVersion",
             "jobState",
             "location",
-            "configuration",
             "dm",
             "dmErr",
             "dmEpoch",
@@ -144,6 +145,7 @@ class PipelineRun(GraphQLTable):
             "flux",
             "rm",
             "percentRfiZapped",
+            "configuration",
         ]
 
     def list(
@@ -168,6 +170,7 @@ class PipelineRun(GraphQLTable):
         percentRfiZapped=None,
     ):
         filters = [
+            {"field": "id", "value": id, "join": "PipelineRun"},
             {"field": "observation_Id", "value": observation_id, "join": "Observation"},
             {"field": "ephemeris_Id", "value": ephemeris_id, "join": "Ephemeris"},
             {"field": "template_Id", "value": template_id, "join": "Template"},
@@ -186,8 +189,7 @@ class PipelineRun(GraphQLTable):
             {"field": "rm", "value": rm, "join": None},
             {"field": "percentRfiZapped", "value": percentRfiZapped, "join": None},
         ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        return GraphQLTable.list_graphql(self, graphql_query)
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def create(
         self,
@@ -335,7 +337,7 @@ class PipelineRun(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "pipelinerun"
+        return "pipeline_run"
 
     @classmethod
     def get_description(cls):
