@@ -15,13 +15,19 @@ class Toa(GraphQLTable):
             $pipelineRunId: Int!,
             $ephemerisId: Int!,
             $templateId: Int!,
-            $toaText: String!,
+            $toaLines: [String]!,
+            $dmCorrected: Boolean!,
+            $minimumNsubs: Boolean!,
+            $maximumNsubs: Boolean!,
         ) {
             createToa (input: {
                 pipelineRunId: $pipelineRunId,
                 ephemerisId: $ephemerisId,
                 templateId: $templateId,
-                toaText: $toaText,
+                toaLines: $toaLines,
+                dmCorrected: $dmCorrected,
+                minimumNsubs: $minimumNsubs,
+                maximumNsubs: $maximumNsubs,
             }) {
                 toa {
                     id,
@@ -147,6 +153,26 @@ class Toa(GraphQLTable):
         pipeline_run_id,
         ephemeris_id,
         template_id,
+        toa_lines,
+        dmCorrected,
+        minimumNsubs,
+        maximumNsubs,
+    ):
+        # Upload the toa
+        self.create_variables = {
+            'pipelineRunId': pipeline_run_id,
+            'ephemerisId': ephemeris_id,
+            'templateId': template_id,
+            'toaLines': toa_lines,
+            'dmCorrected': dmCorrected,
+            'minimumNsubs': minimumNsubs,
+            'maximumNsubs': maximumNsubs,
+        }
+        return self.create_graphql()
+
+    def download(
+        self,
+        pipeline_run_id,
         toa_text,
     ):
         # Upload the toa
@@ -189,10 +215,12 @@ class Toa(GraphQLTable):
                 args.quality,
                 args.comment,
             )
-        elif args.subcommand == "list":
-            return self.list(args.id, args.processing, args.folding, args.ephemeris, args.template)
         elif args.subcommand == "delete":
             return self.delete(args.id)
+        elif args.subcommand == "list":
+            return self.list(args.id, args.processing, args.folding, args.ephemeris, args.template)
+        elif args.subcommand == "download":
+            return self.download(args.id, args.processing, args.folding, args.ephemeris, args.template)
         else:
             raise RuntimeError(args.subcommand + " command is not implemented")
 
