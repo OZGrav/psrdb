@@ -55,7 +55,7 @@ class GraphQLClient:
             if "JWT" in header_log["Authorization"]:
                 header_log["Authorization"] = "JWT [redacted]"
         self.logger.debug(f"Using header: {header_log}")
-        response = self.graphql_session.post(self.graphql_url, headers=header, json=payload, timeout=(15, 15))
+        response = self.graphql_session.post(self.graphql_url, headers=header, json=payload, timeout=(60, 60))
         content = json.loads(response.content)
 
         if response.status_code != 200:

@@ -79,17 +79,28 @@ class Toa(GraphQLTable):
 
         self.field_names = [
             "id",
-            "processing {id}",
-            "inputFolding {id}",
-            "timingEphemeris {id}",
-            "template {id}",
-            "flags",
-            "frequency",
+            "pipelineRun{ id }",
+            "ephemeris { id }",
+            "template { id }",
+            "archive",
+            "freqMhz",
             "mjd",
-            "site",
-            "uncertainty",
-            "quality",
-            "comment",
+            "mjdErr",
+            "telescope",
+            "fe",
+            "be",
+            "f",
+            "bw",
+            "tobs",
+            "tmplt",
+            "gof",
+            "nbin",
+            "nch",
+            "chan",
+            "rcvr",
+            "snr",
+            "length",
+            "subint",
         ]
         self.literal_field_names = [
             "id",
@@ -172,17 +183,59 @@ class Toa(GraphQLTable):
 
     def download(
         self,
-        pipeline_run_id,
-        toa_text,
+        pulsar,
+        id=None,
+        pipeline_run_id=None,
+        dm_corrected=None,
+        minimum_nsubs=None,
+        maximum_nsubs=None,
+        obs_nchan=None,
     ):
-        # Upload the toa
-        self.create_variables = {
-            'pipelineRunId': pipeline_run_id,
-            'ephemerisId': ephemeris_id,
-            'templateId': template_id,
-            'toaText': toa_text,
-        }
-        return self.create_graphql()
+        # Grab a dictionary of the toas
+        filters = [
+            {"field": "id", "value": id},
+            {"field": "pulsar", "value": pulsar},
+            {"field": "pipelineRunId", "value": pipeline_run_id},
+            {"field": "dmCorrected", "value": dm_corrected},
+            {"field": "minimumNsubs", "value": minimum_nsubs},
+            {"field": "maximumNsubs", "value": maximum_nsubs},
+            {"field": "obsNchan", "value": obs_nchan},
+        ]
+        self.get_dicts = True
+        toa_dicts = GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+        # Create the output name
+        output_name = f"toa_{pulsar}"
+        if id is not None:
+            output_name += f"_id{id}"
+        if pipeline_run_id is not None:
+            output_name += f"_pipeline_run_id{pipeline_run_id}"
+        if dm_corrected is not None and dm_corrected:
+            output_name += f"_dm_corrected"
+        if minimum_nsubs is not None and minimum_nsubs:
+            output_name += f"_minimum_nsubs"
+        if maximum_nsubs is not None and maximum_nsubs:
+            output_name += f"_maximum_nsubs"
+        if obs_nchan is not None:
+            output_name += f"_nchan{obs_nchan}"
+        output_name += ".tim"
+
+        # Loop over the toas and dump them as a file
+        with open(output_name, "w") as f:
+            f.write("FORMAT 1\n")
+            for toa_dict in toa_dicts:
+                # Convert to toa format
+                # del toa_dict["id"]
+                del toa_dict["pipelineRun"]
+                del toa_dict["ephemeris"]
+                del toa_dict["template"]
+                toa_dict["freq_MHz"] = toa_dict["freqMhz"]
+                toa_dict["mjd_err"] = toa_dict["mjdErr"]
+                del toa_dict["freqMhz"]
+                del toa_dict["mjdErr"]
+                toa_line = toa_dict_to_line(toa_dict)
+                f.write(f"{toa_line}\n")
+        return output_name
 
 
     def process(self, args):
@@ -220,7 +273,15 @@ class Toa(GraphQLTable):
         elif args.subcommand == "list":
             return self.list(args.id, args.processing, args.folding, args.ephemeris, args.template)
         elif args.subcommand == "download":
-            return self.download(args.id, args.processing, args.folding, args.ephemeris, args.template)
+            return self.download(
+                args.pulsar,
+                args.id,
+                args.pipeline_run_id,
+                args.dm_corrected,
+                args.minimum_nsubs,
+                args.maximum_nsubs,
+                args.nchan,
+            )
         else:
             raise RuntimeError(args.subcommand + " command is not implemented")
 
@@ -305,6 +366,16 @@ class Toa(GraphQLTable):
         # create the parser for the "delete" command
         parser_delete = subs.add_parser("delete", help="delete an existing toa")
         parser_delete.add_argument("id", metavar="ID", type=int, help="id of the toa to update [int]")
+
+        # create the parser for the "download" command
+        parser_download = subs.add_parser("download", help="Download TOAs for a pulsar to a .tim file")
+        parser_download.add_argument("pulsar", type=str, help="Name of the pulsar [str]")
+        parser_download.add_argument("--id", type=int, help="id of the toa [int]")
+        parser_download.add_argument("--pipeline_run_id", type=int, help="pipeline_run_id of the toa [int]")
+        parser_download.add_argument("--dm_corrected",  action="store_true", help="Return TOAs that have had their DM corrected for each observation [bool]")
+        parser_download.add_argument("--minimum_nsubs", action="store_true", help="Only use TOAs with the minimum number of subints per observation (1) [bool]")
+        parser_download.add_argument("--maximum_nsubs", action="store_true", help="Only use TOAs with the maximum number of subints per observation (can be 1 but is often more) [bool]")
+        parser_download.add_argument("--nchan", type=int, help="Only use TOAs with this many subchans (common values are 1,4 and 16) [int]")
 
 
 if __name__ == "__main__":
