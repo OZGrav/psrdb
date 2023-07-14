@@ -3,6 +3,7 @@ import logging
 import requests as r
 from base64 import b64decode, b64encode
 import binascii
+from copy import copy
 
 from psrdb.graphql_client import GraphQLClient
 from psrdb.utils.other import to_camel_case
@@ -22,6 +23,8 @@ def generate_graphql_query(table_name, filters, conection_fields, node_fields):
             #     value = b64encode(f"{join}Node:{value}".encode("ascii")).decode("utf-8")
             if type(value) == str:
                 arguments.append(f'{field}: "{value}"')
+            elif type(value) == bool:
+                arguments.append(f"{field}: {str(value).lower()}")
             else:
                 arguments.append(f"{field}: {value}")
     # Prepare the arguments to the template format
@@ -137,12 +140,15 @@ class GraphQLTable:
         """Parse the response from a create or update mutation and return the id of the record"""
         if response.status_code == 200:
             content = json.loads(response.content)
+            print(content)
             if not "errors" in content.keys():
                 for key in content["data"].keys():
                     record_set = content["data"][key]
                     if record_set.get(record_name):
-                        if self.print_stdout:
-                            print(record_set[record_name]["id"])
+                        nodes = record_set[record_name]
+                        for node in nodes:
+                            if self.print_stdout:
+                                print(node["id"])
                     else:
                         self.logger.warning(f"Record {record_name} did not exist in returned json")
             else:
@@ -187,10 +193,10 @@ class GraphQLTable:
         result = []
         while has_next_page:
             # Append page information to input filters and fields
-            filters = input_filters
+            filters = copy(input_filters)
             filters.append({"field": "first", "value": 100})
             if cursor is not None:
-                filters.append({"field": "fiafterrst", "value": cursor})
+                filters.append({"field": "after", "value": cursor})
             connection_fields = input_connection_fields
             connection_fields.append("pageInfo { hasNextPage endCursor }")
 
