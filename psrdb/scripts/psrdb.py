@@ -12,12 +12,12 @@ from psrdb.tables.template import Template
 from psrdb.tables.calibration import Calibration
 from psrdb.tables.observation import Observation
 from psrdb.tables.pipeline_run import PipelineRun
-# from psrdb.tables.fold_pulsar_result import FoldPulsarResult
+from psrdb.tables.pulsar_fold_result import PulsarFoldResult
 # from psrdb.tables.fold_pulsar_summary import FoldPulsarSummary
 from psrdb.tables.pipeline_image import PipelineImage
 # from psrdb.tables.pipeline_file import PipelineFile
 from psrdb.tables.toa import Toa
-# from psrdb.tables.residual import Residual
+from psrdb.tables.residual import Residual
 
 
 def main():
@@ -37,12 +37,12 @@ def main():
         Calibration,
         Observation,
         PipelineRun,
-        # FoldPulsarResult,
+        PulsarFoldResult,
         # FoldPulsarSummary,
         PipelineImage,
         # PipelineFile,
         Toa,
-        # Residual,
+        Residual,
     ]
 
     configured = []
