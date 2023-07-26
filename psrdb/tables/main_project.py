@@ -5,9 +5,21 @@ from psrdb.graphql_query import graphql_query_factory
 class MainProject(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
+        self.table_name = "main_project"
+        self.literal_field_names = ["id", "telescope {id} ", "name"]
+        self.field_names = ["id", "telescope {name} ", "name"]
 
-        # create a new record
-        self.create_mutation = """
+    def list(self, id=None, telescope=None, name=None):
+        """Return a list of records matching the id and/or the telescope id, name."""
+        filters = [
+            {"field": "telescope", "value": telescope},
+            {"field": "name", "value": name},
+        ]
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+    def create(self, telescope, name):
+        self.mutation_name = "createMainProject"
+        self.mutation = """
         mutation ($telescope: String!, $name: String!) {
             createMainProject(input: {
                 telescopeName: $telescope,
@@ -19,7 +31,15 @@ class MainProject(GraphQLTable):
             }
         }
         """
-        self.update_mutation = """
+        self.variables = {
+            "telescope": telescope,
+            "name": name,
+        }
+        return self.mutation_graphql()
+
+    def update(self, id, telescope, name):
+        self.mutation_name = "updateMainProject"
+        self.mutation = """
         mutation ($id: Int!, $telescope: String!, $name: String!) {
             updateMainProject(id: $id, input: {
                 telescopeName: $telescope,
@@ -32,51 +52,38 @@ class MainProject(GraphQLTable):
             }
         }
         """
+        self.variables = {
+            "id": id,
+            "telescope": telescope,
+            "name": name,
+        }
+        return self.mutation_graphql()
 
-        self.delete_mutation = """
+    def delete(self, id, telescope, name):
+        self.mutation_name = "deleteMainProject"
+        self.mutation = """
         mutation ($id: Int!) {
             deleteMainProject(id: $id) {
                 ok
             }
         }
         """
-
-        self.literal_field_names = ["id", "telescope {id} ", "name"]
-        self.field_names = ["id", "telescope {name} ", "name"]
-
-    def list(self, id=None, telescope=None, name=None):
-        """Return a list of records matching the id and/or the telescope id, name."""
-        filters = [
-            {"field": "telescope", "value": telescope, "join": "Telescopes"},
-            {"field": "name", "value": name, "join": None},
-        ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        return GraphQLTable.list_graphql(self, graphql_query)
-
-    def create(self, telescope, name):
-        self.create_variables = {
-            "telescope": telescope,
-            "name": name,
-        }
-        return self.create_graphql()
-
-    def update(self, id, telescope, name):
-        self.update_variables = {
+        self.variables = {
             "id": id,
             "telescope": telescope,
             "name": name,
         }
-        return self.update_graphql()
+        return self.mutation_graphql()
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""
         self.print_stdout = True
-        if args.subcommand == "create":
+        if args.subcommand == "list":
+            return self.list(args.id, args.telescope, args.name)
+        elif args.subcommand == "create":
             return self.create(args.telescope, args.name)
         elif args.subcommand == "update":
             return self.update(args.id, args.telescope, args.name)
-        elif args.subcommand == "list":
-            return self.list(args.id, args.telescope, args.name)
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:

@@ -77,15 +77,12 @@ class GraphQLTable:
 
         self.get_dicts = False
         self.print_stdout = False
-        self.create_mutation = None
-        self.create_variables = {}
-        self.update_mutation = None
-        self.update_variables = {}
-        self.list_query = None
-        self.list_variables = None
-        self.delete_mutation = None
-        self.delete_variables = {}
         self.paginate = False
+
+        self.mutation_name = None
+        self.mutation = None
+        self.variables = {}
+
 
         self.cli_name = None
         self.cli_description = None
@@ -94,15 +91,6 @@ class GraphQLTable:
 
         # record name is the singular form of the record
         self.record_name = self.__class__.__name__.lower()
-
-        # if records.endswith("ides"):
-        #     self.record_name = records.rstrip("ides") + "is"
-        # elif records.endswith("es"):
-        #     self.record_name = records.rstrip("es")
-        # elif records.endswith("s"):
-        #     self.record_name = records.rstrip("s")
-        # else:
-        #     raise RuntimeError("Could not determine singular form of record from " + records)
 
         self.human_readable = True
         self.literal_field_names = []
@@ -131,59 +119,30 @@ class GraphQLTable:
         decoded = b64decode(encoded).decode("ascii")
         return decoded.split(":")[1]
 
-    def delete(self, id):
-        """Delete a record in the table matching the unique id."""
-        self.delete_variables = {"id": id}
-        return self.delete_graphql()
-
-    def parse_mutation_response(self, response, record_name):
+    def parse_mutation_response(self, response, record_name, mutation_name):
         """Parse the response from a create or update mutation and return the id of the record"""
         if response.status_code == 200:
             content = json.loads(response.content)
-            print(content)
+            self.logger.debug(f"Response content: {content}")
             if not "errors" in content.keys():
-                for key in content["data"].keys():
-                    record_set = content["data"][key]
-                    if record_set.get(record_name):
-                        nodes = record_set[record_name]
-                        for node in nodes:
-                            if self.print_stdout:
-                                print(node["id"])
-                    else:
-                        self.logger.warning(f"Record {record_name} did not exist in returned json")
+                data = content["data"]
+                mutation_data = data[mutation_name]
+                created_data = mutation_data[record_name]
+                if self.print_stdout:
+                    print(created_data["id"])
             else:
                 self.logger.warning(f"Errors returned in content {content['errors']}")
         else:
             self.logger.warning(f"Bad response status_code={response.status_code}")
         return None
 
-    def create_graphql(self):
+    def mutation_graphql(self):
+        self.logger.debug(f"Using mutation {self.mutation}")
+        self.logger.debug(f"Using mutation vars dict {self.variables}")
 
-        self.logger.debug(f"Using mutation {self.create_mutation}")
-        self.logger.debug(f"Using mutation vars in a dict {self.create_variables}")
-
-        payload = {"query": self.create_mutation, "variables": json.dumps(self.create_variables)}
+        payload = {"query": self.mutation, "variables": json.dumps(self.variables)}
         response = self.client.post(payload, **self.header)
-        self.parse_mutation_response(response, self.record_name)
-        return response
-
-    def update_graphql(self, delim="\t"):
-
-        self.logger.debug(f"Using mutation {self.update_mutation}")
-        self.logger.debug(f"Using mutation vars dict {self.update_variables}")
-
-        payload = {"query": self.update_mutation, "variables": json.dumps(self.update_variables)}
-        response = self.client.post(payload, **self.header)
-        self.parse_mutation_response(response, self.record_name)
-        return response
-
-    def delete_graphql(self):
-        self.logger.debug(f"Using mutation {self.delete_mutation}")
-        self.logger.debug(f"Using mutation vars dict {self.delete_variables}")
-
-        payload = {"query": self.delete_mutation, "variables": json.dumps(self.delete_variables)}
-        response = self.client.post(payload, **self.header)
-        self.parse_mutation_response(response, self.record_name)
+        self.parse_mutation_response(response, self.record_name, self.mutation_name)
         return response
 
     def list_graphql(self, table_name, input_filters, input_connection_fields, input_node_fields):

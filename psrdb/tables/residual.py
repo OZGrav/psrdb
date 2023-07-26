@@ -7,70 +7,7 @@ from psrdb.utils.other import decode_id
 class Residual(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
-        self.record_name = "residual"
-
-            # Convert string to Decimal
-        # create a new record
-        self.create_mutation = """
-        mutation (
-            $pulsar: String!,
-            $projectShort: String!,
-            $ephemerisId: Int!,
-            $residualLines: [String]!,
-        ) {
-            createResidual (input: {
-                pulsar: $pulsar,
-                projectShort: $projectShort,
-                ephemerisId: $ephemerisId,
-                residualLines: $residualLines,
-            }) {
-                residual {
-                    id,
-                }
-            }
-        }
-        """
-
-        self.update_mutation = """
-        mutation ($id: Int!, $processing: Int!, $inputFolding: Int!, $timingEphemeris: Int!, $template: Int!, $flags: JSONString!, $frequency: Float!, $mjd: String!, $site: String!, $uncertainty: Float!, $quality: String!, $comment: String!) {
-            updateResidual (id: $id, input: {
-                processing_id: $processing,
-                input_folding_id: $inputFolding,
-                timing_ephemeris_id: $timingEphemeris,
-                template_id: $template,
-                flags: $flags,
-                frequency: $frequency,
-                mjd: $mjd,
-                site: $site,
-                uncertainty: $uncertainty,
-                quality: $quality,
-                comment: $comment
-            }) {
-                residual {
-                    id,
-                    processing {id},
-                    inputFolding {id},
-                    timingEphemeris {id},
-                    template {id},
-                    flags,
-                    frequency,
-                    mjd,
-                    site,
-                    uncertainty,
-                    quality,
-                    comment
-                }
-            }
-        }
-        """
-
-        self.delete_mutation = """
-        mutation ($id: Int!) {
-            deleteResidual(id: $id) {
-                ok
-            }
-        }
-        """
+        self.table_name = "residual"
 
         self.field_names = [
             "id",
@@ -115,13 +52,56 @@ class Residual(GraphQLTable):
     def list(self, id=None, processing_id=None, input_folding_id=None, timing_ephemeris_id=None, template_id=None):
         """Return a list of records matching the id and/or the provided arguments."""
         filters = [
-            {"field": "processingId", "value": processing_id, "join": "Processings"},
-            {"field": "inputFoldingId", "value": input_folding_id, "join": "Foldings"},
-            {"field": "timingEphemerisId", "value": timing_ephemeris_id, "join": "Ephemerides"},
-            {"field": "templateId", "value": template_id, "join": "Templates"},
+            {"field": "processingId", "value": processing_id},
+            {"field": "inputFoldingId", "value": input_folding_id},
+            {"field": "timingEphemerisId", "value": timing_ephemeris_id},
+            {"field": "templateId", "value": template_id},
         ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        return GraphQLTable.list_graphql(self, graphql_query)
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+    def create(
+        self,
+        pulsar,
+        project_short,
+        ephemeris_id,
+        residual_lines,
+    ):
+        self.mutation_name = "createResidual"
+        self.mutation = """
+        mutation (
+            $pulsar: String!,
+            $projectShort: String!,
+            $ephemerisId: Int!,
+            $residualLines: [String]!,
+        ) {
+            createResidual (input: {
+                pulsar: $pulsar,
+                projectShort: $projectShort,
+                ephemerisId: $ephemerisId,
+                residualLines: $residualLines,
+            }) {
+                residual {
+                    id,
+                }
+            }
+        }
+        """
+        # Loop over the lines and grab the important info to reduce upload size
+        residual_line_info = []
+        for residual_line in residual_lines[1:]:
+            residual_line = residual_line.rstrip("\n")
+            # Loop over residual lines and turn into a dict
+            residual_dict = residual_line_to_dict(residual_line)
+            # return only important info as a comma sperated string
+            residual_line_info.append(f"{decode_id(residual_dict['id'])},{residual_dict['mjd']},{residual_dict['residual']},{residual_dict['residual_error']},{residual_dict['residual_phase']}")
+        # Upload the residual
+        self.variables = {
+            'pulsar': pulsar,
+            'projectShort': project_short,
+            'ephemerisId': ephemeris_id,
+            'residualLines': residual_line_info,
+        }
+        return self.mutation_graphql()
 
     def update(
         self,
@@ -138,7 +118,40 @@ class Residual(GraphQLTable):
         quality,
         comment,
     ):
-        self.update_variables = {
+        self.mutation_name = "updateResidual"
+        self.mutation = """
+        mutation ($id: Int!, $processing: Int!, $inputFolding: Int!, $timingEphemeris: Int!, $template: Int!, $flags: JSONString!, $frequency: Float!, $mjd: String!, $site: String!, $uncertainty: Float!, $quality: String!, $comment: String!) {
+            updateResidual (id: $id, input: {
+                processing_id: $processing,
+                input_folding_id: $inputFolding,
+                timing_ephemeris_id: $timingEphemeris,
+                template_id: $template,
+                flags: $flags,
+                frequency: $frequency,
+                mjd: $mjd,
+                site: $site,
+                uncertainty: $uncertainty,
+                quality: $quality,
+                comment: $comment
+            }) {
+                residual {
+                    id,
+                    processing {id},
+                    inputFolding {id},
+                    timingEphemeris {id},
+                    template {id},
+                    flags,
+                    frequency,
+                    mjd,
+                    site,
+                    uncertainty,
+                    quality,
+                    comment
+                }
+            }
+        }
+        """
+        self.variables = {
             "id": id,
             "processing": processing,
             "inputFolding": input_folding,
@@ -152,32 +165,24 @@ class Residual(GraphQLTable):
             "quality": quality,
             "comment": comment,
         }
-        return self.update_graphql()
+        return self.mutation_graphql()
 
-    def create(
+    def delete(
         self,
-        pulsar,
-        project_short,
-        ephemeris_id,
-        residual_lines,
+        id,
     ):
-        # Loop over the lines and grab the important info to reduce upload size
-        residual_line_info = []
-        for residual_line in residual_lines[1:]:
-            residual_line = residual_line.rstrip("\n")
-            # Loop over residual lines and turn into a dict
-            residual_dict = residual_line_to_dict(residual_line)
-            # return only important info as a comma sperated string
-            residual_line_info.append(f"{decode_id(residual_dict['id'])},{residual_dict['mjd']},{residual_dict['residual']},{residual_dict['residual_error']},{residual_dict['residual_phase']}")
-        # Upload the residual
-        self.create_variables = {
-            'pulsar': pulsar,
-            'projectShort': project_short,
-            'ephemerisId': ephemeris_id,
-            'residualLines': residual_line_info,
+        self.mutation_name = "deleteResidual"
+        self.mutation = """
+        mutation ($id: Int!) {
+            deleteResidual(id: $id) {
+                ok
+            }
         }
-        return self.create_graphql()
-
+        """
+        self.variables = {
+            "id": id,
+        }
+        return self.mutation_graphql()
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""

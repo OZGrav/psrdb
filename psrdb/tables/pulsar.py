@@ -5,9 +5,20 @@ from psrdb.graphql_query import graphql_query_factory
 class Pulsar(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
+        self.table_name = "pulsar"
 
-        # create a new record
-        self.create_mutation = """
+        self.field_names = ["id", "name", "comment"]
+
+    def list(self, id=None, name=None):
+        """Return a list of records matching the id and/or the pulsar name."""
+        filters = [
+            {"field": "name", "value": name},
+        ]
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+    def create(self, name, comment=None):
+        self.mutation_name = "createPulsar"
+        self.mutation = """
         mutation ($name: String!, $comment: String) {
             createPulsar(input: {
                 name: $name, comment: $comment
@@ -18,8 +29,15 @@ class Pulsar(GraphQLTable):
             }
         }
         """
-        # Update an existing record
-        self.update_mutation = """
+        self.variables = {
+            "name": name,
+            "comment": comment,
+        }
+        return self.mutation_graphql()
+
+    def update(self, id, name, comment):
+        self.mutation_name = "updatePulsar"
+        self.mutation = """
         mutation ($id: Int!, $name: String!, $comment: String) {
             updatePulsar(id: $id, input: {
                 name: $name,
@@ -33,33 +51,26 @@ class Pulsar(GraphQLTable):
             }
         }
         """
+        self.variables = {
+            "id": id,
+            "name": name,
+            "comment": comment,
+        }
+        return self.mutation_graphql()
 
-        self.delete_mutation = """
+    def delete(self, id):
+        self.mutation_name = "deletePulsar"
+        self.mutation = """
         mutation ($id: Int!) {
             deletePulsar(id: $id) {
                 ok
             }
         }
         """
-
-        self.field_names = ["id", "name", "comment"]
-
-    def list(self, id=None, name=None):
-        """Return a list of records matching the id and/or the pulsar name."""
-        filters = [
-            {"field": "name", "value": name, "join": None},
-        ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        print(graphql_query)
-        return GraphQLTable.list_graphql(self, graphql_query)
-
-    def create(self, name, comment=None):
-        self.create_variables = {"name": name, "comment": comment}
-        return self.create_graphql()
-
-    def update(self, id, name, comment):
-        self.update_variables = {"id": id, "name": name, "comment": comment}
-        return self.update_graphql()
+        self.variables = {
+            "id": id,
+        }
+        return self.mutation_graphql()
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""

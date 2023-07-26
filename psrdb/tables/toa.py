@@ -8,75 +8,6 @@ class Toa(GraphQLTable):
         GraphQLTable.__init__(self, client, token)
         self.record_name = "toa"
 
-            # Convert string to Decimal
-        # create a new record
-        self.create_mutation = """
-        mutation (
-            $pipelineRunId: Int!,
-            $ephemerisId: Int!,
-            $templateId: Int!,
-            $toaLines: [String]!,
-            $dmCorrected: Boolean!,
-            $minimumNsubs: Boolean!,
-            $maximumNsubs: Boolean!,
-        ) {
-            createToa (input: {
-                pipelineRunId: $pipelineRunId,
-                ephemerisId: $ephemerisId,
-                templateId: $templateId,
-                toaLines: $toaLines,
-                dmCorrected: $dmCorrected,
-                minimumNsubs: $minimumNsubs,
-                maximumNsubs: $maximumNsubs,
-            }) {
-                toa {
-                    id,
-                }
-            }
-        }
-        """
-
-        self.update_mutation = """
-        mutation ($id: Int!, $processing: Int!, $inputFolding: Int!, $timingEphemeris: Int!, $template: Int!, $flags: JSONString!, $frequency: Float!, $mjd: String!, $site: String!, $uncertainty: Float!, $quality: String!, $comment: String!) {
-            updateToa (id: $id, input: {
-                processing_id: $processing,
-                input_folding_id: $inputFolding,
-                timing_ephemeris_id: $timingEphemeris,
-                template_id: $template,
-                flags: $flags,
-                frequency: $frequency,
-                mjd: $mjd,
-                site: $site,
-                uncertainty: $uncertainty,
-                quality: $quality,
-                comment: $comment
-            }) {
-                toa {
-                    id,
-                    processing {id},
-                    inputFolding {id},
-                    timingEphemeris {id},
-                    template {id},
-                    flags,
-                    frequency,
-                    mjd,
-                    site,
-                    uncertainty,
-                    quality,
-                    comment
-                }
-            }
-        }
-        """
-
-        self.delete_mutation = """
-        mutation ($id: Int!) {
-            deleteToa(id: $id) {
-                ok
-            }
-        }
-        """
-
         self.field_names = [
             "id",
             "pipelineRun{ id }",
@@ -120,13 +51,60 @@ class Toa(GraphQLTable):
     def list(self, id=None, processing_id=None, input_folding_id=None, timing_ephemeris_id=None, template_id=None):
         """Return a list of records matching the id and/or the provided arguments."""
         filters = [
-            {"field": "processingId", "value": processing_id, "join": "Processings"},
-            {"field": "inputFoldingId", "value": input_folding_id, "join": "Foldings"},
-            {"field": "timingEphemerisId", "value": timing_ephemeris_id, "join": "Ephemerides"},
-            {"field": "templateId", "value": template_id, "join": "Templates"},
+            {"field": "processingId", "value": processing_id},
+            {"field": "inputFoldingId", "value": input_folding_id},
+            {"field": "timingEphemerisId", "value": timing_ephemeris_id},
+            {"field": "templateId", "value": template_id},
         ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        return GraphQLTable.list_graphql(self, graphql_query)
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+    def create(
+        self,
+        pipeline_run_id,
+        ephemeris_id,
+        template_id,
+        toa_lines,
+        dmCorrected,
+        minimumNsubs,
+        maximumNsubs,
+    ):
+        self.mutation_name = "createToa"
+        self.mutation = """
+        mutation (
+            $pipelineRunId: Int!,
+            $ephemerisId: Int!,
+            $templateId: Int!,
+            $toaLines: [String]!,
+            $dmCorrected: Boolean!,
+            $minimumNsubs: Boolean!,
+            $maximumNsubs: Boolean!,
+        ) {
+            createToa (input: {
+                pipelineRunId: $pipelineRunId,
+                ephemerisId: $ephemerisId,
+                templateId: $templateId,
+                toaLines: $toaLines,
+                dmCorrected: $dmCorrected,
+                minimumNsubs: $minimumNsubs,
+                maximumNsubs: $maximumNsubs,
+            }) {
+                toa {
+                    id,
+                }
+            }
+        }
+        """
+        # Upload the toa
+        self.variables = {
+            'pipelineRunId': pipeline_run_id,
+            'ephemerisId': ephemeris_id,
+            'templateId': template_id,
+            'toaLines': toa_lines,
+            'dmCorrected': dmCorrected,
+            'minimumNsubs': minimumNsubs,
+            'maximumNsubs': maximumNsubs,
+        }
+        return self.mutation_graphql()
 
     def update(
         self,
@@ -143,7 +121,40 @@ class Toa(GraphQLTable):
         quality,
         comment,
     ):
-        self.update_variables = {
+        self.mutation_name = "updateToa"
+        self.mutation = """
+        mutation ($id: Int!, $processing: Int!, $inputFolding: Int!, $timingEphemeris: Int!, $template: Int!, $flags: JSONString!, $frequency: Float!, $mjd: String!, $site: String!, $uncertainty: Float!, $quality: String!, $comment: String!) {
+            updateToa (id: $id, input: {
+                processing_id: $processing,
+                input_folding_id: $inputFolding,
+                timing_ephemeris_id: $timingEphemeris,
+                template_id: $template,
+                flags: $flags,
+                frequency: $frequency,
+                mjd: $mjd,
+                site: $site,
+                uncertainty: $uncertainty,
+                quality: $quality,
+                comment: $comment
+            }) {
+                toa {
+                    id,
+                    processing {id},
+                    inputFolding {id},
+                    timingEphemeris {id},
+                    template {id},
+                    flags,
+                    frequency,
+                    mjd,
+                    site,
+                    uncertainty,
+                    quality,
+                    comment
+                }
+            }
+        }
+        """
+        self.variables = {
             "id": id,
             "processing": processing,
             "inputFolding": input_folding,
@@ -157,29 +168,24 @@ class Toa(GraphQLTable):
             "quality": quality,
             "comment": comment,
         }
-        return self.update_graphql()
+        return self.mutation_graphql()
 
-    def create(
+    def delete(
         self,
-        pipeline_run_id,
-        ephemeris_id,
-        template_id,
-        toa_lines,
-        dmCorrected,
-        minimumNsubs,
-        maximumNsubs,
+        id,
     ):
-        # Upload the toa
-        self.create_variables = {
-            'pipelineRunId': pipeline_run_id,
-            'ephemerisId': ephemeris_id,
-            'templateId': template_id,
-            'toaLines': toa_lines,
-            'dmCorrected': dmCorrected,
-            'minimumNsubs': minimumNsubs,
-            'maximumNsubs': maximumNsubs,
+        self.mutation_name = "deleteToa"
+        self.mutation = """
+        mutation ($id: Int!) {
+            deleteToa(id: $id) {
+                ok
+            }
         }
-        return self.create_graphql()
+        """
+        self.variables = {
+            "id": id,
+        }
+        return self.mutation_graphql()
 
     def download(
         self,

@@ -5,9 +5,22 @@ from psrdb.graphql_query import graphql_query_factory
 class Project(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
+        self.table_name = "project"
 
-        # create a new record
-        self.create_mutation = """
+        self.literal_field_names = ["id", "mainProject {id}", "code", "short", "embargoPeriod", "description"]
+        self.field_names = ["id", "mainProject {name}", "code", "short", "embargoPeriod", "description"]
+
+    def list(self, id=None, mainProject=None, code=None):
+        """Return a list of records matching the id and/or the program id, code."""
+        filters = [
+            {"field": "mainProject", "value": mainProject},
+            {"field": "code", "value": code},
+        ]
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+    def create(self, mainproject, code, short, embargo_period, description):
+        self.mutation_name = "createProject"
+        self.mutation = """
         mutation ($code: String!, $mainproject: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
             createProject(input: {
                 mainProjectName: $mainproject,
@@ -22,7 +35,18 @@ class Project(GraphQLTable):
             }
         }
         """
-        self.update_mutation = """
+        self.variables = {
+            "mainproject": mainproject,
+            "code": code,
+            "short": short,
+            "embargoPeriod": embargo_period,
+            "description": description,
+        }
+        return self.mutation_graphql()
+
+    def update(self, id, mainproject, code, short, embargo_period, description):
+        self.mutation_name = "updateProject"
+        self.mutation = """
         mutation ($id: Int!, $mainproject: String!, $code: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
             updateProject(id: $id, input: {
                 mainProjectName: $mainproject,
@@ -42,39 +66,7 @@ class Project(GraphQLTable):
             }
         }
         """
-
-        self.delete_mutation = """
-        mutation ($id: Int!) {
-            deleteProject(id: $id) {
-                ok
-            }
-        }
-        """
-
-        self.literal_field_names = ["id", "mainProject {id}", "code", "short", "embargoPeriod", "description"]
-        self.field_names = ["id", "mainProject {name}", "code", "short", "embargoPeriod", "description"]
-
-    def list(self, id=None, mainProject=None, code=None):
-        """Return a list of records matching the id and/or the program id, code."""
-        filters = [
-            {"field": "mainProject", "value": mainProject, "join": "mainProject"},
-            {"field": "code", "value": code, "join": None},
-        ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        return GraphQLTable.list_graphql(self, graphql_query)
-
-    def create(self, mainproject, code, short, embargo_period, description):
-        self.create_variables = {
-            "mainproject": mainproject,
-            "code": code,
-            "short": short,
-            "embargoPeriod": embargo_period,
-            "description": description,
-        }
-        return self.create_graphql()
-
-    def update(self, id, mainproject, code, short, embargo_period, description):
-        self.update_variables = {
+        self.variables = {
             "id": id,
             "mainproject": mainproject,
             "code": code,
@@ -82,7 +74,22 @@ class Project(GraphQLTable):
             "embargoPeriod": embargo_period,
             "description": description,
         }
-        return self.update_graphql()
+        return self.mutation_graphql()
+
+    def delete(self, id):
+        self.mutation_name = "deleteProject"
+        self.mutation = """
+        mutation ($id: Int!) {
+            deleteProject(id: $id) {
+                ok
+            }
+        }
+        """
+        self.variables = {
+            "id": id,
+        }
+        return self.mutation_graphql()
+
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""

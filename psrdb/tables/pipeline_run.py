@@ -11,101 +11,6 @@ class PipelineRun(GraphQLTable):
         self.table_name = "pipeline_run"
         self.client = client
 
-        # create a new record
-        self.create_mutation = """
-        mutation (
-            $observationId: Int!,
-            $ephemerisId: Int!,
-            $templateId: Int!,
-            $pipelineName: String!,
-            $pipelineDescription: String!,
-            $pipelineVersion: String!,
-            $jobState: String!,
-            $location: String!,
-            $configuration: String!,
-            $dm: Float,
-            $dm_err: Float,
-            $dm_epoch: Float,
-            $dm_chi2r: Float,
-            $dm_tres: Float,
-            $sn: Float,
-            $flux: Float,
-            $rm: Float,
-            $rm_err: Float,
-            $percent_rfi_zapped: Float,
-        ) {
-            createPipelineRun(input: {
-                observationId: $observationId,
-                ephemerisId: $ephemerisId,
-                templateId: $templateId,
-                pipelineName: $pipelineName,
-                pipelineDescription: $pipelineDescription,
-                pipelineVersion: $pipelineVersion,
-                jobState: $jobState,
-                location: $location,
-                configuration: $configuration,
-                dm: $dm,
-                dmErr: $dm_err,
-                dmEpoch: $dm_epoch,
-                dmChi2r: $dm_chi2r,
-                dmTres: $dm_tres,
-                sn: $sn,
-                flux: $flux,
-                rm: $rm,
-                rmErr: $rm_err,
-                percentRfiZapped: $percent_rfi_zapped,
-            }) {
-                pipelineRun {
-                    id
-                }
-            }
-        }
-        """
-
-        self.update_mutation = """
-        mutation (
-            $id: Int!,
-            $jobState: String!,
-            $dm: Float,
-            $dm_err: Float,
-            $dm_epoch: Float,
-            $dm_chi2r: Float,
-            $dm_tres: Float,
-            $sn: Float,
-            $flux: Float,
-            $rm: Float,
-            $rm_err: Float,
-            $percent_rfi_zapped: Float,
-
-        ) {
-            updatePipelineRun(id: $id, input: {
-                jobState: $jobState,
-                dm: $dm,
-                dmErr: $dm_err,
-                dmEpoch: $dm_epoch,
-                dmChi2r: $dm_chi2r,
-                dmTres: $dm_tres,
-                sn: $sn,
-                flux: $flux,
-                rm: $rm,
-                rmErr: $rm_err,
-                percentRfiZapped: $percent_rfi_zapped,
-            }) {
-                pipelineRun {
-                    id
-                }
-            }
-        }
-        """
-
-        self.delete_mutation = """
-        mutation ($id: Int!) {
-            deletePipelineRun(id: $id) {
-                ok
-            }
-        }
-        """
-
         self.field_names = [
             "id",
             "observation { id }",
@@ -170,24 +75,24 @@ class PipelineRun(GraphQLTable):
         percentRfiZapped=None,
     ):
         filters = [
-            {"field": "id", "value": id, "join": "PipelineRun"},
-            {"field": "observation_Id", "value": observation_id, "join": "Observation"},
-            {"field": "ephemeris_Id", "value": ephemeris_id, "join": "Ephemeris"},
-            {"field": "template_Id", "value": template_id, "join": "Template"},
-            {"field": "pipelineName", "value": pipelineName, "join": None},
-            {"field": "pipelineDescription", "value": pipelineDescription, "join": None},
-            {"field": "pipelineVersion", "value": pipelineVersion, "join": None},
-            {"field": "jobState", "value": jobState, "join": None},
-            {"field": "location", "value": location, "join": None},
-            {"field": "dm", "value": dm, "join": None},
-            {"field": "dmErr", "value": dmErr, "join": None},
-            {"field": "dmEpoch", "value": dmEpoch, "join": None},
-            {"field": "dmChi2r", "value": dmChi2r, "join": None},
-            {"field": "dmTres", "value": dmTres, "join": None},
-            {"field": "sn", "value": sn, "join": None},
-            {"field": "flux", "value": flux, "join": None},
-            {"field": "rm", "value": rm, "join": None},
-            {"field": "percentRfiZapped", "value": percentRfiZapped, "join": None},
+            {"field": "id", "value": id},
+            {"field": "observation_Id", "value": observation_id},
+            {"field": "ephemeris_Id", "value": ephemeris_id},
+            {"field": "template_Id", "value": template_id,},
+            {"field": "pipelineName", "value": pipelineName},
+            {"field": "pipelineDescription", "value": pipelineDescription},
+            {"field": "pipelineVersion", "value": pipelineVersion},
+            {"field": "jobState", "value": jobState},
+            {"field": "location", "value": location},
+            {"field": "dm", "value": dm},
+            {"field": "dmErr", "value": dmErr},
+            {"field": "dmEpoch", "value": dmEpoch},
+            {"field": "dmChi2r", "value": dmChi2r},
+            {"field": "dmTres", "value": dmTres},
+            {"field": "sn", "value": sn},
+            {"field": "flux", "value": flux},
+            {"field": "rm", "value": rm},
+            {"field": "percentRfiZapped", "value": percentRfiZapped},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
@@ -204,6 +109,56 @@ class PipelineRun(GraphQLTable):
         configuration,
         results_dict=None,
     ):
+        self.mutation_name = "createPipelineRun"
+        self.mutation = """
+        mutation (
+            $observationId: Int!,
+            $ephemerisId: Int!,
+            $templateId: Int!,
+            $pipelineName: String!,
+            $pipelineDescription: String!,
+            $pipelineVersion: String!,
+            $jobState: String!,
+            $location: String!,
+            $configuration: String!,
+            $dm: Float,
+            $dm_err: Float,
+            $dm_epoch: Float,
+            $dm_chi2r: Float,
+            $dm_tres: Float,
+            $sn: Float,
+            $flux: Float,
+            $rm: Float,
+            $rm_err: Float,
+            $percent_rfi_zapped: Float,
+        ) {
+            createPipelineRun(input: {
+                observationId: $observationId,
+                ephemerisId: $ephemerisId,
+                templateId: $templateId,
+                pipelineName: $pipelineName,
+                pipelineDescription: $pipelineDescription,
+                pipelineVersion: $pipelineVersion,
+                jobState: $jobState,
+                location: $location,
+                configuration: $configuration,
+                dm: $dm,
+                dmErr: $dm_err,
+                dmEpoch: $dm_epoch,
+                dmChi2r: $dm_chi2r,
+                dmTres: $dm_tres,
+                sn: $sn,
+                flux: $flux,
+                rm: $rm,
+                rmErr: $rm_err,
+                percentRfiZapped: $percent_rfi_zapped,
+            }) {
+                pipelineRun {
+                    id
+                }
+            }
+        }
+        """
         if results_dict is None:
             results_dict = {
                 "dm": None,
@@ -221,7 +176,7 @@ class PipelineRun(GraphQLTable):
             results_dict["rm"] = None
         if results_dict["rm_err"] == "None":
             results_dict["rm_err"] = None
-        self.create_variables = {
+        self.variables = {
             "observationId": observationId,
             "ephemerisId": ephemerisId,
             "templateId": templateId,
@@ -242,7 +197,7 @@ class PipelineRun(GraphQLTable):
             "rm_err": results_dict["rm_err"],
             "percent_rfi_zapped": results_dict["percent_rfi_zapped"],
         }
-        return self.create_graphql()
+        return self.mutation_graphql()
 
     def update(
         self,
@@ -250,6 +205,42 @@ class PipelineRun(GraphQLTable):
         jobState,
         results_dict=None,
     ):
+        self.mutation_name = "updatePipelineRun"
+        self.mutation = """
+        mutation (
+            $id: Int!,
+            $jobState: String!,
+            $dm: Float,
+            $dm_err: Float,
+            $dm_epoch: Float,
+            $dm_chi2r: Float,
+            $dm_tres: Float,
+            $sn: Float,
+            $flux: Float,
+            $rm: Float,
+            $rm_err: Float,
+            $percent_rfi_zapped: Float,
+
+        ) {
+            updatePipelineRun(id: $id, input: {
+                jobState: $jobState,
+                dm: $dm,
+                dmErr: $dm_err,
+                dmEpoch: $dm_epoch,
+                dmChi2r: $dm_chi2r,
+                dmTres: $dm_tres,
+                sn: $sn,
+                flux: $flux,
+                rm: $rm,
+                rmErr: $rm_err,
+                percentRfiZapped: $percent_rfi_zapped,
+            }) {
+                pipelineRun {
+                    id
+                }
+            }
+        }
+        """
         if results_dict is None:
             results_dict = {
                 "dm": None,
@@ -267,7 +258,7 @@ class PipelineRun(GraphQLTable):
             results_dict["rm"] = None
         if results_dict["rm_err"] == "None":
             results_dict["rm_err"] = None
-        self.update_variables = {
+        self.variables = {
             "id": id,
             "jobState": jobState,
             "dm": results_dict["dm"],
@@ -281,7 +272,24 @@ class PipelineRun(GraphQLTable):
             "rm_err": results_dict["rm_err"],
             "percent_rfi_zapped": results_dict["percent_rfi_zapped"],
         }
-        return self.update_graphql()
+        return self.mutation_graphql()
+
+    def delete(
+        self,
+        id,
+    ):
+        self.mutation_name = "deletePipelineRun"
+        self.mutation = """
+        mutation ($id: Int!) {
+            deletePipelineRun(id: $id) {
+                ok
+            }
+        }
+        """
+        self.variables = {
+            "id": id,
+        }
+        return self.mutation_graphql()
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""

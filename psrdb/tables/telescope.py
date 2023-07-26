@@ -7,8 +7,18 @@ class Telescope(GraphQLTable):
         GraphQLTable.__init__(self, client, token)
         self.record_name = "telescope"
 
-        # create a new record
-        self.create_mutation = """
+        self.field_names = ["id", "name"]
+
+    def list(self, id=None, name=None):
+        """Return a list of records matching the id and/or the name."""
+        filters = [
+            {"field": "name", "value": name},
+        ]
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+    def create(self, name):
+        self.mutation_name = "createTelescope"
+        self.mutation = """
         mutation ($name: String!) {
             createTelescope(input: {
                 name: $name,
@@ -19,8 +29,14 @@ class Telescope(GraphQLTable):
             }
         }
         """
+        self.variables = {
+            "name": name,
+        }
+        return self.mutation_graphql()
 
-        self.update_mutation = """
+    def update(self, id, name):
+        self.mutation_name = "updateTelescope"
+        self.mutation = """
         mutation ($id: Int!, $name: String!) {
             updateTelescope(id: $id, input: {
                 name: $name,
@@ -32,42 +48,35 @@ class Telescope(GraphQLTable):
             }
         }
         """
+        self.variables = {
+            "id": id,
+            "name": name,
+        }
+        return self.mutation_graphql()
 
-        self.delete_mutation = """
+    def delete(self, id):
+        self.mutation_name = "deleteTelescope"
+        self.mutation = """
         mutation ($id: Int!) {
             deleteTelescope(id: $id) {
                 ok
             }
         }
         """
-
-        self.field_names = ["id", "name"]
-
-    def list(self, id=None, name=None):
-        """Return a list of records matching the id and/or the name."""
-        filters = [
-            {"field": "name", "value": name, "join": None},
-        ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        return GraphQLTable.list_graphql(self, graphql_query)
-
-    def create(self, name):
-        self.create_variables = {"name": name}
-        return self.create_graphql()
-
-    def update(self, id, name):
-        self.update_variables = {"id": id, "name": name}
-        return self.update_graphql()
+        self.variables = {
+            "id": id,
+        }
+        return self.mutation_graphql()
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""
         self.print_stdout = True
-        if args.subcommand == "create":
-            return self.create(args.name)
-        if args.subcommand == "update":
-            return self.update(args.id, args.name)
-        elif args.subcommand == "list":
+        if args.subcommand == "list":
             return self.list(args.id, args.name)
+        elif args.subcommand == "create":
+            return self.create(args.name)
+        elif args.subcommand == "update":
+            return self.update(args.id, args.name)
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:

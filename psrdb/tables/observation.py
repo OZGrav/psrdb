@@ -7,9 +7,97 @@ from psrdb.graphql_query import graphql_query_factory
 class Observation(GraphQLTable):
     def __init__(self, client, token, logger=None):
         GraphQLTable.__init__(self, client, token, logger)
+        self.table_name = "observation"
+        self.field_names = [
+            "id",
+            "pulsar { name }",
+            "calibration { id }",
+            "telescope { name }",
+            "project { code }",
+            "project { short }",
+            "utcStart",
+            "band",
+            "duration",
+        ]
+        self.literal_field_names = [
+            "id",
+            "pulsar { id }",
+            "calibration { id }",
+            "telescope { id }",
+            "project { id }",
+            "project { id }",
+            "utcStart",
+            "band",
+            "duration",
+        ]
 
+    def list(
+        self,
+        id=None,
+        pulsar_name=None,
+        telescope_name=None,
+        project_id=None,
+        project_short=None,
+        utcs=None,
+        utce=None,
+    ):
+        # Convert dates to correct format
+        if utcs == "":
+            utcs = None
+        elif utcs is not None:
+            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
+            utcs = f"{d.date()}T{d.time()}+00:00"
+        if utce == "":
+            utce = None
+        elif utce is not None:
+            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
+            utce = f"{d.date()}T{d.time()}+00:00"
+        if project_short == "":
+            project_short = None
+        """Return a list of records matching the id and/or any of the arguments."""
+        filters = [
+            {"field": "pulsar_Name", "value": pulsar_name},
+            {"field": "telescope_Name", "value": telescope_name},
+            {"field": "project_Id", "value": project_id},
+            {"field": "project_Short", "value": project_short},
+            {"field": "utcStart_gte", "value": utcs},
+            {"field": "utcStart_lte", "value": utce},
+        ]
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+    def create(
+        self,
+        pulsarName,
+        telescopeName,
+        projectCode,
+        calibrationId,
+        ephemerisText,
+        frequency,
+        bandwidth,
+        nchan,
+        beam,
+        nant,
+        nantEff,
+        npol,
+        obsType,
+        utcStart,
+        raj,
+        decj,
+        duration,
+        nbit,
+        tsamp,
+        foldNbin,
+        foldNchan,
+        foldTsubint,
+        filterbankNbit,
+        filterbankNpol,
+        filterbankNchan,
+        filterbankTsamp,
+        filterbankDm,
+    ):
         # create a new record
-        self.create_mutation = """
+        self.mutation_name = "createObservation"
+        self.mutation = """
         mutation (
             $pulsarName: String!,
             $telescopeName: String!,
@@ -76,8 +164,55 @@ class Observation(GraphQLTable):
             }
         }
         """
+        self.variables = {
+            "pulsarName": pulsarName,
+            "telescopeName": telescopeName,
+            "projectCode": projectCode,
+            "calibrationId": calibrationId,
+            "ephemerisText": ephemerisText,
+            "frequency": frequency,
+            "bandwidth": bandwidth,
+            "nchan": nchan,
+            "beam": beam,
+            "nant": nant,
+            "nantEff": nantEff,
+            "npol": npol,
+            "obsType": obsType,
+            "utcStart": utcStart,
+            "raj": raj,
+            "decj": decj,
+            "duration": duration,
+            "nbit": nbit,
+            "tsamp": tsamp,
+            "foldNbin": foldNbin,
+            "foldNchan": foldNchan,
+            "foldTsubint": foldTsubint,
+            "filterbankNbit": filterbankNbit,
+            "filterbankNpol": filterbankNpol,
+            "filterbankNchan": filterbankNchan,
+            "filterbankTsamp": filterbankTsamp,
+            "filterbankDm": filterbankDm,
+        }
+        return self.mutation_graphql()
 
-        self.update_mutation = """
+    def update(
+        self,
+        id,
+        target,
+        calibration,
+        telescope,
+        instrument_config,
+        project,
+        config,
+        utc,
+        duration,
+        nant,
+        nanteff,
+        suspect,
+        comment,
+    ):
+        self.mutation_name = "updateObservation"
+        self.mutation = """
         mutation ($id: Int!, $target: Int!, $calibration: Int!, $telescope: Int!, $instrument_config: Int!, $project: Int!, $config: JSONString!, $duration: Float!, $utc_start: DateTime!, $nant: Int!,   $nant_eff: Int!, $suspect: Boolean!, $comment: String) {
             updateObservation(id: $id, input: {
                 target_id: $target,
@@ -111,151 +246,7 @@ class Observation(GraphQLTable):
             }
         }
         """
-
-        self.delete_mutation = """
-        mutation ($id: Int!) {
-            deleteObservation(id: $id) {
-                ok
-            }
-        }
-        """
-
-        self.field_names = [
-            "id",
-            "pulsar { name }",
-            "calibration { id }",
-            "telescope { name }",
-            "project { code }",
-            "project { short }",
-            "utcStart",
-            "band",
-            "duration",
-        ]
-        self.literal_field_names = [
-            "id",
-            "pulsar { id }",
-            "calibration { id }",
-            "telescope { id }",
-            "project { id }",
-            "project { id }",
-            "utcStart",
-            "band",
-            "duration",
-        ]
-
-    def list(
-        self,
-        id=None,
-        pulsar_name=None,
-        telescope_name=None,
-        project_id=None,
-        project_short=None,
-        utcs=None,
-        utce=None,
-    ):
-        # Convert dates to correct format
-        if utcs == "":
-            utcs = None
-        elif utcs is not None:
-            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
-            utcs = f"{d.date()}T{d.time()}+00:00"
-        if utce == "":
-            utce = None
-        elif utce is not None:
-            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
-            utce = f"{d.date()}T{d.time()}+00:00"
-        if project_short == "":
-            project_short = None
-        """Return a list of records matching the id and/or any of the arguments."""
-        filters = [
-            {"field": "pulsar_Name", "value": pulsar_name, "join": "Pulsar"},
-            {"field": "telescope_Name", "value": telescope_name, "join": "Telescopes"},
-            {"field": "project_Id", "value": project_id, "join": "Projects"},
-            {"field": "project_Short", "value": project_short, "join": "Projects"},
-            {"field": "utcStart_gte", "value": utcs, "join": None},
-            {"field": "utcStart_lte", "value": utce, "join": None},
-        ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        return GraphQLTable.list_graphql(self, graphql_query)
-
-    def create(
-        self,
-        pulsarName,
-        telescopeName,
-        projectCode,
-        calibrationId,
-        ephemerisText,
-        frequency,
-        bandwidth,
-        nchan,
-        beam,
-        nant,
-        nantEff,
-        npol,
-        obsType,
-        utcStart,
-        raj,
-        decj,
-        duration,
-        nbit,
-        tsamp,
-        foldNbin,
-        foldNchan,
-        foldTsubint,
-        filterbankNbit,
-        filterbankNpol,
-        filterbankNchan,
-        filterbankTsamp,
-        filterbankDm,
-    ):
-        self.create_variables = {
-            "pulsarName": pulsarName,
-            "telescopeName": telescopeName,
-            "projectCode": projectCode,
-            "calibrationId": calibrationId,
-            "ephemerisText": ephemerisText,
-            "frequency": frequency,
-            "bandwidth": bandwidth,
-            "nchan": nchan,
-            "beam": beam,
-            "nant": nant,
-            "nantEff": nantEff,
-            "npol": npol,
-            "obsType": obsType,
-            "utcStart": utcStart,
-            "raj": raj,
-            "decj": decj,
-            "duration": duration,
-            "nbit": nbit,
-            "tsamp": tsamp,
-            "foldNbin": foldNbin,
-            "foldNchan": foldNchan,
-            "foldTsubint": foldTsubint,
-            "filterbankNbit": filterbankNbit,
-            "filterbankNpol": filterbankNpol,
-            "filterbankNchan": filterbankNchan,
-            "filterbankTsamp": filterbankTsamp,
-            "filterbankDm": filterbankDm,
-        }
-        return self.create_graphql()
-
-    def update(
-        self,
-        id,
-        target,
-        calibration,
-        telescope,
-        instrument_config,
-        project,
-        config,
-        utc,
-        duration,
-        nant,
-        nanteff,
-        suspect,
-        comment,
-    ):
-        self.update_variables = {
+        self.variables = {
             "id": id,
             "target": target,
             "calibration": calibration,
@@ -270,7 +261,21 @@ class Observation(GraphQLTable):
             "suspect": suspect,
             "comment": comment,
         }
-        return self.update_graphql()
+        return self.mutation_graphql()
+
+    def delete(self, id):
+        self.mutation_name = "deleteObservation"
+        self.mutation = """
+        mutation ($id: Int!) {
+            deleteObservation(id: $id) {
+                ok
+            }
+        }
+        """
+        self.variables = {
+            "id": id,
+        }
+        return self.mutation_graphql()
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""

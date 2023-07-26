@@ -8,63 +8,6 @@ class Template(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
         self.record_name = "template"
-        self.client = client
-
-        # create a new record
-        self.create_mutation = """
-        mutation (
-            $pulsar_name: String!,
-            $project_code: String!,
-            $band: String!,
-        ) {
-            createTemplate (input: {
-                pulsarName: $pulsar_name,
-                projectCode: $project_code,
-                band: $band,
-            }) {
-                template {
-                    id,
-                }
-            }
-        }
-        """
-
-        self.update_mutation = """
-        mutation ($id: Int!, $pulsar: Int!,  $frequency: Float!, $bandwidth: Float!, $created_at: DateTime!, $created_by: String!, $location: String!, $method: String!, $type: String!, $comment: String!) {
-            updateTemplate (id: $id, input: {
-                pulsar_id: $pulsar,
-                frequency: $frequency,
-                bandwidth: $bandwidth,
-                created_at: $created_at,
-                created_by: $created_by,
-                location: $location,
-                method: $method,
-                type: $type,
-                comment: $comment
-            }) {
-                template {
-                    id,
-                    pulsar {id},
-                    frequency,
-                    bandwidth,
-                    createdAt,
-                    createdBy,
-                    location,
-                    method,
-                    type,
-                    comment
-                }
-            }
-        }
-        """
-
-        self.delete_mutation = """
-        mutation ($id: Int!) {
-            deleteTemplate(id: $id) {
-                ok
-            }
-        }
-        """
 
         self.field_names = [
             "id",
@@ -94,27 +37,11 @@ class Template(GraphQLTable):
     def list(self, id=None, pulsar_id=None, frequency=None, bandwidth=None):
         """Return a list of records matching the id and/or the pulsar id, frequency, bandwidth."""
         filters = [
-            {"field": "pulsar_Id", "value": pulsar_id, "join": "Pulsars"},
-            {"field": "frequency", "value": frequency, "join": None},
-            {"field": "bandwidth", "value": bandwidth, "join": None},
+            {"field": "pulsar_Id", "value": pulsar_id},
+            {"field": "frequency", "value": frequency},
+            {"field": "bandwidth", "value": bandwidth},
         ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        return GraphQLTable.list_graphql(self, graphql_query)
-
-    def update(self, id, pulsar, frequency, bandwidth, created_at, created_by, location, method, type, comment):
-        self.update_variables = {
-            "id": id,
-            "pulsar": pulsar,
-            "frequency": frequency,
-            "bandwidth": bandwidth,
-            "created_at": created_at,
-            "created_by": created_by,
-            "location": location,
-            "method": method,
-            "type": type,
-            "comment": comment,
-        }
-        return self.update_graphql()
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def create(
             self,
@@ -148,23 +75,8 @@ class Template(GraphQLTable):
                 args.band,
                 args.template_path,
             )
-        elif args.subcommand == "update":
-            return self.update(
-                args.id,
-                args.pulsar,
-                args.frequency,
-                args.bandwidth,
-                args.created_at,
-                args.created_by,
-                args.location,
-                args.method,
-                args.type,
-                args.comment,
-            )
         elif args.subcommand == "list":
             return self.list(args.id, args.pulsar, args.frequency, args.bandwidth)
-        elif args.subcommand == "delete":
-            return self.delete(args.id)
         else:
             raise RuntimeError(args.subcommand + " command is not implemented")
 

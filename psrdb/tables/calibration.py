@@ -5,9 +5,19 @@ from psrdb.graphql_query import graphql_query_factory
 class Calibration(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
+        self.record_name = "calibration"
+        self.field_names = ["id", "delayCalId", "phaseUpId", "calibrationType", "location"]
 
-        # Create a new record
-        self.create_mutation = """
+    def list(self, id=None, type=None):
+        """Return a list of records matching the id and/or the type."""
+        filters = [
+            {"field": "type", "value": type},
+        ]
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+    def create(self, delay_cal_id, phase_up_id, type, location):
+        self.mutation_name = "createCalibration"
+        self.mutation = """
         mutation (
             $delay_cal_id: String,
             $phase_up_id: String,
@@ -26,9 +36,17 @@ class Calibration(GraphQLTable):
             }
         }
         """
+        self.variables = {
+            "delay_cal_id": delay_cal_id,
+            "phase_up_id": phase_up_id,
+            "calibration_type": type,
+            "location": location,
+        }
+        return self.mutation_graphql()
 
-        # Update an existing record
-        self.update_mutation = """
+    def update(self, id, delay_cald_id, type, location):
+        self.mutation_name = "updateCalibration"
+        self.mutation = """
         mutation ($id: Int!, $calibration_type: String!, $location: String!) {
             updateCalibration(id: $id, input: {
                 calibrationType: $calibration_type,
@@ -42,37 +60,26 @@ class Calibration(GraphQLTable):
             }
         }
         """
+        self.variables = {
+            "delay_cald_id": delay_cald_id,
+            "calibration_type": type,
+            "location": location,
+        }
+        return self.mutation_graphql()
 
-        self.delete_mutation = """
+    def delete(self, id):
+        self.mutation_name = "deleteCalibration"
+        self.mutation = """
         mutation ($id: Int!) {
             deleteCalibration(id: $id) {
                 ok
             }
         }
         """
-
-        self.field_names = ["id", "delayCalId", "phaseUpId", "calibrationType", "location"]
-
-    def list(self, id=None, type=None):
-        """Return a list of records matching the id and/or the type."""
-        filters = [
-            {"field": "type", "value": type, "join": None},
-        ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        return GraphQLTable.list_graphql(self, graphql_query)
-
-    def create(self, delay_cal_id, phase_up_id, type, location):
-        self.create_variables = {
-            "delay_cal_id": delay_cal_id,
-            "phase_up_id": phase_up_id,
-            "calibration_type": type,
-            "location": location,
+        self.variables = {
+            "id": id,
         }
-        return self.create_graphql()
-
-    def update(self, id, delay_cald_id, type, location):
-        self.create_variables = {"delay_cald_id": delay_cald_id, "calibration_type": type, "location": location}
-        return self.update_graphql()
+        return self.mutation_graphql()
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""

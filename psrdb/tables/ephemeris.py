@@ -8,61 +8,7 @@ from psrdb.graphql_query import graphql_query_factory
 class Ephemeris(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
-
-        # create a new record
-        self.create_mutation = """
-        mutation ($pulsar: String!, $ephemerisText: String!, $project: String!, $comment: String!) {
-            createEphemeris (input: {
-                pulsarName: $pulsar,
-                ephemerisText: $ephemerisText,
-                projectCode: $project,
-                comment: $comment,
-                }) {
-                ephemeris {
-                    id
-                }
-            }
-        }
-        """
-
-        self.update_mutation = """
-        mutation ($id: Int!, $pulsar: Int!, $created_at: DateTime!, $created_by: String!, $ephemeris: JSONString!, $p0: Decimal!, $dm: Float!, $rm: Float!, $comment: String!, $valid_from: DateTime!, $valid_to: DateTime!) {
-            updateEphemeris (id: $id, input: {
-                pulsar_id: $pulsar,
-                created_at: $created_at,
-                created_by: $created_by,
-                ephemeris: $ephemeris,
-                p0: $p0,
-                dm: $dm,
-                rm: $rm,
-                comment: $comment,
-                valid_from: $valid_from,
-                valid_to: $valid_to
-                }) {
-                ephemeris {
-                    id,
-                    pulsar {id},
-                    createdAt,
-                    createdBy,
-                    ephemeris,
-                    p0,
-                    dm,
-                    rm,
-                    comment,
-                    validFrom,
-                    validTo
-                }
-            }
-        }
-        """
-
-        self.delete_mutation = """
-        mutation ($id: Int!) {
-            deleteEphemeris(id: $id) {
-                ok
-            }
-        }
-        """
+        self.table_name = "ephemeris"
 
         self.field_names = [
             "id",
@@ -105,16 +51,73 @@ class Ephemeris(GraphQLTable):
             eph_hash = hashlib.md5(json.dumps(eph_json, sort_keys=True, indent=2).encode("utf-8")).hexdigest()
 
         filters = [
-            {"field": "pulsar_Id", "value": pulsar_id, "join": "Pulsars"},
-            {"field": "p0", "value": p0_filtered, "join": None},
-            {"field": "dm", "value": dm, "join": None},
-            {"field": "ephemerisHash", "value": eph_hash, "join": None},
+            {"field": "pulsar_Id", "value": pulsar_id},
+            {"field": "p0", "value": p0_filtered},
+            {"field": "dm", "value": dm},
+            {"field": "ephemerisHash", "value": eph_hash},
         ]
-        graphql_query = graphql_query_factory(self.table_name, self.record_name, id, filters)
-        return GraphQLTable.list_graphql(self, graphql_query)
+        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+    def create(self, pulsar, ephemeris, project, comment):
+        self.mutation_name = "createEphemeris"
+        self.mutation = """
+        mutation ($pulsar: String!, $ephemerisText: String!, $project: String!, $comment: String!) {
+            createEphemeris (input: {
+                pulsarName: $pulsar,
+                ephemerisText: $ephemerisText,
+                projectCode: $project,
+                comment: $comment,
+                }) {
+                ephemeris {
+                    id
+                }
+            }
+        }
+        """
+        # Read ephemeris file
+        with open(ephemeris, "r") as f:
+            ephemeris_str = f.read()
+        self.variables = {
+            "pulsar": pulsar,
+            "ephemerisText": ephemeris_str,
+            "project": project,
+            "comment": comment,
+        }
+        return self.mutation_graphql()
 
     def update(self, id, pulsar, created_at, created_by, ephemeris, p0, dm, rm, comment, valid_from, valid_to):
-        self.update_variables = {
+        self.mutation_name = "updateEphemeris"
+        self.mutation = """
+        mutation ($id: Int!, $pulsar: Int!, $created_at: DateTime!, $created_by: String!, $ephemeris: JSONString!, $p0: Decimal!, $dm: Float!, $rm: Float!, $comment: String!, $valid_from: DateTime!, $valid_to: DateTime!) {
+            updateEphemeris (id: $id, input: {
+                pulsar_id: $pulsar,
+                created_at: $created_at,
+                created_by: $created_by,
+                ephemeris: $ephemeris,
+                p0: $p0,
+                dm: $dm,
+                rm: $rm,
+                comment: $comment,
+                valid_from: $valid_from,
+                valid_to: $valid_to
+                }) {
+                ephemeris {
+                    id,
+                    pulsar {id},
+                    createdAt,
+                    createdBy,
+                    ephemeris,
+                    p0,
+                    dm,
+                    rm,
+                    comment,
+                    validFrom,
+                    validTo
+                }
+            }
+        }
+        """
+        self.variables = {
             "id": id,
             "pulsar": pulsar,
             "created_at": created_at,
@@ -126,19 +129,21 @@ class Ephemeris(GraphQLTable):
             "valid_from": valid_from,
             "valid_to": valid_to,
         }
-        return self.update_graphql()
+        return self.mutation_graphql()
 
-    def create(self, pulsar, ephemeris, project, comment):
-        # Read ephemeris file
-        with open(ephemeris, "r") as f:
-            ephemeris_str = f.read()
-        self.create_variables = {
-            "pulsar": pulsar,
-            "ephemerisText": ephemeris_str,
-            "project": project,
-            "comment": comment,
+    def delete(self, id):
+        self.mutation_name = "deleteEphemeris"
+        self.mutation = """
+        mutation ($id: Int!) {
+            deleteEphemeris(id: $id) {
+                ok
+            }
         }
-        return self.create_graphql()
+        """
+        self.variables = {
+            "id": id,
+        }
+        return self.mutation_graphql()
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""
