@@ -46,15 +46,17 @@ class Template(GraphQLTable):
     def create(
             self,
             pulsar_name,
-            project_code,
             band,
             template_path,
+            project_code=None,
+            project_short=None,
         ):
         # Open the file in binary mode
         with open(template_path, 'rb') as file:
             variables = {
                 "pulsar_name": pulsar_name,
                 "project_code": project_code,
+                "project_short": project_short,
                 "band": band,
             }
             files = {
