@@ -12,10 +12,12 @@ class Observation(GraphQLTable):
             "id",
             "pulsar { name }",
             "calibration { id }",
+            "calibration { location }",
             "telescope { name }",
             "project { code }",
             "project { short }",
             "utcStart",
+            "beam",
             "band",
             "duration",
         ]
@@ -23,10 +25,12 @@ class Observation(GraphQLTable):
             "id",
             "pulsar { id }",
             "calibration { id }",
+            "calibration { location }",
             "telescope { id }",
             "project { id }",
             "project { id }",
             "utcStart",
+            "beam",
             "band",
             "duration",
         ]
@@ -54,6 +58,8 @@ class Observation(GraphQLTable):
             utce = f"{d.date()}T{d.time()}+00:00"
         if project_short == "":
             project_short = None
+        if pulsar_name == "":
+            pulsar_name = None
         """Return a list of records matching the id and/or any of the arguments."""
         filters = [
             {"field": "pulsar_Name", "value": pulsar_name},
