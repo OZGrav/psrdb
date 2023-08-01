@@ -66,8 +66,8 @@ class Observation(GraphQLTable):
             {"field": "telescope_Name", "value": telescope_name},
             {"field": "project_Id", "value": project_id},
             {"field": "project_Short", "value": project_short},
-            {"field": "utcStart_gte", "value": utcs},
-            {"field": "utcStart_lte", "value": utce},
+            {"field": "utcStartGte", "value": utcs},
+            {"field": "utcStartLte", "value": utce},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
