@@ -9,6 +9,7 @@ class PipelineRun(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
         self.table_name = "pipeline_run"
+        self.record_name = "pipeline_run"
         self.client = client
 
         self.field_names = [

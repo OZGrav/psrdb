@@ -58,14 +58,28 @@ class Ephemeris(GraphQLTable):
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
-    def create(self, pulsar, ephemeris, project, comment):
+    def create(
+            self,
+            pulsar,
+            ephemeris,
+            project_code=None,
+            project_short=None,
+            comment=None,
+        ):
         self.mutation_name = "createEphemeris"
         self.mutation = """
-        mutation ($pulsar: String!, $ephemerisText: String!, $project: String!, $comment: String!) {
+        mutation (
+            $pulsar: String!,
+            $ephemerisText: String!,
+            $projectCode: String,
+            $projectShort: String,
+            $comment: String,
+        ) {
             createEphemeris (input: {
                 pulsarName: $pulsar,
                 ephemerisText: $ephemerisText,
-                projectCode: $project,
+                projectCode: $projectCode,
+                projectShort: $projectShort,
                 comment: $comment,
                 }) {
                 ephemeris {
@@ -80,7 +94,8 @@ class Ephemeris(GraphQLTable):
         self.variables = {
             "pulsar": pulsar,
             "ephemerisText": ephemeris_str,
-            "project": project,
+            "projectCode": project_code,
+            "projectShort": project_short,
             "comment": comment,
         }
         return self.mutation_graphql()
