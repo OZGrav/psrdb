@@ -13,8 +13,8 @@ from psrdb.tables.pulsar import Pulsar
 from psrdb.tables.calibration import Calibration
 from psrdb.tables.observation import Observation
 
-LOG_DIRECTORY = config("LOG_DIRECTORY")
-LOG_FILE = f"{time.strftime('%Y-%m-%d')}{config('LOG_FILENAME')}"
+LOG_DIRECTORY = config("LOG_DIRECTORY", default="logs/")
+LOG_FILE = f"{time.strftime('%Y-%m-%d')}{config('LOG_FILENAME', default='ingest_obs.log')}"
 
 
 def main():

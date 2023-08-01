@@ -127,7 +127,7 @@ class GraphQLTable:
             if not "errors" in content.keys():
                 data = content["data"]
                 mutation_data = data[mutation_name]
-                created_data = mutation_data[record_name]
+                created_data = mutation_data[to_camel_case(record_name)]
                 if self.print_stdout:
                     print(created_data["id"])
             else:

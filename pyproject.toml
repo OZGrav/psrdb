@@ -12,16 +12,15 @@ requests = "^2.25.1"
 pytest = "^7.3.1"
 python-decouple = "^3.8"
 
-[tool.poetry.dev-dependencies]
-pytest = "^7.3.1"
-
 [tool.poetry.scripts]
 psrdb = "psrdb.scripts.psrdb:main"
 generate_meerkat_json = "psrdb.scripts.generate_meerkat_json:main"
 ingest_obs = "psrdb.scripts.ingest_obs:main"
 remove_fluxcals = "psrdb.scripts.remove_fluxcals:main"
 
-[tool.poetry.group.dev.dependencies]
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.3.1"
 isort = "^5.12.0"
 black = "^23.3.0"
 flake8 = "^6.0.0"
