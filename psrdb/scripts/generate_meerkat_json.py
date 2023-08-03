@@ -14,9 +14,9 @@ import psrchive as psr
 from psrdb.utils import header
 
 
-CALIBRATIONS_DIR = config("CALIBRATIONS_DIR")
-RESULTS_DIR = config("RESULTS_DIR")
-FOLDING_DIR = config("FOLDING_DIR")
+CALIBRATIONS_DIR = config("CALIBRATIONS_DIR", "/fred/oz005/users/aparthas/reprocessing_MK/poln_calibration")
+RESULTS_DIR = config("RESULTS_DIR", "/fred/oz005/kronos")
+FOLDING_DIR = config("FOLDING_DIR", "/fred/oz005/timing")
 
 
 def generate_obs_length(freq_summed_archive):

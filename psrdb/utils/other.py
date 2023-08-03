@@ -92,9 +92,13 @@ def get_graphql_id(response, table, logger):
         mutation_name = to_camel_case(f"create_{table}")
         table_name = to_camel_case(table)
         try:
-            return int(data[mutation_name][table_name]["id"])
+            graphql_id = data[mutation_name][table_name]["id"]
         except KeyError:
             raise KeyError(f"No key ['{mutation_name}']['{table_name}']['id'] in {data}")
+        try:
+            return int(graphql_id)
+        except ValueError:
+            return decode_id(graphql_id)
 
 
 def get_rest_api_id(response, logger):
@@ -112,5 +116,5 @@ def get_rest_api_id(response, logger):
 
 
 def decode_id(encoded):
-        decoded = b64decode(encoded).decode("ascii")
-        return decoded.split(":")[1]
+    decoded = b64decode(encoded).decode("ascii")
+    return decoded.split(":")[1]
