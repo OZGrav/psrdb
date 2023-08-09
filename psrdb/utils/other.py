@@ -91,14 +91,19 @@ def get_graphql_id(response, table, logger):
         # Convert from snake_case to CamelCase
         mutation_name = to_camel_case(f"create_{table}")
         table_name = to_camel_case(table)
-        try:
-            graphql_id = data[mutation_name][table_name]["id"]
-        except KeyError:
-            raise KeyError(f"No key ['{mutation_name}']['{table_name}']['id'] in {data}")
-        try:
-            return int(graphql_id)
-        except ValueError:
-            return decode_id(graphql_id)
+        models_made = data[mutation_name][table_name]
+        # Turn into list if multiple objects were created
+        if type(models_made) != list:
+            models_made = [models_made]
+        for model in models_made:
+            try:
+                graphql_id = model["id"]
+            except KeyError:
+                raise KeyError(f"No key ['{mutation_name}']['{table_name}']['id'] in {data}")
+            try:
+                return int(graphql_id)
+            except ValueError:
+                return decode_id(graphql_id)
 
 
 def get_rest_api_id(response, logger):

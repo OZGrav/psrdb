@@ -129,7 +129,11 @@ class GraphQLTable:
                 mutation_data = data[mutation_name]
                 created_data = mutation_data[to_camel_case(record_name)]
                 if self.print_stdout:
-                    print(created_data["id"])
+                    if type(created_data) == list:
+                        for d in created_data:
+                            print(d["id"])
+                    else:
+                        print(created_data["id"])
             else:
                 self.logger.warning(f"Errors returned in content {content['errors']}")
         else:
