@@ -258,6 +258,9 @@ class Toa(GraphQLTable):
                         args.ephemeris_id,
                         args.template_id,
                         input_toa_line,
+                        args.dm_corrected,
+                        args.minimumNsubs,
+                        args.maximumNsubs,
                     )
         elif args.subcommand == "update":
             return self.update(
@@ -340,6 +343,15 @@ class Toa(GraphQLTable):
         )
         parser_create.add_argument(
             "toa_path", metavar="TOA", type=str, help="Path to the TOA file [str]"
+        )
+        parser_create.add_argument(
+            "--dm_corrected", action="store_true", help="If the TOA was DM corrected [bool]"
+        )
+        parser_create.add_argument(
+            "--minimum_nsubs", action="store_true", help="If the TOA was generated with the minimum number of time subbands [bool]"
+        )
+        parser_create.add_argument(
+            "--maximum_nsubs", action="store_true", help="If the TOA was generated with the maximum number of time subbands [bool]"
         )
 
         # create the parser for the "update" command

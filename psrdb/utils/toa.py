@@ -38,7 +38,7 @@ def toa_dict_to_line(toa_dict):
         str: A line from a .toa file.
     """
     toa_line = ""
-    toa_line += f"{toa_dict['archive']} {toa_dict['freq_MHz']:.6f} {toa_dict['mjd']}   {toa_dict['mjd_err']:.3f}  {toa_dict['telescope']} "
+    toa_line += f"{toa_dict['archive']} {toa_dict['freq_MHz']:.6f} {toa_dict['mjd']}{toa_dict['mjd_err']:>8.3f}  {toa_dict['telescope']} "
     for key, value in toa_dict.items():
         if key not in ["archive", "freq_MHz", "mjd", "mjd_err", "telescope"]:
             toa_line += f" -{key} {value}"
