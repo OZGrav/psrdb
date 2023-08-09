@@ -63,7 +63,7 @@ class Residual(GraphQLTable):
         self,
         pulsar,
         project_short,
-        ephemeris_id,
+        ephemeris,
         residual_lines,
     ):
         self.mutation_name = "createResidual"
@@ -71,13 +71,13 @@ class Residual(GraphQLTable):
         mutation (
             $pulsar: String!,
             $projectShort: String!,
-            $ephemerisId: Int!,
+            $ephemerisText: String!,
             $residualLines: [String]!,
         ) {
             createResidual (input: {
                 pulsar: $pulsar,
                 projectShort: $projectShort,
-                ephemerisId: $ephemerisId,
+                ephemerisText: $ephemerisText,
                 residualLines: $residualLines,
             }) {
                 residual {
@@ -86,6 +86,9 @@ class Residual(GraphQLTable):
             }
         }
         """
+        # Read ephemeris file
+        with open(ephemeris, "r") as f:
+            ephemeris_str = f.read()
         # Loop over the lines and grab the important info to reduce upload size
         residual_line_info = []
         for residual_line in residual_lines[1:]:
@@ -98,7 +101,7 @@ class Residual(GraphQLTable):
         self.variables = {
             'pulsar': pulsar,
             'projectShort': project_short,
-            'ephemerisId': ephemeris_id,
+            'ephemerisText': ephemeris_str,
             'residualLines': residual_line_info,
         }
         return self.mutation_graphql()
@@ -193,7 +196,7 @@ class Residual(GraphQLTable):
                 return self.create(
                     args.pulsar,
                     args.project_short,
-                    args.ephemeris_id,
+                    args.ephemeris,
                     residual_lines,
                 )
         elif args.subcommand == "update":
@@ -255,12 +258,12 @@ class Residual(GraphQLTable):
         )
 
         # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="Create a new TOA")
+        parser_create = subs.add_parser("create", help="Create a new Residual")
         parser_create.add_argument(
             "pulsar", metavar="PULSAR", type=str, help="Name of the pulsar [str]"
         )
         parser_create.add_argument(
-            "ephemeris_id", metavar="EPH", type=int, help="ID of the timing ephemeris used in this this residual file [int]"
+            "ephemeris", metavar="EPH", type=str, help="Path to the timing ephemeris used to create this residual file [str]"
         )
         parser_create.add_argument(
             "project_short", metavar="PROJ", type=str, help="Short code of the project [str]"
