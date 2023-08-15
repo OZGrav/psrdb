@@ -44,6 +44,7 @@ class Observation(GraphQLTable):
         project_short=None,
         utcs=None,
         utce=None,
+        obs_type='fold',
     ):
         # Convert dates to correct format
         if utcs == "":
@@ -68,6 +69,7 @@ class Observation(GraphQLTable):
             {"field": "project_Short", "value": project_short},
             {"field": "utcStartGte", "value": utcs},
             {"field": "utcStartLte", "value": utce},
+            {"field": "obsType", "value": obs_type},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
