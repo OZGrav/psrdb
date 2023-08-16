@@ -4,6 +4,11 @@ from psrdb.utils.residual import residual_line_to_dict
 from psrdb.utils.other import decode_id
 
 
+def chunk_list(lst, chunk_size):
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i + chunk_size]
+
+
 class Residual(GraphQLTable):
     def __init__(self, client, token):
         GraphQLTable.__init__(self, client, token)
@@ -97,14 +102,15 @@ class Residual(GraphQLTable):
             residual_dict = residual_line_to_dict(residual_line)
             # return only important info as a comma sperated string
             residual_line_info.append(f"{decode_id(residual_dict['id'])},{residual_dict['mjd']},{residual_dict['residual']},{residual_dict['residual_error']},{residual_dict['residual_phase']}")
-        # Upload the residual
-        self.variables = {
-            'pulsar': pulsar,
-            'projectShort': project_short,
-            'ephemerisText': ephemeris_str,
-            'residualLines': residual_line_info,
-        }
-        return self.mutation_graphql()
+        # Upload the residuals 1000 at a time
+        for residual_chunk in chunk_list(residual_line_info, 1000):
+            self.variables = {
+                'pulsar': pulsar,
+                'projectShort': project_short,
+                'ephemerisText': ephemeris_str,
+                'residualLines': residual_chunk,
+            }
+            self.mutation_graphql()
 
     def update(
         self,
