@@ -203,10 +203,13 @@ class Toa(GraphQLTable):
             {"field": "pulsar", "value": pulsar},
             {"field": "pipelineRunId", "value": pipeline_run_id},
             {"field": "dmCorrected", "value": dm_corrected},
-            {"field": "minimumNsubs", "value": minimum_nsubs},
-            {"field": "maximumNsubs", "value": maximum_nsubs},
             {"field": "obsNchan", "value": obs_nchan},
         ]
+        if minimum_nsubs:
+            filters.append({"field": "minimumNsubs", "value": minimum_nsubs})
+        if maximum_nsubs:
+            filters.append({"field": "maximumNsubs", "value": maximum_nsubs})
+
         self.get_dicts = True
         toa_dicts = GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
