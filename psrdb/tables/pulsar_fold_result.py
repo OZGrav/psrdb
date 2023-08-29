@@ -11,6 +11,8 @@ class PulsarFoldResult(GraphQLTable):
         self.field_names = [
             "id",
             "observation { utcStart }",
+            "observation { band }",
+            "observation { duration }",
             "pipelineRun { dm }",
             "pipelineRun { dmErr }",
             "pipelineRun { dmEpoch }",
@@ -69,11 +71,13 @@ class PulsarFoldResult(GraphQLTable):
 
         # Loop over the pulsar_fold_results and dump them as a file
         with open(output_name, "w") as f:
-            f.write("ID,UTC Start,DM,DM error,DM epoch,DM chi2r,DM tres,SN,Flux,RM,RM error, Percentage RFI zapped\n")
+            f.write("ID,UTC Start,Observing band,Duration (s),DM (pc cm^-3),DM error (pc cm^-3),DM epoch (MJD),DM chi2r,DM tres,SN,Flux (mJy),RM (rad m^-2),RM error (rad m^-2),RFI zapped (%)\n")
             for pulsar_fold_result_dict in pulsar_fold_result_dicts:
                 data_line = [
                     str(pulsar_fold_result_dict["id"]),
                     str(pulsar_fold_result_dict["observation"]["utcStart"]),
+                    str(pulsar_fold_result_dict["observation"]["band"]),
+                    str(pulsar_fold_result_dict["observation"]["duration"]),
                     str(pulsar_fold_result_dict["pipelineRun"]["dm"]),
                     str(pulsar_fold_result_dict["pipelineRun"]["dmErr"]),
                     str(pulsar_fold_result_dict["pipelineRun"]["dmEpoch"]),
