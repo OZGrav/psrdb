@@ -1,3 +1,5 @@
+from pulsar_paragraph.pulsar_paragraph import create_pulsar_paragraph
+
 from psrdb.graphql_table import GraphQLTable
 from psrdb.graphql_query import graphql_query_factory
 
@@ -29,6 +31,9 @@ class Pulsar(GraphQLTable):
             }
         }
         """
+        if comment is None:
+            # Generate pulsar paragraph
+            comment = create_pulsar_paragraph(pulsar_names=[name])[0]
         self.variables = {
             "name": name,
             "comment": comment,
@@ -51,6 +56,9 @@ class Pulsar(GraphQLTable):
             }
         }
         """
+        if comment is None:
+            # Generate pulsar paragraph
+            comment = create_pulsar_paragraph(pulsar_names=[name])[0]
         self.variables = {
             "id": id,
             "name": name,
@@ -122,7 +130,7 @@ class Pulsar(GraphQLTable):
         parser_update = subs.add_parser("update", help="update the values of an existing pulsar")
         parser_update.add_argument("id", metavar="ID", type=int, help="database id of the pulsar [int]")
         parser_update.add_argument("name", metavar="name", type=str, help="name of the pulsar [str]")
-        parser_update.add_argument("comment", metavar="COMMENT", type=str, help="description of the pulsar [str]")
+        parser_update.add_argument("--comment", metavar="COMMENT", type=str, help="description of the pulsar [str]")
 
         # create the parser for the "delete" command
         parser_delete = subs.add_parser("delete", help="delete an existing pulsar")
