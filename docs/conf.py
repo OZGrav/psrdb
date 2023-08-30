@@ -45,3 +45,9 @@ html_theme_options = {
     'navigation_depth': 4,
     # Other options...
 }
+
+# Grabs jquery which allows for the flyout menu to work
+html_js_files = [
+    'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js',
+    '_static/flyout.js'
+]
