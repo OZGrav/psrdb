@@ -363,7 +363,7 @@ class Observation(GraphQLTable):
             "--target_id", metavar="TGTID", type=int, help="list observations matching the target (pulsar) id [int]"
         )
         parser_list.add_argument(
-            "--pulsar", metavar="TGTNAME", type=str, help="list observations matching the target (pulsar) name [str]"
+            "--pulsar", metavar="TGTNAME", type=str, nargs='+', help="list observations matching the target (pulsar) name [str]"
         )
         parser_list.add_argument(
             "--telescope_id", metavar="TELID", type=int, help="list observations matching the telescope id [int]"
