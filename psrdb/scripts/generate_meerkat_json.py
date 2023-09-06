@@ -17,18 +17,36 @@ from psrdb.utils import header
 CALIBRATIONS_DIR = config("CALIBRATIONS_DIR", "/fred/oz005/users/aparthas/reprocessing_MK/poln_calibration")
 RESULTS_DIR = config("RESULTS_DIR", "/fred/oz005/kronos")
 FOLDING_DIR = config("FOLDING_DIR", "/fred/oz005/timing")
+SEARCH_DIR  = config("SEARCH_DIR",  "/fred/oz005/search")
 
 
-def generate_obs_length(freq_summed_archive):
+def generate_obs_length(archive):
     """
     Determine the length of the observation from the input archive file
     """
 
-    ar = psr.Archive_load(freq_summed_archive)
+    ar = psr.Archive_load(archive)
     ar = ar.total()
-    length = ar.get_first_Integration().get_duration()
+    return ar.get_first_Integration().get_duration()
 
-    return length
+def get_sf_length(sf_files):
+    """
+    Determine the length of input sf files with the vap command
+    """
+    comm = f"vap -c length {' '.join(sf_files)}"
+    args = shlex.split(comm)
+    proc = subprocess.Popen(args,stdout=subprocess.PIPE)
+    proc.wait()
+    vap_lines = proc.stdout.read().decode("utf-8").split("\n")
+
+    lengths = []
+    print(vap_lines)
+    for line in vap_lines[1:]:
+        if line == '':
+            continue
+        print(line.split())
+        lengths.append(float(line.split()[1].strip()))
+    return sum(lengths)
 
 
 def get_calibration(utc_start):
@@ -106,20 +124,27 @@ def main():
     obs_data.parse()
     obs_data.set("BEAM", args.beam)
 
-    # Check if ther are freq.sum and archive files
+    # Find raw archive and frequency summed files
     freq_summed_archive = f"{RESULTS_DIR}/{args.beam}/{obs_data.utc_start}/{obs_data.source}/freq.sum"
-    archive_files = glob.glob(f"{FOLDING_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.ar")
-    if not os.path.exists(freq_summed_archive):
-        logging.error(f"Could not find freq.sum file for {obs_data.source} {obs_data.utc_start} {args.beam}")
-    if len(archive_files) == 0:
-        logging.error(f"Could not find archive file for {obs_data.source} {obs_data.utc_start} {args.beam}")
-    if not os.path.exists(freq_summed_archive) and len(archive_files) == 0:
+    if obs_data.obs_type == "fold":
+        archive_files = glob.glob(f"{FOLDING_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.ar")
+    elif obs_data.obs_type == "search":
+        print(f"{SEARCH_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.sf")
+        archive_files = glob.glob(f"{SEARCH_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.sf")
+        print(archive_files)
+    if not os.path.exists(freq_summed_archive) and not archive_files:
         logging.error(f"Could not find freq.sum and archive files for {obs_data.source} {obs_data.utc_start} {args.beam}")
         exit()
 
 
-    # Grab observation length from the frequency summed archive
-    obs_length = generate_obs_length(freq_summed_archive)
+    # Check if ther are freq.sum and archive files
+    if not os.path.exists(freq_summed_archive):
+        logging.warning(f"Could not find freq.sum file for {obs_data.source} {obs_data.utc_start} {args.beam}")
+        logging.warning("Finding observation length from archive files (This may take a while)")
+        obs_length = get_sf_length(archive_files)
+    else:
+        # Grab observation length from the frequency summed archive
+        obs_length = generate_obs_length(freq_summed_archive)
 
     cal_type, cal_location = get_calibration(obs_data.utc_start)
 
