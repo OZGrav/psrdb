@@ -9,39 +9,6 @@ psrdb modules
 ================
 
 
-psrdb joins classes
-===================
-
-FoldedObservations
-------------------
-
-.. autoclass:: psrdb.joins.folded_observations.FoldedObservations
-   :members:
-
-GraphQLJoin
------------
-
-.. autoclass:: psrdb.joins.graphql_join.GraphQLJoin
-   :members:
-
-ProcessedObservations
----------------------
-
-.. autoclass:: psrdb.joins.processed_observations.ProcessedObservations
-   :members:
-
-PulsarsLaunches
----------------
-
-.. autoclass:: psrdb.joins.pulsar_launches.PulsarsLaunches
-   :members:
-
-ToaedObservations
------------------
-
-.. autoclass:: psrdb.joins.toaed_observations.ToaedObservations
-   :members:
-
 
 psrdb tables classes
 ===================
@@ -85,13 +52,13 @@ Foldings
 GraphQLClause
 -------------
 
-.. autoclass:: psrdb.tables.graphql_query.GraphQLClause
+.. autoclass:: psrdb.graphql_query.GraphQLClause
    :members:
 
 GraphQLTable
 ------------
 
-.. autoclass:: psrdb.tables.graphql_table.GraphQLTable
+.. autoclass:: psrdb.graphql_table.GraphQLTable
    :members:
 
 Instrumentconfigs

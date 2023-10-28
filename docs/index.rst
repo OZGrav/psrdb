@@ -8,6 +8,7 @@ Welcome to psrdb's documentation!
    installation
    how_to_use
    database_structure
+   observation_ingest
    psrdb_modules
 
 

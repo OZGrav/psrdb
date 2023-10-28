@@ -1,33 +1,23 @@
 #!/usr/bin/env python
 
-from ..psrdb.tables.graphql_table import GraphQLTable
-from ..psrdb.graphql_client import GraphQLClient
-from ..psrdb.tables import (
-    Basebandings,
-    Calibrations,
-    Collections,
-    Ephemerides,
-    Filterbankings,
-    Foldings,
-    Instrumentconfigs,
-    Launches,
-    Observations,
-    Processingcollections,
-    Processings,
-    Programs,
-    Projects,
-    Pulsars,
-    Pulsartargets,
-    Pipelineimages,
-    Pipelinefiles,
-    Pipelines,
-    Sessions,
-    Targets,
-    Telescopes,
-    Templates,
-    Toas,
-)
-from psrdb.joins import FoldedObservations, ProcessedObservations, ToaedObservations
+from psrdb.graphql_table import GraphQLTable
+from psrdb.graphql_client import GraphQLClient
+
+from psrdb.tables.pulsar import Pulsar
+from psrdb.tables.telescope import Telescope
+from psrdb.tables.main_project import MainProject
+from psrdb.tables.project import Project
+from psrdb.tables.ephemeris import Ephemeris
+from psrdb.tables.template import Template
+from psrdb.tables.calibration import Calibration
+from psrdb.tables.observation import Observation
+from psrdb.tables.pipeline_run import PipelineRun
+from psrdb.tables.pulsar_fold_result import PulsarFoldResult
+# from psrdb.tables.fold_pulsar_summary import FoldPulsarSummary
+from psrdb.tables.pipeline_image import PipelineImage
+# from psrdb.tables.pipeline_file import PipelineFile
+from psrdb.tables.toa import Toa
+from psrdb.tables.residual import Residual
 
 
 def main():
@@ -38,35 +28,21 @@ def main():
     subparsers.required = True
 
     tables = [
-        Basebandings,
-        Calibrations,
-        Collections,
-        Ephemerides,
-        Filterbankings,
-        Foldings,
-        Instrumentconfigs,
-        Launches,
-        Observations,
-        Processingcollections,
-        Processings,
-        Programs,
-        Projects,
-        Pulsars,
-        Pulsartargets,
-        Pipelineimages,
-        Pipelinefiles,
-        Pipelines,
-        Sessions,
-        Targets,
-        Telescopes,
-        Templates,
-        Toas,
-    ]
-
-    joins = [
-        FoldedObservations,
-        ProcessedObservations,
-        ToaedObservations,
+        Pulsar,
+        Telescope,
+        MainProject,
+        Project,
+        Ephemeris,
+        Template,
+        Calibration,
+        Observation,
+        PipelineRun,
+        PulsarFoldResult,
+        # FoldPulsarSummary,
+        PipelineImage,
+        # PipelineFile,
+        Toa,
+        Residual,
     ]
 
     configured = []
@@ -76,19 +52,16 @@ def main():
         t.configure_parsers(p)
         configured.append({"name": n, "parser": p, "table": t})
 
-    for j in joins:
-        n = j.get_name()
-        p = subparsers.add_parser(n, help=j.get_description())
-        j.configure_parsers(p)
-        configured.append({"name": n, "parser": p, "table": j})
-
     args = parser.parse_args()
-    GraphQLTable.configure_logging(args)
+    if args.url is None:
+        raise RuntimeError("GraphQL URL must be provided in $PSRDB_URL or via -u option")
+    if args.token is None:
+        raise RuntimeError("GraphQL Token must be provided in $PSRDB_TOKEN or via -t option")
 
     for c in configured:
         if args.command == c["name"]:
             client = GraphQLClient(args.url, args.very_verbose)
-            table = c["table"](client, args.url, args.token)
+            table = c["table"](client, args.token)
             table.set_field_names(args.literal, args.quiet)
             table.set_use_pagination(True)
             response = table.process(args)
