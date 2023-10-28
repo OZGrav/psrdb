@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Observation Ingest &mdash; psrdb  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="_static/_static/flyout.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="psrdb modules" href="psrdb_modules.html" />
+    <link rel="prev" title="Database structure" href="database_structure.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            psrdb
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use.html">How to use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="database_structure.html">Database structure</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Observation Ingest</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#telescope-specific-ingest">Telescope specific ingest</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#meerkat-ingest">MeerKAT ingest</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#uploading-the-observation">Uploading the observation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psrdb_modules.html">psrdb modules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">psrdb</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Observation Ingest</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/observation_ingest.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="observation-ingest">
+<h1>Observation Ingest<a class="headerlink" href="#observation-ingest" title="Permalink to this heading"></a></h1>
+<p>This documentation will describe how observation data is uploaded to the MeerTime database.
+It will first describe telescope specific steps to create a meertime.json and then how to upload the json.</p>
+<section id="telescope-specific-ingest">
+<h2>Telescope specific ingest<a class="headerlink" href="#telescope-specific-ingest" title="Permalink to this heading"></a></h2>
+<section id="meerkat-ingest">
+<h3>MeerKAT ingest<a class="headerlink" href="#meerkat-ingest" title="Permalink to this heading"></a></h3>
+<p>The design of the pulsar backend of MeerKAT (PTUSE) is described <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2020PASA...37...28B/abstract">here</a>.</p>
+<p>For each MeerKAT observation, two directories are created <code class="docutils literal notranslate"><span class="pre">/fred/oz005/kronos/&lt;beam_num&gt;/&lt;utc&gt;/&lt;jname&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">/fred/oz005/timing/&lt;jname&gt;/&lt;utc&gt;/&lt;beam_num&gt;/&lt;frequency&gt;</span></code>.
+The directories are split by <code class="docutils literal notranslate"><span class="pre">&lt;beam_num&gt;</span></code> as sometimes MeerKAT observe multiple sources at the same time (UTC) with different beams.</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">/fred/oz005/kronos/&lt;beam_num&gt;/&lt;utc&gt;/&lt;jname&gt;</span></code> there is a <code class="docutils literal notranslate"><span class="pre">obs.header</span></code> file which contains the configuration that the PTUSE uses to observe a source, most of the information we require is in this file.
+There is also a <code class="docutils literal notranslate"><span class="pre">obs.info</span></code> file which has information about how the PTUSE split the <code class="docutils literal notranslate"><span class="pre">dspsr</span></code> command into subbands, this info does not need to be uploaded.
+The <code class="docutils literal notranslate"><span class="pre">obs.results</span></code> has a signal to noise ratio result of the folded result and the length of the observation in seconds, if the backend has not had enough time to finish the process required for this calculation the file may not exist and will need to be regenerated.</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">/fred/oz005/timing/&lt;jname&gt;/&lt;utc&gt;/&lt;beam_num&gt;/&lt;frequency&gt;</span></code> it will also have the <code class="docutils literal notranslate"><span class="pre">obs.header</span></code>, <code class="docutils literal notranslate"><span class="pre">obs.info</span></code> and <code class="docutils literal notranslate"><span class="pre">obs.results</span></code> file.
+The <code class="docutils literal notranslate"><span class="pre">metadata.json</span></code> is generated to upload the data to the MeeKAT data portal.
+This directory also contains all the archive files that output from the PTUSE in 8 second files.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">meertime.json</span></code> file required for ingest is created with the <code class="docutils literal notranslate"><span class="pre">psrdb/scripts/generate_meerkat_json.py</span></code> script.
+The inputs of the script are the <code class="docutils literal notranslate"><span class="pre">obs.header</span></code> file (this is where it gets most of the metadata) and the beam_num which is worked out from the directory structure.
+The script also works out the calibration type (“pre” or “post”) from the UTC and finds and calibration files that are on disk.
+It uses the frequency summed archive in <code class="docutils literal notranslate"><span class="pre">/fred/oz005/kronos/&lt;beam_num&gt;/&lt;utc&gt;/&lt;jname&gt;/freq.sum</span></code> to work out the observation length and the ephemeris used for folding.</p>
+</section>
+</section>
+<section id="uploading-the-observation">
+<h2>Uploading the observation<a class="headerlink" href="#uploading-the-observation" title="Permalink to this heading"></a></h2>
+<p>To upload an observation we use the <code class="docutils literal notranslate"><span class="pre">metadata.json</span></code> and the script <code class="docutils literal notranslate"><span class="pre">psrdb/scripts/ingest_obs.py</span></code>.</p>
+<p>An example of the <code class="docutils literal notranslate"><span class="pre">metadata.json</span></code> file is shown below</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="s2">&quot;pulsarName&quot;</span><span class="p">:</span> <span class="s2">&quot;J1705-1903&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;telescopeName&quot;</span><span class="p">:</span> <span class="s2">&quot;MeerKAT&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;projectCode&quot;</span><span class="p">:</span> <span class="s2">&quot;SCI-20180516-MB-05&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;delaycal_id&quot;</span><span class="p">:</span> <span class="s2">&quot;20201022-0018&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;cal_type&quot;</span><span class="p">:</span> <span class="s2">&quot;pre&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;cal_location&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+ <span class="s2">&quot;frequency&quot;</span><span class="p">:</span> <span class="mf">1283.58203125</span><span class="p">,</span>
+ <span class="s2">&quot;bandwidth&quot;</span><span class="p">:</span> <span class="mf">856.0</span><span class="p">,</span>
+ <span class="s2">&quot;nchan&quot;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
+ <span class="s2">&quot;beam&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+ <span class="s2">&quot;nant&quot;</span><span class="p">:</span> <span class="mi">61</span><span class="p">,</span>
+ <span class="s2">&quot;nantEff&quot;</span><span class="p">:</span> <span class="mi">61</span><span class="p">,</span>
+ <span class="s2">&quot;npol&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+ <span class="s2">&quot;obsType&quot;</span><span class="p">:</span> <span class="s2">&quot;fold&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;utcStart&quot;</span><span class="p">:</span> <span class="s2">&quot;2020-10-22-16:24:55&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;raj&quot;</span><span class="p">:</span> <span class="s2">&quot;17:05:43.8502743&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;decj&quot;</span><span class="p">:</span> <span class="s2">&quot;-19:03:41.32025&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="mf">1999.5421942429905</span><span class="p">,</span>
+ <span class="s2">&quot;nbit&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+ <span class="s2">&quot;tsamp&quot;</span><span class="p">:</span> <span class="mf">1.196261682242991</span><span class="p">,</span>
+ <span class="s2">&quot;foldNbin&quot;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
+ <span class="s2">&quot;foldNchan&quot;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
+ <span class="s2">&quot;foldTsubint&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+ <span class="s2">&quot;filterbankNbit&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+ <span class="s2">&quot;filterbankNpol&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+ <span class="s2">&quot;filterbankNchan&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+ <span class="s2">&quot;filterbankTsamp&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+ <span class="s2">&quot;filterbankDm&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+ <span class="s2">&quot;ephemerisText&quot;</span><span class="p">:</span> <span class="s2">&quot;PSRJ </span><span class="se">\t</span><span class="s2"> J1705-1903</span><span class="se">\n</span><span class="s2">RAJ  </span><span class="se">\t</span><span class="s2">  17:05:43.8502743  </span><span class="se">\t</span><span class="s2">  2.846e-4</span><span class="se">\n</span><span class="s2">DECJ  </span><span class="se">\t</span><span class="s2">  -19:03:41.32025  </span><span class="se">\t</span><span class="s2">  3.999e-2</span><span class="se">\n</span><span class="s2">F0  </span><span class="se">\t</span><span class="s2">  403.17844370811329346  </span><span class="se">\t</span><span class="s2">  1.289e-9</span><span class="se">\n</span><span class="s2">DM  </span><span class="se">\t</span><span class="s2">  57.50571096535851744  </span><span class="se">\t</span><span class="s2">  5.052e-5</span><span class="se">\n</span><span class="s2">F1  </span><span class="se">\t</span><span class="s2">  -3.4428715379610950e-15  </span><span class="se">\t</span><span class="s2">  6.438e-18</span><span class="se">\n</span><span class="s2">PEPOCH  </span><span class="se">\t</span><span class="s2">  56618  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">POSEPOCH  </span><span class="se">\t</span><span class="s2">  56618  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">DMEPOCH  </span><span class="se">\t</span><span class="s2">  56618  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">PMRA  </span><span class="se">\t</span><span class="s2">  -4.3811121114291140e+0  </span><span class="se">\t</span><span class="s2">  1.3305</span><span class="se">\n</span><span class="s2">PMDEC  </span><span class="se">\t</span><span class="s2">  -1.7888684789156335e+1  </span><span class="se">\t</span><span class="s2">  13.2010</span><span class="se">\n</span><span class="s2">PX  </span><span class="se">\t</span><span class="s2">  0  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">BINARY  </span><span class="se">\t</span><span class="s2">  ELL1  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">PB  </span><span class="se">\t</span><span class="s2">  0.18395403344503906874  </span><span class="se">\t</span><span class="s2">  3.598e-8</span><span class="se">\n</span><span class="s2">A1  </span><span class="se">\t</span><span class="s2">  0.10436244224177347356  </span><span class="se">\t</span><span class="s2">  1.698e-6</span><span class="se">\n</span><span class="s2">PBDOT  </span><span class="se">\t</span><span class="s2">  -3.7178429899716451e-12  </span><span class="se">\t</span><span class="s2">  1.539e-11</span><span class="se">\n</span><span class="s2">TASC  </span><span class="se">\t</span><span class="s2">  56582.21217308180756000000  </span><span class="se">\t</span><span class="s2">  2.285e-4</span><span class="se">\n</span><span class="s2">EPS1  </span><span class="se">\t</span><span class="s2">  7.9300304759274633e-5  </span><span class="se">\t</span><span class="s2">  1.779e-5</span><span class="se">\n</span><span class="s2">EPS2  </span><span class="se">\t</span><span class="s2">  -3.3596418853323134e-5  </span><span class="se">\t</span><span class="s2">  7.178e-6</span><span class="se">\n</span><span class="s2">TZRMJD  </span><span class="se">\t</span><span class="s2">  58855.25408581254015800000  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">TZRFRQ  </span><span class="se">\t</span><span class="s2">  944.52099999999995816000  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">TZRSITE  </span><span class="se">\t</span><span class="s2">  meerkat  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">EPHVER  </span><span class="se">\t</span><span class="s2">  5  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">CLK  </span><span class="se">\t</span><span class="s2">  TT(TAI)  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">UNITS  </span><span class="se">\t</span><span class="s2">  TCB  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">TIMEEPH  </span><span class="se">\t</span><span class="s2">  IF99  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">T2CMETHOD  </span><span class="se">\t</span><span class="s2">  IAU2000B  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">CORRECT_TROPOSPHERE  </span><span class="se">\t</span><span class="s2">  N  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">EPHEM  </span><span class="se">\t</span><span class="s2">  DE421  </span><span class="se">\t</span><span class="s2">  </span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="p">}</span>
+
+
+
+
+
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="database_structure.html" class="btn btn-neutral float-left" title="Database structure" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="psrdb_modules.html" class="btn btn-neutral float-right" title="psrdb modules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Nick Swainston.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
