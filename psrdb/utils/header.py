@@ -44,6 +44,10 @@ class Header(KeyValueStore):
             self.phaseup_id  = self.cfg["PHASEUP_ID"]
         else:
             self.phaseup_id  = None
+        if "SCHEDULE_BLOCK_ID" in self.cfg.keys():
+            self.schedule_block_id  = self.cfg["SCHEDULE_BLOCK_ID"]
+        else:
+            self.schedule_block_id  = None
 
         self.ra  = self.cfg["RA"]
         self.dec = self.cfg["DEC"]
