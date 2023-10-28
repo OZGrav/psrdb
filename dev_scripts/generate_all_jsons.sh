@@ -10,6 +10,7 @@ for path in $(find /fred/oz005/timing -type f -name "obs.header"); do
     utc=${directories[-4]}
     jname=${directories[-5]}
     IFS=" "
-    echo "making ${utc}_${beam}_${jname}.json"
-    poetry run generate_meerkat_json $path $beam -o test_jsons -n "${utc}_${beam}_${jname}.json"
+    echo "Making meetime.json for $path"
+    generate_meerkat_json $path $beam -o ${path%%obs.header}
+    ingest_obs ${path%%obs.header}/meertime.json
 done
