@@ -10,7 +10,14 @@ for path in $(find /fred/oz005/timing -type f -name "obs.header"); do
     utc=${directories[-4]}
     jname=${directories[-5]}
     IFS=" "
-    echo "Making meetime.json for $path"
-    generate_meerkat_json $path $beam -o ${path%%obs.header}
-    ingest_obs ${path%%obs.header}/meertime.json
+    if [ -e "${path%%obs.header}/meertime.json" ]; then
+        echo "Skipping $path"
+    else
+        echo "Making meetime.json for $path"
+        EXIT_CODE=0
+        generate_meerkat_json $path $beam -o ${path%%obs.header} || EXIT_CODE=$?
+        if [ "$EXIT_CODE" -ne 42 ]; then
+            ingest_obs ${path%%obs.header}/meertime.json
+        fi
+    fi
 done

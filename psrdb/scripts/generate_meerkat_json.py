@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-import glob
-import logging
 import os
+import sys
+import glob
 import json
-from datetime import datetime
-from decouple import config
 import shlex
+import logging
 import subprocess
+from decouple import config
+from datetime import datetime
 
 import psrchive as psr
 
@@ -132,13 +133,16 @@ def main():
         print(f"{SEARCH_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.sf")
         archive_files = glob.glob(f"{SEARCH_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.sf")
         print(archive_files)
-    if not os.path.exists(freq_summed_archive) and not archive_files:
-        logging.error(f"Could not find freq.sum and archive files for {obs_data.source} {obs_data.utc_start} {args.beam}")
-        exit()
+    if obs_data.obs_type != "cal":
+        if not os.path.exists(freq_summed_archive) and not archive_files:
+            logging.error(f"Could not find freq.sum and archive files for {obs_data.source} {obs_data.utc_start} {args.beam}")
+            sys.exit(42)
 
 
     # Check if ther are freq.sum and archive files
-    if not os.path.exists(freq_summed_archive):
+    if obs_data.obs_type == "cal":
+        obs_length = -1
+    elif not os.path.exists(freq_summed_archive):
         logging.warning(f"Could not find freq.sum file for {obs_data.source} {obs_data.utc_start} {args.beam}")
         logging.warning("Finding observation length from archive files (This may take a while)")
         obs_length = get_sf_length(archive_files)
