@@ -29,6 +29,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'numpydoc',
     'myst_parser',
+    'sphinxarg.ext',
 ]
 
 templates_path = ['_templates']

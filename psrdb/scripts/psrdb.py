@@ -13,9 +13,7 @@ from psrdb.tables.calibration import Calibration
 from psrdb.tables.observation import Observation
 from psrdb.tables.pipeline_run import PipelineRun
 from psrdb.tables.pulsar_fold_result import PulsarFoldResult
-# from psrdb.tables.fold_pulsar_summary import FoldPulsarSummary
 from psrdb.tables.pipeline_image import PipelineImage
-# from psrdb.tables.pipeline_file import PipelineFile
 from psrdb.tables.toa import Toa
 from psrdb.tables.residual import Residual
 
@@ -38,9 +36,7 @@ def main():
         Observation,
         PipelineRun,
         PulsarFoldResult,
-        # FoldPulsarSummary,
         PipelineImage,
-        # PipelineFile,
         Toa,
         Residual,
     ]
@@ -60,9 +56,9 @@ def main():
 
     for c in configured:
         if args.command == c["name"]:
-            client = GraphQLClient(args.url, args.very_verbose)
-            table = c["table"](client, args.token)
-            table.set_field_names(args.literal, args.quiet)
+            client = GraphQLClient(args.url, args.token, args.very_verbose)
+            table = c["table"](client)
+            table.set_quiet(args.quiet)
             table.set_use_pagination(True)
             response = table.process(args)
             if args.verbose or args.very_verbose:

@@ -10,14 +10,20 @@ or if you don't use poetry, you can instead run
 pip install .
 ```
 
-To use the database you need a download token to read it or an ingest token to read and write/upload to it.
+To interact with the database you need to get an account on the https://pulsars.org.au/ website.
+Once you have an account you then need to generate a token on the page https://pulsars.org.au/token_generate/.
 
-To get a read token run
-```
-get_token.sh
-```
-
-The output token should be set as an environment variable using
+Set this token using the following command (you can put this in your `~/.bashrc`):
 ```
 export PSRDB_TOKEN=tokenhere
-export PSRDB_URL=https://pulsars.org.au/api/graphql/
+```
+
+## Optional
+
+If you want to change the default url of https://pulsars.org.au/api/, you can change it by setting:
+
+```
+export PSRDB_URL=https://customurl.com/api/
+```
+
+It is likely that only developers will need to set this option.

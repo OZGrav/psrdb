@@ -10,6 +10,7 @@ Welcome to psrdb's documentation!
    database_structure
    observation_ingest
    psrdb_modules
+   calibration
 
 
 
