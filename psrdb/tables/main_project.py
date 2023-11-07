@@ -2,20 +2,59 @@ from psrdb.graphql_table import GraphQLTable
 
 
 class MainProject(GraphQLTable):
+    """Class for interacting with the MainProject database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.table_name = "main_project"
         self.field_names = ["id", "telescope {name} ", "name"]
 
     def list(self, id=None, telescope=None, name=None):
-        """Return a list of records matching the id and/or the telescope id, name."""
+        """Return a list of MainProject information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        telescope : str, optional
+            Filter by the telescope name, by default None
+        name : str, optional
+            Filter by the name, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
+            {"field": "id", "value": id},
             {"field": "telescope", "value": telescope},
             {"field": "name", "value": name},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def create(self, telescope, name):
+        """Create a new MainProject database object.
+
+        Parameters
+        ----------
+        telescope : str
+            The telescope name
+        name : str
+            The name of the MainProject
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createMainProject"
         self.mutation = """
         mutation ($telescope: String!, $name: String!) {
@@ -36,6 +75,22 @@ class MainProject(GraphQLTable):
         return self.mutation_graphql()
 
     def update(self, id, telescope, name):
+        """Update a MainProject database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+        telescope : str
+            The telescope name
+        name : str
+            The name of the MainProject
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "updateMainProject"
         self.mutation = """
         mutation ($id: Int!, $telescope: String!, $name: String!) {
@@ -57,7 +112,19 @@ class MainProject(GraphQLTable):
         }
         return self.mutation_graphql()
 
-    def delete(self, id, telescope, name):
+    def delete(self, id):
+        """Delete a MainProject database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deleteMainProject"
         self.mutation = """
         mutation ($id: Int!) {
@@ -68,8 +135,6 @@ class MainProject(GraphQLTable):
         """
         self.variables = {
             "id": id,
-            "telescope": telescope,
-            "name": name,
         }
         return self.mutation_graphql()
 
@@ -85,7 +150,7 @@ class MainProject(GraphQLTable):
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):

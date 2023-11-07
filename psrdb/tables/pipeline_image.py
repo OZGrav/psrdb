@@ -4,6 +4,13 @@ from psrdb.graphql_table import GraphQLTable
 
 
 class PipelineImage(GraphQLTable):
+    """Class for interacting with the PipelineImage database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.record_name = "pipeline_image"
@@ -11,9 +18,25 @@ class PipelineImage(GraphQLTable):
         self.field_names = ["id", "image", "imageType", "resolution", "cleaned", "pipelineRun {id}"]
 
     def list(self, id=None, pipeline_run_id=None):
-        """Return a list of records matching the id and/or the pipelineRun id."""
+        """Return a list of PipelineImage information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        pipeline_run_id : int, optional
+            Filter by the pipeline run ID, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
-            {"field": "processing", "value": pipeline_run_id},
+            {"field": "id", "value": id},
+            {"field": "pipelineRunId", "value": pipeline_run_id},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
@@ -25,6 +48,26 @@ class PipelineImage(GraphQLTable):
             resolution,
             cleaned,
         ):
+        """Create a new PipelineImage database object.
+
+        Parameters
+        ----------
+        pipeline_run_id : int
+            The ID of the PipelineRun database object this image is associated with.
+        image_path : str
+            The path to the image file.
+        image_type : str
+            The type of image (profile, profile-pol, phase-time, phase-freq, bandpass, snr-cumul, snr-single).
+        resolution : str
+            The resolution of the image (high or low).
+        cleaned : bool
+            Whether the image is from cleaned data (RFI removed).
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         # Open the file in binary mode
         with open(image_path, 'rb') as file:
             variables = {
@@ -55,7 +98,7 @@ class PipelineImage(GraphQLTable):
         elif args.subcommand == "list":
             return self.list(args.id, args.processing_id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):

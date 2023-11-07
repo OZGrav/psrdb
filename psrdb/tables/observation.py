@@ -4,6 +4,13 @@ from psrdb.graphql_table import GraphQLTable
 
 
 class Observation(GraphQLTable):
+    """Class for interacting with the Observation database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
     def __init__(self, client, logger=None):
         GraphQLTable.__init__(self, client, logger)
         self.table_name = "observation"
@@ -32,6 +39,34 @@ class Observation(GraphQLTable):
         utce=None,
         obs_type='fold',
     ):
+        """Return a list of Observation information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        pulsar_name : str, optional
+            Filter by the pulsar name, by default None
+        telescope_name : str, optional
+            Filter by the telescope name, by default None
+        project_id : int, optional
+            Filter by the project id, by default None
+        project_short : str, optional
+            Filter by the project short name, by default None
+        utcs : str, optional
+            Filter by the utc start time greater than or equal to the timestamp in the format YYYY-MM-DDTHH:MM:SS+00:00, by default None
+        utce : str, optional
+            Filter by the utc start time less than or equal to the timestamp in the format YYYY-MM-DDTHH:MM:SS+00:00, by default None
+        obs_type : str, optional
+            Filter by the observation type (fold, search or cal), by default 'fold'
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         # Convert dates to correct format
         if utcs == "":
             utcs = None
@@ -49,6 +84,7 @@ class Observation(GraphQLTable):
             pulsar_name = None
         """Return a list of records matching the id and/or any of the arguments."""
         filters = [
+            {"field": "id", "value": id},
             {"field": "pulsar_Name", "value": pulsar_name},
             {"field": "telescope_Name", "value": telescope_name},
             {"field": "project_Id", "value": project_id},
@@ -89,6 +125,70 @@ class Observation(GraphQLTable):
         filterbankTsamp,
         filterbankDm,
     ):
+        """Create a new Observation database object.
+
+        Parameters
+        ----------
+        pulsarName : str
+            The pulsar name.
+        telescopeName : str
+            The telescope name.
+        projectCode : str
+            The project code.
+        calibrationId : int
+            The ID of the Calibration database object.
+        ephemerisText : str
+            The ephemeris text as a single string (includes new line characters).
+        frequency : float
+            The frequency of the observation in MHz.
+        bandwidth : float
+            The bandwidth of the observation in MHz.
+        nchan : int
+            The number of frequency channels.
+        beam : int
+            The beam number.
+        nant : int
+            The number of antennas used in the observation.
+        nantEff : int
+            The effective number of antennas used in the observation.
+        npol : int
+            The number of polarisations.
+        obsType : str
+            The type of observation (fold, search or cal).
+        utcStart : `datetime`
+            The UTC start time of the observation as a `datetime` object.
+        raj : str
+            The right ascension of the observation in HH:MM:SS.SS format.
+        decj : str
+            The declination of the observation in DD:MM:SS.SS format.
+        duration : float
+            The duration of the observation in seconds.
+        nbit : int
+            The number of bits per sample.
+        tsamp : float
+            The sampling time in microseconds.
+        foldNbin : int
+            The number of bins in the folded data (None for non fold observations).
+        foldNchan : int
+            The number of frequency channels in the folded data (None for non fold observations).
+        foldTsubint : int
+            The number of time samples in each sub-integration of the folded data (None for non fold observations).
+        filterbankNbit : int
+            The number of bits per sample in the filterbank data (None for non search observations).
+        filterbankNpol : int
+            The number of polarisations in the filterbank data (None for non search observations).
+        filterbankNchan : int
+            The number of frequency channels in the filterbank data (None for non search observations).
+        filterbankTsamp : float
+            The sampling time in microseconds in the filterbank data (None for non search observations).
+        filterbankDm : float
+            The dispersion measure in the filterbank data (None for non search observations).
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         # create a new record
         self.mutation_name = "createObservation"
         self.mutation = """
@@ -192,72 +292,216 @@ class Observation(GraphQLTable):
     def update(
         self,
         id,
-        target,
-        calibration,
-        telescope,
-        instrument_config,
-        project,
-        config,
-        utc,
-        duration,
+        pulsarName,
+        telescopeName,
+        projectCode,
+        calibrationId,
+        ephemerisText,
+        frequency,
+        bandwidth,
+        nchan,
+        beam,
         nant,
-        nanteff,
-        suspect,
-        comment,
+        nantEff,
+        npol,
+        obsType,
+        utcStart,
+        raj,
+        decj,
+        duration,
+        nbit,
+        tsamp,
+        foldNbin,
+        foldNchan,
+        foldTsubint,
+        filterbankNbit,
+        filterbankNpol,
+        filterbankNchan,
+        filterbankTsamp,
+        filterbankDm,
     ):
+        """Update a Observation database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+        pulsarName : str
+            The pulsar name.
+        telescopeName : str
+            The telescope name.
+        projectCode : str
+            The project code.
+        calibrationId : int
+            The ID of the Calibration database object.
+        ephemerisText : str
+            The ephemeris text as a single string (includes new line characters).
+        frequency : float
+            The frequency of the observation in MHz.
+        bandwidth : float
+            The bandwidth of the observation in MHz.
+        nchan : int
+            The number of frequency channels.
+        beam : int
+            The beam number.
+        nant : int
+            The number of antennas used in the observation.
+        nantEff : int
+            The effective number of antennas used in the observation.
+        npol : int
+            The number of polarisations.
+        obsType : str
+            The type of observation (fold, search or cal).
+        utcStart : `datetime`
+            The UTC start time of the observation as a `datetime` object.
+        raj : str
+            The right ascension of the observation in HH:MM:SS.SS format.
+        decj : str
+            The declination of the observation in DD:MM:SS.SS format.
+        duration : float
+            The duration of the observation in seconds.
+        nbit : int
+            The number of bits per sample.
+        tsamp : float
+            The sampling time in microseconds.
+        foldNbin : int
+            The number of bins in the folded data (None for non fold observations).
+        foldNchan : int
+            The number of frequency channels in the folded data (None for non fold observations).
+        foldTsubint : int
+            The number of time samples in each sub-integration of the folded data (None for non fold observations).
+        filterbankNbit : int
+            The number of bits per sample in the filterbank data (None for non search observations).
+        filterbankNpol : int
+            The number of polarisations in the filterbank data (None for non search observations).
+        filterbankNchan : int
+            The number of frequency channels in the filterbank data (None for non search observations).
+        filterbankTsamp : float
+            The sampling time in microseconds in the filterbank data (None for non search observations).
+        filterbankDm : float
+            The dispersion measure in the filterbank data (None for non search observations).
+
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "updateObservation"
         self.mutation = """
-        mutation ($id: Int!, $target: Int!, $calibration: Int!, $telescope: Int!, $instrument_config: Int!, $project: Int!, $config: JSONString!, $duration: Float!, $utc_start: DateTime!, $nant: Int!,   $nant_eff: Int!, $suspect: Boolean!, $comment: String) {
-            updateObservation(id: $id, input: {
-                target_id: $target,
-                calibration_id: $calibration,
-                telescope_id: $telescope,
-                instrument_config_id: $instrument_config,
-                project_id: $project,
-                config: $config,
-                utcStart: $utc_start,
-                duration: $duration,
+        mutation (
+            $id: Int!,
+            $pulsarName: String!,
+            $telescopeName: String!,
+            $projectCode: String!,
+            $calibrationId: Int!,
+            $frequency: Float!,
+            $bandwidth: Float!,
+            $nchan: Int!,
+            $beam: Int!,
+            $nant: Int!,
+            $nantEff: Int!,
+            $npol: Int!,
+            $obsType: String!,
+            $utcStart: DateTime!,
+            $raj: String!,
+            $decj: String!,
+            $duration: Float!,
+            $nbit: Int!,
+            $tsamp: Float!,
+            # Fold options
+            $ephemerisText: String,
+            $foldNbin: Int,
+            $foldNchan: Int,
+            $foldTsubint: Int,
+            # Search options
+            $filterbankNbit: Int,
+            $filterbankNpol: Int,
+            $filterbankNchan: Int,
+            $filterbankTsamp: Float,
+            $filterbankDm: Float,
+        ) {
+            updateObservation(input: {
+                id: $id,
+                pulsarName: $pulsarName,
+                telescopeName: $telescopeName,
+                projectCode: $projectCode,
+                calibrationId: $calibrationId,
+                frequency: $frequency,
+                bandwidth: $bandwidth,
+                nchan: $nchan,
+                beam: $beam,
                 nant: $nant,
-                nantEff: $nant_eff,
-                suspect: $suspect,
-                comment: $comment
+                nantEff: $nantEff,
+                npol: $npol,
+                obsType: $obsType,
+                utcStart: $utcStart,
+                raj: $raj,
+                decj: $decj,
+                duration: $duration,
+                nbit: $nbit,
+                tsamp: $tsamp,
+                ephemerisText: $ephemerisText,
+                foldNbin: $foldNbin,
+                foldNchan: $foldNchan,
+                foldTsubint: $foldTsubint,
+                filterbankNbit: $filterbankNbit,
+                filterbankNpol: $filterbankNpol,
+                filterbankNchan: $filterbankNchan,
+                filterbankTsamp: $filterbankTsamp,
+                filterbankDm: $filterbankDm,
             }) {
                 observation {
-                    id,
-                    target { id },
-                    calibration { id },
-                    telescope { id },
-                    instrumentConfig { id },
-                    project { id },
-                    config,
-                    utcStart,
-                    duration,
-                    nant,
-                    nantEff,
-                    suspect,
-                    comment
+                    id
                 }
             }
         }
         """
         self.variables = {
             "id": id,
-            "target": target,
-            "calibration": calibration,
-            "telescope": telescope,
-            "instrument_config": instrument_config,
-            "project": project,
-            "config": config,
-            "utc_start": utc,
-            "duration": duration,
+            "pulsarName": pulsarName,
+            "telescopeName": telescopeName,
+            "projectCode": projectCode,
+            "calibrationId": calibrationId,
+            "ephemerisText": ephemerisText,
+            "frequency": frequency,
+            "bandwidth": bandwidth,
+            "nchan": nchan,
+            "beam": beam,
             "nant": nant,
-            "nant_eff": nanteff,
-            "suspect": suspect,
-            "comment": comment,
+            "nantEff": nantEff,
+            "npol": npol,
+            "obsType": obsType,
+            "utcStart": utcStart,
+            "raj": raj,
+            "decj": decj,
+            "duration": duration,
+            "nbit": nbit,
+            "tsamp": tsamp,
+            "foldNbin": foldNbin,
+            "foldNchan": foldNchan,
+            "foldTsubint": foldTsubint,
+            "filterbankNbit": filterbankNbit,
+            "filterbankNpol": filterbankNpol,
+            "filterbankNchan": filterbankNchan,
+            "filterbankTsamp": filterbankTsamp,
+            "filterbankDm": filterbankDm,
         }
         return self.mutation_graphql()
 
     def delete(self, id):
+        """Delete a Observation database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deleteObservation"
         self.mutation = """
         mutation ($id: Int!) {
@@ -318,7 +562,7 @@ class Observation(GraphQLTable):
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):

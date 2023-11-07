@@ -2,6 +2,13 @@ from psrdb.graphql_table import GraphQLTable
 
 
 class PulsarFoldResult(GraphQLTable):
+    """Class for interacting with the PulsarFoldResult database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.table_name = "pulsar_fold_result"
@@ -31,7 +38,26 @@ class PulsarFoldResult(GraphQLTable):
             utcStart=None,
             beam=None
         ):
-        """Return a list of records matching the id and/or the provided arguments."""
+        """Return a list of PulsarFoldResult information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        pulsar : str, optional
+            Filter by the pulsar name, by default None
+        mainProject : str, optional
+            Filter by the main project name, by default None
+        utcStart : str, optional
+            Filter by the utcStart, by default None
+        beam : int, optional
+            Filter by the beam number, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
             {"field": "pulsar", "value": pulsar},
             {"field": "mainProject", "value": mainProject},
@@ -109,7 +135,7 @@ class PulsarFoldResult(GraphQLTable):
                 args.beam,
             )
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):

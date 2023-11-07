@@ -2,25 +2,70 @@ from psrdb.graphql_table import GraphQLTable
 
 
 class Project(GraphQLTable):
+    """Class for interacting with the Project database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.table_name = "project"
         self.field_names = ["id", "mainProject {name}", "code", "short", "embargoPeriod", "description"]
 
     def list(self, id=None, mainProject=None, code=None):
-        """Return a list of records matching the id and/or the program id, code."""
+        """Return a list of Project information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        mainProject : str, optional
+            Filter by the mainProject name, by default None
+        code : str, optional
+            Filter by the code, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
+            {"field": "id", "value": id},
             {"field": "mainProject", "value": mainProject},
             {"field": "code", "value": code},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
-    def create(self, mainproject, code, short, embargo_period, description):
+    def create(self, main_project, code, short, embargo_period, description):
+        """Create a new Project database object.
+
+        Parameters
+        ----------
+        main_project : str
+            The name of the MainProject this project is under.
+        code : str
+            The code of the project.
+        short : str
+            The short name of the project (e.g. PTA).
+        embargo_period : int
+            The embargo period in days.
+        description : str
+            A description of the project.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createProject"
         self.mutation = """
-        mutation ($code: String!, $mainproject: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
+        mutation ($code: String!, $main_project: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
             createProject(input: {
-                mainProjectName: $mainproject,
+                mainProjectName: $main_project,
                 code: $code,
                 short: $short,
                 embargoPeriod: $embargoPeriod,
@@ -33,7 +78,7 @@ class Project(GraphQLTable):
         }
         """
         self.variables = {
-            "mainproject": mainproject,
+            "main_project": main_project,
             "code": code,
             "short": short,
             "embargoPeriod": embargo_period,
@@ -41,12 +86,34 @@ class Project(GraphQLTable):
         }
         return self.mutation_graphql()
 
-    def update(self, id, mainproject, code, short, embargo_period, description):
+    def update(self, id, main_project, code, short, embargo_period, description):
+        """Update a Project database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+        main_project : str
+            The name of the MainProject this project is under.
+        code : str
+            The code of the project.
+        short : str
+            The short name of the project (e.g. PTA).
+        embargo_period : int
+            The embargo period in days.
+        description : str
+            A description of the project.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "updateProject"
         self.mutation = """
-        mutation ($id: Int!, $mainproject: String!, $code: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
+        mutation ($id: Int!, $main_project: String!, $code: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
             updateProject(id: $id, input: {
-                mainProjectName: $mainproject,
+                mainProjectName: $main_project,
                 code: $code,
                 short: $short,
                 embargoPeriod: $embargoPeriod,
@@ -65,7 +132,7 @@ class Project(GraphQLTable):
         """
         self.variables = {
             "id": id,
-            "mainproject": mainproject,
+            "main_project": main_project,
             "code": code,
             "short": short,
             "embargoPeriod": embargo_period,
@@ -74,6 +141,18 @@ class Project(GraphQLTable):
         return self.mutation_graphql()
 
     def delete(self, id):
+        """Delete a Project database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deleteProject"
         self.mutation = """
         mutation ($id: Int!) {
@@ -100,7 +179,7 @@ class Project(GraphQLTable):
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):

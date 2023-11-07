@@ -5,6 +5,13 @@ from psrdb.graphql_table import GraphQLTable
 
 
 class Ephemeris(GraphQLTable):
+    """Class for interacting with the Ephemeris database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.table_name = "ephemeris"
@@ -34,8 +41,29 @@ class Ephemeris(GraphQLTable):
             "validTo",
         ]
 
-    def list(self, id=None, pulsar_id=None, p0=None, dm=None, rm=None, eph=None):
-        """Return a list of records matching the id and/or the pulsar id, p0, dm, rm."""
+    def list(self, id=None, pulsar_id=None, p0=None, dm=None, eph=None):
+        """Return a list of Ephemeris information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None.
+        pulsar_id : int, optional
+            Filter by the pulsar ID, by default None.
+        p0 : float, optional
+            Filter by the pulsar period, by default None.
+        dm : float, optional
+            Filter by the pulsar DM, by default None.
+        eph : str, optional
+            Filter by the ephemeris hash, by default None.
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         # P0 is stored with a maximum of 8 decimal places only
         m = 10 ** 8
         if p0 is None:
@@ -50,6 +78,7 @@ class Ephemeris(GraphQLTable):
             eph_hash = hashlib.md5(json.dumps(eph_json, sort_keys=True, indent=2).encode("utf-8")).hexdigest()
 
         filters = [
+            {"field": "id", "value": id},
             {"field": "pulsar_Id", "value": pulsar_id},
             {"field": "p0", "value": p0_filtered},
             {"field": "dm", "value": dm},
@@ -65,6 +94,26 @@ class Ephemeris(GraphQLTable):
             project_short=None,
             comment=None,
         ):
+        """Create a new Ephemeris database object.
+
+        Parameters
+        ----------
+        pulsar : str
+            The pulsar name.
+        ephemeris : str
+            The ephemeris text as a single string (includes new line characters).
+        project_code : str, optional
+            The project code, by default None
+        project_short : str, optional
+            The project short name (e.g PTA), by default None
+        comment : str, optional
+            A comment about the ephemeris, by default None
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createEphemeris"
         self.mutation = """
         mutation (
@@ -100,6 +149,28 @@ class Ephemeris(GraphQLTable):
         return self.mutation_graphql()
 
     def update(self, id, pulsar, created_at, created_by, ephemeris, p0, dm, rm, comment, valid_from, valid_to):
+        """Update a Ephemeris database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+        pulsar : str
+            The pulsar name.
+        ephemeris : str
+            The ephemeris text as a single string (includes new line characters).
+        project_code : str, optional
+            The project code, by default None
+        project_short : str, optional
+            The project short name (e.g PTA), by default None
+        comment : str, optional
+            A comment about the ephemeris, by default None
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "updateEphemeris"
         self.mutation = """
         mutation ($id: Int!, $pulsar: Int!, $created_at: DateTime!, $created_by: String!, $ephemeris: JSONString!, $p0: Decimal!, $dm: Float!, $rm: Float!, $comment: String!, $valid_from: DateTime!, $valid_to: DateTime!) {
@@ -146,6 +217,18 @@ class Ephemeris(GraphQLTable):
         return self.mutation_graphql()
 
     def delete(self, id):
+        """Delete a Ephemeris database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deleteEphemeris"
         self.mutation = """
         mutation ($id: Int!) {
@@ -188,7 +271,7 @@ class Ephemeris(GraphQLTable):
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):

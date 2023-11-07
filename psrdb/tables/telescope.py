@@ -2,19 +2,54 @@ from psrdb.graphql_table import GraphQLTable
 
 
 class Telescope(GraphQLTable):
+    """Class for interacting with the Telescope database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.table_name = "telescope"
         self.field_names = ["id", "name"]
 
     def list(self, id=None, name=None):
-        """Return a list of records matching the id and/or the name."""
+        """Return a list of Telescope information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        name : str, optional
+            Filter by the name, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
+            {"field": "id", "value": id},
             {"field": "name", "value": name},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def create(self, name):
+        """Create a new Telescope database object.
+
+        Parameters
+        ----------
+        name : str
+            The name of the Telescope.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createTelescope"
         self.mutation = """
         mutation ($name: String!) {
@@ -33,6 +68,20 @@ class Telescope(GraphQLTable):
         return self.mutation_graphql()
 
     def update(self, id, name):
+        """Update a Telescope database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID.
+        name : str
+            The name of the Telescope.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "updateTelescope"
         self.mutation = """
         mutation ($id: Int!, $name: String!) {
@@ -53,6 +102,18 @@ class Telescope(GraphQLTable):
         return self.mutation_graphql()
 
     def delete(self, id):
+        """Delete a Telescope database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deleteTelescope"
         self.mutation = """
         mutation ($id: Int!) {
@@ -78,7 +139,7 @@ class Telescope(GraphQLTable):
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):

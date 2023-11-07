@@ -15,27 +15,45 @@ class Calibration(GraphQLTable):
         self.field_names = ["id", "delayCalId", "phaseUpId", "calibrationType", "location"]
 
     def list(self, id=None, type=None):
-        """Return a list of records matching the id and/or the type.
+        """Return a list of Calibration information based on the `self.field_names` and filtered by the parameters.
 
         Parameters
         ----------
         id : int, optional
-            _description_, by default None
+            Filter by the database ID, by default None
         type : str, optional
-            _description_, by default None
+            Filter by the observation type (pre or post), by default None
 
         Returns
         -------
-        _type_
-            _description_
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
         """
         filters = [
+            {"field": "id", "value": id},
             {"field": "type", "value": type},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def create(self, schedule_block_id, type, location):
-        """Create a new calibration record."""
+        """Create a new Calibration database object.
+
+        Parameters
+        ----------
+        schedule_block_id : str
+            The schedule block ID which this calibration is associated with.
+        type : str
+            The type of calibration (pre or post).
+        location : str
+            The location of the calibration file on the filesystem (if a post type calibration).
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createCalibration"
         self.mutation = """
         mutation (
@@ -61,8 +79,25 @@ class Calibration(GraphQLTable):
         }
         return self.mutation_graphql()
 
-    def update(self, id, delay_cald_id, type, location):
-        """Update the values of an existing calibration record."""
+    def update(self, id, schedule_block_id, type, location):
+        """Update a Calibration database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+        schedule_block_id : str
+            The schedule block ID which this calibration is associated with.
+        type : str
+            The type of calibration (pre or post).
+        location : str
+            The location of the calibration file on the filesystem (if a post type calibration).
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "updateCalibration"
         self.mutation = """
         mutation ($id: Int!, $calibration_type: String!, $location: String!) {
@@ -79,14 +114,26 @@ class Calibration(GraphQLTable):
         }
         """
         self.variables = {
-            "delay_cald_id": delay_cald_id,
+            "id": id,
+            "schedule_block_id": schedule_block_id,
             "calibration_type": type,
             "location": location,
         }
         return self.mutation_graphql()
 
     def delete(self, id):
-        """Delete an existing calibration record."""
+        """Delete a Calibration database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deleteCalibration"
         self.mutation = """
         mutation ($id: Int!) {

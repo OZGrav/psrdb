@@ -4,6 +4,13 @@ from psrdb.graphql_table import GraphQLTable
 
 
 class Template(GraphQLTable):
+    """Class for interacting with the Template database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.table_name = "template"
@@ -20,12 +27,32 @@ class Template(GraphQLTable):
             "comment",
         ]
 
-    def list(self, id=None, pulsar_id=None, frequency=None, bandwidth=None):
-        """Return a list of records matching the id and/or the pulsar id, frequency, bandwidth."""
+    def list(self, id=None, pulsar_name=None, band=None, project_short=None):
+        """Return a list of Template information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        pulsar_name : str, optional
+            Filter by the pulsar name, by default None
+        band : str, optional
+            Filter by the band, by default None
+        project_short : str, optional
+            Filter by the project short name, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
-            {"field": "pulsar_Id", "value": pulsar_id},
-            {"field": "frequency", "value": frequency},
-            {"field": "bandwidth", "value": bandwidth},
+            {"field": "id", "value": id},
+            {"field": "pulsar_Name", "value": pulsar_name},
+            {"field": "band", "value": band},
+            {"field": "project_Short", "value": project_short},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
@@ -37,6 +64,26 @@ class Template(GraphQLTable):
             project_code=None,
             project_short=None,
         ):
+        """Create a new Template database object.
+
+        Parameters
+        ----------
+        pulsar_name : str
+            The name of the pulsar.
+        band : str
+            The band of the template (e.g. SBAND).
+        template_path : str
+            The path to the template file.
+        project_code : str, optional
+            The code of the project, by default None
+        project_short : str, optional
+            The short name of the project (e.g. PTA), by default None
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         # Open the file in binary mode
         with open(template_path, 'rb') as file:
             variables = {
@@ -66,7 +113,7 @@ class Template(GraphQLTable):
         elif args.subcommand == "list":
             return self.list(args.id, args.pulsar, args.frequency, args.bandwidth)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):

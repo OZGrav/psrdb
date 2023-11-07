@@ -37,7 +37,7 @@ PipelineImage
 -------------
 
 .. autoclass:: psrdb.tables.pipeline_image.PipelineImage
-   :members: list, create, update, delete
+   :members: list, create
 
 PipelineRun
 -----------
@@ -55,7 +55,7 @@ PulsarFoldResult
 ----------------
 
 .. autoclass:: psrdb.tables.pulsar_fold_result.PulsarFoldResult
-   :members: list, create, update, delete
+   :members: list, download
 
 Pulsar
 ------
@@ -67,13 +67,13 @@ Residual
 --------
 
 .. autoclass:: psrdb.tables.residual.Residual
-   :members: list, create, update, delete
+   :members: list, create
 
 Telescope
 ---------
 
 .. autoclass:: psrdb.tables.telescope.Telescope
-   :members: list, create, update, delete
+   :members: list, create
 
 Template
 --------
@@ -85,4 +85,4 @@ Toa
 ---
 
 .. autoclass:: psrdb.tables.toa.Toa
-   :members: list, create, update, delete
+   :members: list, create, delete, download

@@ -3,6 +3,13 @@ from psrdb.utils.toa import toa_line_to_dict, toa_dict_to_line
 
 
 class Toa(GraphQLTable):
+    """Class for interacting with the Toa database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.table_name = "toa"
@@ -33,14 +40,53 @@ class Toa(GraphQLTable):
             "subint",
         ]
 
-    def list(self, id=None, processing_id=None, input_folding_id=None, timing_ephemeris_id=None, template_id=None):
-        """Return a list of records matching the id and/or the provided arguments."""
+    def list(
+        self,
+        id=None,
+        pulsar=None,
+        pipeline_run_id=None,
+        dm_corrected=None,
+        minimum_nsubs=None,
+        maximum_nsubs=None,
+        obs_nchan=None,
+    ):
+        """Return a list of Toa information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        pulsar : str, optional
+            Filter by the pulsar name, by default None
+        pipeline_run_id : int, optional
+            Filter by the pipeline run id, by default None
+        dm_corrected : bool, optional
+            Filter by if the toa was DM corrected, by default None
+        minimum_nsubs : bool, optional
+            Filter by if the toa was generated with the minimum number of time subbands, by default None
+        maximum_nsubs : bool, optional
+            Filter by if the toa was generated with the maximum number of time subbands, by default None
+        obs_nchan : int, optional
+            Filter by the number of channels, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
-            {"field": "processingId", "value": processing_id},
-            {"field": "inputFoldingId", "value": input_folding_id},
-            {"field": "timingEphemerisId", "value": timing_ephemeris_id},
-            {"field": "templateId", "value": template_id},
+            {"field": "id", "value": id},
+            {"field": "pulsar", "value": pulsar},
+            {"field": "pipelineRunId", "value": pipeline_run_id},
+            {"field": "dmCorrected", "value": dm_corrected},
+            {"field": "obsNchan", "value": obs_nchan},
         ]
+        if minimum_nsubs:
+            filters.append({"field": "minimumNsubs", "value": minimum_nsubs})
+        if maximum_nsubs:
+            filters.append({"field": "maximumNsubs", "value": maximum_nsubs})
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def create(
@@ -53,6 +99,30 @@ class Toa(GraphQLTable):
         minimumNsubs,
         maximumNsubs,
     ):
+        """Create a new Toa database object.
+
+        Parameters
+        ----------
+        pipeline_run_id : int
+            The ID of the PipelineRun database object for this Toa.
+        ephemeris_id : int
+            The ID of the Ephemeris database object for this Toa.
+        template_id : int
+            The ID of the Template database object for this Toa.
+        toa_lines : list
+            A list containing the toa lines.
+        dmCorrected : bool
+            If the toa was DM corrected.
+        minimumNsubs : bool
+            If the toa was generated with the minimum number of time subbands.
+        maximumNsubs : bool
+            If the toa was generated with the maximum number of time subbands.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createToa"
         self.mutation = """
         mutation (
@@ -91,74 +161,22 @@ class Toa(GraphQLTable):
         }
         return self.mutation_graphql()
 
-    def update(
-        self,
-        id,
-        processing,
-        input_folding,
-        timing_ephemeris,
-        template,
-        flags,
-        frequency,
-        mjd,
-        site,
-        uncertainty,
-        quality,
-        comment,
-    ):
-        self.mutation_name = "updateToa"
-        self.mutation = """
-        mutation ($id: Int!, $processing: Int!, $inputFolding: Int!, $timingEphemeris: Int!, $template: Int!, $flags: JSONString!, $frequency: Float!, $mjd: String!, $site: String!, $uncertainty: Float!, $quality: String!, $comment: String!) {
-            updateToa (id: $id, input: {
-                processing_id: $processing,
-                input_folding_id: $inputFolding,
-                timing_ephemeris_id: $timingEphemeris,
-                template_id: $template,
-                flags: $flags,
-                frequency: $frequency,
-                mjd: $mjd,
-                site: $site,
-                uncertainty: $uncertainty,
-                quality: $quality,
-                comment: $comment
-            }) {
-                toa {
-                    id,
-                    processing {id},
-                    inputFolding {id},
-                    timingEphemeris {id},
-                    template {id},
-                    flags,
-                    frequency,
-                    mjd,
-                    site,
-                    uncertainty,
-                    quality,
-                    comment
-                }
-            }
-        }
-        """
-        self.variables = {
-            "id": id,
-            "processing": processing,
-            "inputFolding": input_folding,
-            "timingEphemeris": timing_ephemeris,
-            "template": template,
-            "flags": flags,
-            "frequency": frequency,
-            "mjd": mjd,
-            "site": site,
-            "uncertainty": uncertainty,
-            "quality": quality,
-            "comment": comment,
-        }
-        return self.mutation_graphql()
-
     def delete(
         self,
         id,
     ):
+        """Delete a Toa database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deleteToa"
         self.mutation = """
         mutation ($id: Int!) {
@@ -182,7 +200,32 @@ class Toa(GraphQLTable):
         maximum_nsubs=None,
         obs_nchan=None,
     ):
-        # Grab a dictionary of the toas
+        """Download a file containing ToAs based on the filters.
+
+        Parameters
+        ----------
+        pulsar : str
+            Filter by the pulsar name
+        id : int, optional
+            Filter by the database ID, by default None
+        pipeline_run_id : int, optional
+            Filter by the pipeline run id, by default None
+        dm_corrected : bool, optional
+            Filter by if the toa was DM corrected, by default None
+        minimum_nsubs : bool, optional
+            Filter by if the toa was generated with the minimum number of time subbands, by default None
+        maximum_nsubs : bool, optional
+            Filter by if the toa was generated with the maximum number of time subbands, by default None
+        obs_nchan : int, optional
+            Filter by the number of channels, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
             {"field": "id", "value": id},
             {"field": "pulsar", "value": pulsar},
@@ -205,11 +248,11 @@ class Toa(GraphQLTable):
         if pipeline_run_id is not None:
             output_name += f"_pipeline_run_id{pipeline_run_id}"
         if dm_corrected is not None and dm_corrected:
-            output_name += f"_dm_corrected"
+            output_name += "_dm_corrected"
         if minimum_nsubs is not None and minimum_nsubs:
-            output_name += f"_minimum_nsubs"
+            output_name += "_minimum_nsubs"
         if maximum_nsubs is not None and maximum_nsubs:
-            output_name += f"_maximum_nsubs"
+            output_name += "_maximum_nsubs"
         if obs_nchan is not None:
             output_name += f"_nchan{obs_nchan}"
         output_name += ".tim"
@@ -250,21 +293,6 @@ class Toa(GraphQLTable):
                         args.minimumNsubs,
                         args.maximumNsubs,
                     )
-        elif args.subcommand == "update":
-            return self.update(
-                args.id,
-                args.processing,
-                args.folding,
-                args.ephemeris,
-                args.template,
-                args.flags,
-                args.frequency,
-                args.mjd,
-                args.site,
-                args.uncertainty,
-                args.quality,
-                args.comment,
-            )
         elif args.subcommand == "delete":
             return self.delete(args.id)
         elif args.subcommand == "list":
@@ -280,7 +308,7 @@ class Toa(GraphQLTable):
                 args.nchan,
             )
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):

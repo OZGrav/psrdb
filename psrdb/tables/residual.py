@@ -9,6 +9,13 @@ def chunk_list(lst, chunk_size):
 
 
 class Residual(GraphQLTable):
+    """Class for interacting with the Residual database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.table_name = "residual"
@@ -38,13 +45,33 @@ class Residual(GraphQLTable):
             "subint",
         ]
 
-    def list(self, id=None, processing_id=None, input_folding_id=None, timing_ephemeris_id=None, template_id=None):
-        """Return a list of records matching the id and/or the provided arguments."""
+    def list(
+        self,
+        pulsar,
+        project_short,
+    ):
+        """Return a list of Residual information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        pulsar : str, optional
+            Filter by the pulsar name, by default None
+        project_short : str, optional
+            Filter by the project short code, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
-            {"field": "processingId", "value": processing_id},
-            {"field": "inputFoldingId", "value": input_folding_id},
-            {"field": "timingEphemerisId", "value": timing_ephemeris_id},
-            {"field": "templateId", "value": template_id},
+            {"field": "id", "value": id},
+            {"field": "pulsar_Name", "value": pulsar},
+            {"field": "projectShort", "value": project_short},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
@@ -55,6 +82,24 @@ class Residual(GraphQLTable):
         ephemeris,
         residual_lines,
     ):
+        """Create a new Residual database object.
+
+        Parameters
+        ----------
+        pulsar : str
+            The name of the pulsar.
+        project_short : str
+            The short code of the project (e.g. PTA).
+        ephemeris : str
+            The path to the ephemeris file used to create the residuals.
+        residual_lines : list of str
+            A list of strings containing the residual lines.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createResidual"
         self.mutation = """
         mutation (
@@ -96,87 +141,6 @@ class Residual(GraphQLTable):
             }
             self.mutation_graphql()
 
-    def update(
-        self,
-        id,
-        processing,
-        input_folding,
-        timing_ephemeris,
-        template,
-        flags,
-        frequency,
-        mjd,
-        site,
-        uncertainty,
-        quality,
-        comment,
-    ):
-        self.mutation_name = "updateResidual"
-        self.mutation = """
-        mutation ($id: Int!, $processing: Int!, $inputFolding: Int!, $timingEphemeris: Int!, $template: Int!, $flags: JSONString!, $frequency: Float!, $mjd: String!, $site: String!, $uncertainty: Float!, $quality: String!, $comment: String!) {
-            updateResidual (id: $id, input: {
-                processing_id: $processing,
-                input_folding_id: $inputFolding,
-                timing_ephemeris_id: $timingEphemeris,
-                template_id: $template,
-                flags: $flags,
-                frequency: $frequency,
-                mjd: $mjd,
-                site: $site,
-                uncertainty: $uncertainty,
-                quality: $quality,
-                comment: $comment
-            }) {
-                residual {
-                    id,
-                    processing {id},
-                    inputFolding {id},
-                    timingEphemeris {id},
-                    template {id},
-                    flags,
-                    frequency,
-                    mjd,
-                    site,
-                    uncertainty,
-                    quality,
-                    comment
-                }
-            }
-        }
-        """
-        self.variables = {
-            "id": id,
-            "processing": processing,
-            "inputFolding": input_folding,
-            "timingEphemeris": timing_ephemeris,
-            "template": template,
-            "flags": flags,
-            "frequency": frequency,
-            "mjd": mjd,
-            "site": site,
-            "uncertainty": uncertainty,
-            "quality": quality,
-            "comment": comment,
-        }
-        return self.mutation_graphql()
-
-    def delete(
-        self,
-        id,
-    ):
-        self.mutation_name = "deleteResidual"
-        self.mutation = """
-        mutation ($id: Int!) {
-            deleteResidual(id: $id) {
-                ok
-            }
-        }
-        """
-        self.variables = {
-            "id": id,
-        }
-        return self.mutation_graphql()
-
     def process(self, args):
         """Parse the arguments collected by the CLI."""
         self.print_stdout = True
@@ -189,27 +153,10 @@ class Residual(GraphQLTable):
                     args.ephemeris,
                     residual_lines,
                 )
-        elif args.subcommand == "update":
-            return self.update(
-                args.id,
-                args.processing,
-                args.folding,
-                args.ephemeris,
-                args.template,
-                args.flags,
-                args.frequency,
-                args.mjd,
-                args.site,
-                args.uncertainty,
-                args.quality,
-                args.comment,
-            )
-        elif args.subcommand == "delete":
-            return self.delete(args.id)
         elif args.subcommand == "list":
             return self.list(args.id, args.processing, args.folding, args.ephemeris, args.template)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):
