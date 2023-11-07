@@ -1,13 +1,10 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 
 
 class PulsarFoldResult(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.record_name = "pulsar_fold_result"
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
         self.table_name = "pulsar_fold_result"
-
         self.field_names = [
             "id",
             "observation { utcStart }",
@@ -149,14 +146,3 @@ class PulsarFoldResult(GraphQLTable):
         parser_download.add_argument("--utcStart",  type=str, help="UTC start time you want the results of [str]")
         parser_download.add_argument("--beam", type=int, help="Beam number you want to filter pulsar_fold_results by [int]")
 
-
-if __name__ == "__main__":
-    parser = PulsarFoldResult.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    t = PulsarFoldResult(client, args.url, args.token)
-    t.process(args)

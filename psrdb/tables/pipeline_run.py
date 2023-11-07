@@ -1,41 +1,15 @@
 import json
-from datetime import datetime
 
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 
 
 class PipelineRun(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
         self.table_name = "pipeline_run"
-        self.record_name = "pipeline_run"
-        self.client = client
-
         self.field_names = [
             "id",
             "observation { id }",
-            "template { id }",
-            "pipelineName",
-            "pipelineDescription",
-            "pipelineVersion",
-            "jobState",
-            "location",
-            "dm",
-            "dmErr",
-            "dmEpoch",
-            "dmChi2r",
-            "dmTres",
-            "sn",
-            "flux",
-            "rm",
-            "percentRfiZapped",
-            "configuration",
-        ]
-        self.literal_field_names = [
-            "id",
-            "observation { id }",
-            "ephemeris { id }",
             "template { id }",
             "pipelineName",
             "pipelineDescription",
@@ -427,14 +401,3 @@ class PipelineRun(GraphQLTable):
         parser_delete = subs.add_parser("delete", help="delete an existing PipelineRun")
         parser_delete.add_argument("id", metavar="ID", type=int, help="id of the existing PipelineRun [int]")
 
-
-if __name__ == "__main__":
-    parser = PipelineRun.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    o = PipelineRun(client, args.url, args.token)
-    o.process(args)

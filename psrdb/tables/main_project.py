@@ -1,12 +1,10 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 
 
 class MainProject(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
         self.table_name = "main_project"
-        self.literal_field_names = ["id", "telescope {id} ", "name"]
         self.field_names = ["id", "telescope {name} ", "name"]
 
     def list(self, id=None, telescope=None, name=None):
@@ -133,14 +131,3 @@ class MainProject(GraphQLTable):
         parser_delete = subs.add_parser("delete", help="delete an existing MainProject")
         parser_delete.add_argument("id", metavar="ID", type=int, help="id of existing MainProject [int]")
 
-
-if __name__ == "__main__":
-    parser = MainProject.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    p = MainProject(client, args.url, args.token)
-    p.process(args)

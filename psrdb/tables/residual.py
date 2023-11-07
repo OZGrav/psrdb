@@ -1,5 +1,4 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 from psrdb.utils.residual import residual_line_to_dict
 from psrdb.utils.other import decode_id
 
@@ -10,10 +9,9 @@ def chunk_list(lst, chunk_size):
 
 
 class Residual(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
         self.table_name = "residual"
-
         self.field_names = [
             "id",
             "pipelineRun{ id }",
@@ -38,20 +36,6 @@ class Residual(GraphQLTable):
             "snr",
             "length",
             "subint",
-        ]
-        self.literal_field_names = [
-            "id",
-            "processing {id}",
-            "inputFolding {id}",
-            "timingEphemeris {id}",
-            "template {id}",
-            "flags",
-            "frequency",
-            "mjd",
-            "site",
-            "uncertainty",
-            "quality",
-            "comment",
         ]
 
     def list(self, id=None, processing_id=None, input_folding_id=None, timing_ephemeris_id=None, template_id=None):
@@ -309,14 +293,3 @@ class Residual(GraphQLTable):
         parser_delete = subs.add_parser("delete", help="delete an existing residual")
         parser_delete.add_argument("id", metavar="ID", type=int, help="id of the residual to update [int]")
 
-
-if __name__ == "__main__":
-    parser = Residual.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    t = Residual(client, args.url, args.token)
-    t.process(args)

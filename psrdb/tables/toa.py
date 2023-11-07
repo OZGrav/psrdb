@@ -1,12 +1,11 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 from psrdb.utils.toa import toa_line_to_dict, toa_dict_to_line
 
 
 class Toa(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.record_name = "toa"
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "toa"
 
         self.field_names = [
             "id",
@@ -32,20 +31,6 @@ class Toa(GraphQLTable):
             "snr",
             "length",
             "subint",
-        ]
-        self.literal_field_names = [
-            "id",
-            "processing {id}",
-            "inputFolding {id}",
-            "timingEphemeris {id}",
-            "template {id}",
-            "flags",
-            "frequency",
-            "mjd",
-            "site",
-            "uncertainty",
-            "quality",
-            "comment",
         ]
 
     def list(self, id=None, processing_id=None, input_folding_id=None, timing_ephemeris_id=None, template_id=None):

@@ -1,15 +1,12 @@
 import requests
-from base64 import b64encode
 
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 
 
 class PipelineImage(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.record_name = "pipeline_image"
-
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "pipeline_image"
         self.field_names = ["id", "image", "imageType", "rank", "processing {id}"]
 
     def list(self, id=None, processing_id=None):
@@ -115,14 +112,3 @@ class PipelineImage(GraphQLTable):
             help='If the image is from cleaned data (RFI removed) [bool] (default: False)',
         )
 
-
-if __name__ == "__main__":
-    parser = PipelineImage.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    p = PipelineImage(client, args.url, args.token)
-    p.process(args)

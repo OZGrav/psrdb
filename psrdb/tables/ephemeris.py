@@ -2,12 +2,11 @@ import hashlib
 import json
 
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 
 
 class Ephemeris(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
         self.table_name = "ephemeris"
 
         self.field_names = [
@@ -269,14 +268,3 @@ class Ephemeris(GraphQLTable):
         parser_delete = subs.add_parser("delete", help="delete an existing ephemeris")
         parser_delete.add_argument("id", metavar="ID", type=int, help="id of the ephemeris [int]")
 
-
-if __name__ == "__main__":
-    parser = Ephemeris.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    e = Ephemeris(client, args.url, args.token)
-    e.process(args)

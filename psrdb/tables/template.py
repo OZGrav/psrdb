@@ -1,29 +1,15 @@
 import requests
 
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 
 
 class Template(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.record_name = "template"
-
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "template"
         self.field_names = [
             "id",
             "pulsar {jname}",
-            "frequency",
-            "bandwidth",
-            "createdAt",
-            "createdBy",
-            "location",
-            "method",
-            "type",
-            "comment",
-        ]
-        self.literal_field_names = [
-            "id",
-            "pulsar {id}",
             "frequency",
             "bandwidth",
             "createdAt",

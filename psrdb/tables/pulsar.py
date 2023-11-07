@@ -1,14 +1,12 @@
 from pulsar_paragraph.pulsar_paragraph import create_pulsar_paragraph
 
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 
 
 class Pulsar(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
         self.table_name = "pulsar"
-
         self.field_names = ["id", "name", "comment"]
 
     def list(self, id=None, name=None):
@@ -137,14 +135,3 @@ class Pulsar(GraphQLTable):
         parser_delete.add_argument("id", metavar="ID", type=int, help="database id of the pulsar [int]")
 
 
-if __name__ == "__main__":
-
-    parser = Pulsar.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    p = Pulsar(client, args.url, args.token)
-    p.process(args)

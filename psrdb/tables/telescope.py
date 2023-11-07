@@ -1,12 +1,10 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 
 
 class Telescope(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.record_name = "telescope"
-
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "telescope"
         self.field_names = ["id", "name"]
 
     def list(self, id=None, name=None):
@@ -122,13 +120,3 @@ class Telescope(GraphQLTable):
         parser_delete.add_argument("id", metavar="ID", type=int, help="id of an existing telescope [int]")
 
 
-if __name__ == "__main__":
-    parser = Telescope.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    t = Telescope(client, args.url, args.token)
-    t.process(args)

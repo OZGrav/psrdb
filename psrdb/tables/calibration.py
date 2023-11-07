@@ -1,21 +1,41 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 
 
 class Calibration(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.record_name = "calibration"
+    """Class for interacting with the Calibration database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "calibration"
         self.field_names = ["id", "delayCalId", "phaseUpId", "calibrationType", "location"]
 
     def list(self, id=None, type=None):
-        """Return a list of records matching the id and/or the type."""
+        """Return a list of records matching the id and/or the type.
+
+        Parameters
+        ----------
+        id : int, optional
+            _description_, by default None
+        type : str, optional
+            _description_, by default None
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         filters = [
             {"field": "type", "value": type},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def create(self, delay_cal_id, phase_up_id, type, location):
+        """Create a new calibration record."""
         self.mutation_name = "createCalibration"
         self.mutation = """
         mutation (
@@ -45,6 +65,7 @@ class Calibration(GraphQLTable):
         return self.mutation_graphql()
 
     def update(self, id, delay_cald_id, type, location):
+        """Update the values of an existing calibration record."""
         self.mutation_name = "updateCalibration"
         self.mutation = """
         mutation ($id: Int!, $calibration_type: String!, $location: String!) {
@@ -68,6 +89,7 @@ class Calibration(GraphQLTable):
         return self.mutation_graphql()
 
     def delete(self, id):
+        """Delete an existing calibration record."""
         self.mutation_name = "deleteCalibration"
         self.mutation = """
         mutation ($id: Int!) {
@@ -93,7 +115,7 @@ class Calibration(GraphQLTable):
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):
@@ -104,10 +126,10 @@ class Calibration(GraphQLTable):
         return "A defined by its type and location"
 
     @classmethod
-    def get_parsers(cls):
+    def get_parsers():
         """Returns the default parser for this model"""
         parser = GraphQLTable.get_default_parser("Calibration model parser")
-        cls.configure_parsers(parser)
+        Calibration.configure_parsers(parser)
         return parser
 
     @classmethod
@@ -143,15 +165,3 @@ class Calibration(GraphQLTable):
         parser_delete = subs.add_parser("delete", help="delete an existing calibration")
         parser_delete.add_argument("id", type=int, help="id of the calibration")
 
-
-if __name__ == "__main__":
-
-    parser = Calibration.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    c = Calibration(client, args.url, args.token)
-    c.process(args)

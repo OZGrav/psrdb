@@ -1,12 +1,11 @@
 from datetime import datetime
 
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 
 
 class Observation(GraphQLTable):
-    def __init__(self, client, token, logger=None):
-        GraphQLTable.__init__(self, client, token, logger)
+    def __init__(self, client, logger=None):
+        GraphQLTable.__init__(self, client, logger)
         self.table_name = "observation"
         self.field_names = [
             "id",
@@ -16,19 +15,6 @@ class Observation(GraphQLTable):
             "telescope { name }",
             "project { code }",
             "project { short }",
-            "utcStart",
-            "beam",
-            "band",
-            "duration",
-        ]
-        self.literal_field_names = [
-            "id",
-            "pulsar { id }",
-            "calibration { id }",
-            "calibration { location }",
-            "telescope { id }",
-            "project { id }",
-            "project { id }",
             "utcStart",
             "beam",
             "band",
@@ -466,14 +452,3 @@ class Observation(GraphQLTable):
         parser_delete = subs.add_parser("delete", help="delete an existing observation")
         parser_delete.add_argument("id", metavar="ID", type=int, help="id of the existing observation [int]")
 
-
-if __name__ == "__main__":
-    parser = Observation.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    o = Observation(client, args.url, args.token)
-    o.process(args)
