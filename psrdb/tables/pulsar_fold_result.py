@@ -10,6 +10,7 @@ class PulsarFoldResult(GraphQLTable):
             "observation { utcStart }",
             "observation { band }",
             "observation { duration }",
+            "pipelineRun { id }",
             "pipelineRun { dm }",
             "pipelineRun { dmErr }",
             "pipelineRun { dmEpoch }",

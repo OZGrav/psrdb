@@ -2,7 +2,10 @@
 
 set -e
 
-for path in $(find /fred/oz005/timing -type f -name "obs.header"); do
+for path in $(find /fred/oz005/search -type f -name "obs.header"); do
+    if [ $path == "/fred/oz005/search/J1630-4733/2019-03-15-04:20:04/2/1070/obs.header" ]; then
+        continue
+    fi
     IFS="/"
     # Split the path into an array
     read -ra directories <<< "$path"
@@ -17,7 +20,11 @@ for path in $(find /fred/oz005/timing -type f -name "obs.header"); do
         EXIT_CODE=0
         generate_meerkat_json $path $beam -o ${path%%obs.header} || EXIT_CODE=$?
         if [ "$EXIT_CODE" -ne 42 ]; then
-            ingest_obs ${path%%obs.header}/meertime.json
+            if [ -e "meertime.json" ]; then
+                ingest_obs "${path%%obs.header}/meertime.json"
+            else
+                echo "meertime.json does not exist."
+            fi
         fi
     fi
 done

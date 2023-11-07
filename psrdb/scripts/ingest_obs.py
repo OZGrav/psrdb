@@ -88,8 +88,7 @@ def main():
         # Get or upload calibration
         calibration = Calibration(client, token)
         cal_response = calibration.create(
-            delay_cal_id=meertime_data["delaycal_id"],
-            phase_up_id=meertime_data["phaseup_id"],
+            schedule_block_id=meertime_data["schedule_block_id"],
             type=meertime_data["cal_type"],
             location=meertime_data["cal_location"],
         )

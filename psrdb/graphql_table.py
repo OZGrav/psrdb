@@ -20,6 +20,9 @@ def generate_graphql_query(table_name, filters, conection_fields, node_fields):
                 arguments.append(f'{field}: "{value}"')
             elif type(value) == bool:
                 arguments.append(f"{field}: {str(value).lower()}")
+            elif type(value) == list:
+                value_list = '","'.join(value)
+                arguments.append(f'{field}: ["{value_list}"]')
             else:
                 arguments.append(f"{field}: {value}")
     # Prepare the arguments to the template format

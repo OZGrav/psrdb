@@ -6,13 +6,14 @@ from psrdb.graphql_table import GraphQLTable
 class PipelineImage(GraphQLTable):
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
-        self.table_name = "pipeline_image"
-        self.field_names = ["id", "image", "imageType", "rank", "processing {id}"]
+        self.record_name = "pipeline_image"
 
-    def list(self, id=None, processing_id=None):
-        """Return a list of records matching the id and/or the processing id."""
+        self.field_names = ["id", "image", "imageType", "resolution", "cleaned", "pipelineRun {id}"]
+
+    def list(self, id=None, pipeline_run_id=None):
+        """Return a list of records matching the id and/or the pipelineRun id."""
         filters = [
-            {"field": "processing", "value": processing_id},
+            {"field": "processing", "value": pipeline_run_id},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 

@@ -34,19 +34,17 @@ class Calibration(GraphQLTable):
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
-    def create(self, delay_cal_id, phase_up_id, type, location):
+    def create(self, schedule_block_id, type, location):
         """Create a new calibration record."""
         self.mutation_name = "createCalibration"
         self.mutation = """
         mutation (
-            $delay_cal_id: String,
-            $phase_up_id: String,
+            $schedule_block_id: String,
             $calibration_type: String!,
             $location: String,
         ) {
             createCalibration(input: {
-                delayCalId: $delay_cal_id,
-                phaseUpId: $phase_up_id,
+                scheduleBlockId: $schedule_block_id,
                 calibrationType: $calibration_type,
                 location: $location
                 }) {
@@ -57,8 +55,7 @@ class Calibration(GraphQLTable):
         }
         """
         self.variables = {
-            "delay_cal_id": delay_cal_id,
-            "phase_up_id": phase_up_id,
+            "schedule_block_id": schedule_block_id,
             "calibration_type": type,
             "location": location,
         }

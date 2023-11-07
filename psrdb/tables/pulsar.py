@@ -31,7 +31,11 @@ class Pulsar(GraphQLTable):
         """
         if comment is None:
             # Generate pulsar paragraph
-            comment = create_pulsar_paragraph(pulsar_names=[name])[0]
+            paragraphs = create_pulsar_paragraph(pulsar_names=[name])
+            if len(paragraphs) > 0:
+                comment = paragraphs[0]
+            else:
+                comment = None
         self.variables = {
             "name": name,
             "comment": comment,
