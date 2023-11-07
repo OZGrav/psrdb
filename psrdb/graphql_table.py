@@ -1,11 +1,9 @@
 import json
 import logging
-import requests as r
-from base64 import b64decode, b64encode
+from base64 import b64decode
 import binascii
 from copy import copy
 
-from psrdb.graphql_client import GraphQLClient
 from psrdb.utils.other import to_camel_case
 
 
@@ -18,9 +16,6 @@ def generate_graphql_query(table_name, filters, conection_fields, node_fields):
         field = f["field"]
         value = f["value"]
         if value is not None:
-            # if field.lower().endswith("id") or type(value) == int:
-            #     # Convert encoded graphql id to an integer
-            #     value = b64encode(f"{join}Node:{value}".encode("ascii")).decode("utf-8")
             if type(value) == str:
                 arguments.append(f'{field}: "{value}"')
             elif type(value) == bool:
@@ -60,15 +55,10 @@ def generate_graphql_query(table_name, filters, conection_fields, node_fields):
 class GraphQLTable:
     """Abstract base class to perform create, update and select GraphQL queries"""
 
-    def __init__(self, client, token, logger=None):
+    def __init__(self, client, logger=None):
 
         # the graphQL client may also be a djangodb mock endpoint
         self.client = client
-        self.token = token
-        if type(self.client) == GraphQLClient:
-            self.header = {"Authorization": f"JWT {token}"}
-        else:
-            self.header = {"HTTP_AUTHORIZATION": f"JWT {token}"}
 
         if logger is None:
             self.logger = logging.getLogger(__name__)
@@ -78,56 +68,38 @@ class GraphQLTable:
         self.get_dicts = False
         self.print_stdout = False
         self.paginate = False
+        self.quiet = False
 
         self.mutation_name = None
         self.mutation = None
         self.variables = {}
 
-
-        self.cli_name = None
-        self.cli_description = None
-        self.quiet = False
-        self.table_name = self.__class__.__name__[0].lower() + self.__class__.__name__[1:]
-
-        # record name is the singular form of the record
-        self.record_name = self.__class__.__name__.lower()
-
-        self.human_readable = True
-        self.literal_field_names = []
+        # table name that should be overwritten
+        self.table_name = self.__class__.__name__.lower()
+        # List of variables to return from list queries which will be overwritten
         self.field_names = []
 
     def set_use_pagination(self, paginate):
         self.paginate = paginate
 
-    def set_field_names(self, literal, id_only):
-        if literal:
-            if len(self.literal_field_names) > 0:
-                self.field_names = self.literal_field_names
+    def set_quiet(self, id_only):
         if id_only:
             self.field_names = ["id"]
             self.quiet = True
-        self.human_readable = not literal
-
-    def encode_table_id(self, table, id):
-        unencoded = f"{table}Node:{id}"
-        return b64encode(unencoded.encode("ascii")).decode("utf-8")
-
-    def encode_id(self, id):
-        return self.encode_table_id(self.__class__.__name__, id)
 
     def decode_id(self, encoded):
         decoded = b64decode(encoded).decode("ascii")
         return decoded.split(":")[1]
 
-    def parse_mutation_response(self, response, record_name, mutation_name):
+    def parse_mutation_response(self, response, table_name, mutation_name):
         """Parse the response from a create or update mutation and return the id of the record"""
         if response.status_code == 200:
             content = json.loads(response.content)
             self.logger.debug(f"Response content: {content}")
-            if not "errors" in content.keys():
+            if "errors" not in content.keys():
                 data = content["data"]
                 mutation_data = data[mutation_name]
-                created_data = mutation_data[to_camel_case(record_name)]
+                created_data = mutation_data[to_camel_case(table_name)]
                 if self.print_stdout:
                     if type(created_data) == list:
                         for d in created_data:
@@ -145,8 +117,8 @@ class GraphQLTable:
         self.logger.debug(f"Using mutation vars dict {self.variables}")
 
         payload = {"query": self.mutation, "variables": json.dumps(self.variables)}
-        response = self.client.post(payload, **self.header)
-        self.parse_mutation_response(response, self.record_name, self.mutation_name)
+        response = self.client.post(payload)
+        self.parse_mutation_response(response, self.table_name, self.mutation_name)
         return response
 
     def list_graphql(self, table_name, input_filters, input_connection_fields, input_node_fields):
@@ -169,7 +141,7 @@ class GraphQLTable:
 
             # Send the query
             payload = {"query": query}
-            response = self.client.post(payload, **self.header)
+            response = self.client.post(payload)
             has_next_page = False
             if response.status_code == 200:
                 content = json.loads(response.content)
@@ -264,14 +236,7 @@ class GraphQLTable:
 
         parser = ArgumentParser(description=desc)
         parser.add_argument("-t", "--token", nargs=1, default=environ.get("PSRDB_TOKEN"), help="JWT token")
-        parser.add_argument("-u", "--url", nargs=1, default=environ.get("PSRDB_URL"), help="GraphQL URL")
-        parser.add_argument(
-            "-l",
-            "--literal",
-            action="store_true",
-            default=False,
-            help="Return literal IDs in tables instead of more human readable text",
-        )
+        parser.add_argument("-u", "--url", nargs=1, default=environ.get("PSRDB_URL", "https://pulsars.org.au/api/"), help="GraphQL URL")
         parser.add_argument("-q", "--quiet", action="store_true", default=False, help="Return ID only")
         parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase verbosity")
         parser.add_argument("-vv", "--very_verbose", action="store_true", default=False, help="Increase verbosity")
