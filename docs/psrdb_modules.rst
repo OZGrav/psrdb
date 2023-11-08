@@ -79,7 +79,7 @@ Template
 --------
 
 .. autoclass:: psrdb.tables.template.Template
-   :members: list, create, update, delete
+   :members: list, create
 
 Toa
 ---
