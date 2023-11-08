@@ -1,4 +1,8 @@
 # meerdb
+
+[![Documentation Status](https://readthedocs.org/projects/psrdb/badge/?version=latest)](https://psrdb.readthedocs.io/en/latest/?badge=latest)
+![example workflow](https://github.com/OZGrav/psrdb/actions/workflows/pytest.yaml/badge.svg)
+
 Command line interface and python package for interacting with the MeerTime data portal
 
 ## Installation
