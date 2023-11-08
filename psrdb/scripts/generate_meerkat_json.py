@@ -41,11 +41,9 @@ def get_sf_length(sf_files):
     vap_lines = proc.stdout.read().decode("utf-8").split("\n")
 
     lengths = []
-    print(vap_lines)
     for line in vap_lines[1:]:
         if line == '':
             continue
-        print(line.split())
         lengths.append(float(line.split()[1].strip()))
     return sum(lengths)
 
@@ -130,9 +128,7 @@ def main():
     if obs_data.obs_type == "fold":
         archive_files = glob.glob(f"{FOLDING_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.ar")
     elif obs_data.obs_type == "search":
-        print(f"{SEARCH_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.sf")
         archive_files = glob.glob(f"{SEARCH_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.sf")
-        print(archive_files)
     if obs_data.obs_type != "cal":
         if not os.path.exists(freq_summed_archive) and not archive_files:
             logging.error(f"Could not find freq.sum and archive files for {obs_data.source} {obs_data.utc_start} {args.beam}")
