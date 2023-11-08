@@ -1,6 +1,13 @@
 from psrdb.graphql_table import GraphQLTable
 
 
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Calibration database object on the command line in different ways based on the sub-commands.")
+    Calibration.configure_parsers(parser)
+    return parser
+
+
 class Calibration(GraphQLTable):
     """Class for interacting with the Calibration database object.
 
@@ -12,7 +19,7 @@ class Calibration(GraphQLTable):
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.table_name = "calibration"
-        self.field_names = ["id", "delayCalId", "phaseUpId", "calibrationType", "location"]
+        self.field_names = ["id", "scheduleBlockId", "calibrationType", "location"]
 
     def list(self, id=None, type=None):
         """Return a list of Calibration information based on the `self.field_names` and filtered by the parameters.
@@ -170,13 +177,6 @@ class Calibration(GraphQLTable):
         return "A defined by its type and location"
 
     @classmethod
-    def get_parsers():
-        """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("Calibration model parser")
-        Calibration.configure_parsers(parser)
-        return parser
-
-    @classmethod
     def configure_parsers(cls, parser):
         """Add sub-parsers for each of the valid commands."""
         # create the parser for the "list" command
@@ -187,25 +187,4 @@ class Calibration(GraphQLTable):
         parser_list = subs.add_parser("list", help="list existing calibrations")
         parser_list.add_argument("--id", type=int, help="list calibrations matching the id [int]")
         parser_list.add_argument("--type", type=str, help="list calibrations matching the type [pre, post or none]")
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new calibration")
-        parser_create.add_argument(
-            "delay_cal_id", type=str, metavar="CALID", help="ID of the calibration (e.g. 20201022-0018) [str]"
-        )
-        parser_create.add_argument("type", type=str, metavar="TYPE", help="type of the calibration [pre, post, none]")
-        parser_create.add_argument(
-            "location", type=str, metavar="LOCATION", help="location of the calibration on the filesystem [str]"
-        )
-
-        parser_udpate = subs.add_parser("update", help="update the values of an existing calibration")
-        parser_udpate.add_argument("id", type=int, metavar="ID", help="database id of the calibration [int]")
-        parser_udpate.add_argument("type", type=str, metavar="TYPE", help="type of the calibration [pre, post, none]")
-        parser_udpate.add_argument(
-            "location", type=str, metavar="LOCATION", help="location of the calibration on the filesystem [int]"
-        )
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing calibration")
-        parser_delete.add_argument("id", type=int, help="id of the calibration")
 

@@ -56,12 +56,12 @@ def main():
 
     for c in configured:
         if args.command == c["name"]:
-            client = GraphQLClient(args.url, args.token, args.very_verbose)
+            client = GraphQLClient(args.url, args.token, args.verbose)
             table = c["table"](client)
             table.set_quiet(args.quiet)
             table.set_use_pagination(True)
             response = table.process(args)
-            if args.verbose or args.very_verbose:
+            if args.verbose:
                 import json
 
                 print(response.status_code)

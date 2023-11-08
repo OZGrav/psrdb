@@ -3,6 +3,13 @@ from psrdb.utils.residual import residual_line_to_dict
 from psrdb.utils.other import decode_id
 
 
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Residual database object on the command line in different ways based on the sub-commands.")
+    Residual.configure_parsers(parser)
+    return parser
+
+
 def chunk_list(lst, chunk_size):
     for i in range(0, len(lst), chunk_size):
         yield lst[i:i + chunk_size]
@@ -193,50 +200,3 @@ class Residual(GraphQLTable):
         parser_list.add_argument(
             "--template", metavar="TEMPL", type=int, help="list residual matching the template id [int]"
         )
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="Create a new Residual")
-        parser_create.add_argument(
-            "pulsar", metavar="PULSAR", type=str, help="Name of the pulsar [str]"
-        )
-        parser_create.add_argument(
-            "ephemeris", metavar="EPH", type=str, help="Path to the timing ephemeris used to create this residual file [str]"
-        )
-        parser_create.add_argument(
-            "project_short", metavar="PROJ", type=str, help="Short code of the project [str]"
-        )
-        parser_create.add_argument(
-            "residual_path", metavar="TOA", type=str, help="Path to the residual file [str]"
-        )
-
-        # create the parser for the "update" command
-        parser_update = subs.add_parser("update", help="update an existing residual")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of the residual to update [int]")
-        parser_update.add_argument(
-            "processing", metavar="PROC", type=int, help="id of the processing to which this residual applies [int]"
-        )
-        parser_update.add_argument(
-            "folding", metavar="FOLD", type=int, help="id of the folding which is input to this residual [int]"
-        )
-        parser_update.add_argument(
-            "ephemeris", metavar="EPH", type=int, help="id of the timing ephemeris used in this this residual [int]"
-        )
-        parser_update.add_argument(
-            "template", metavar="TEMPL", type=int, help="id of the standard/template used in this this residual [int]"
-        )
-        parser_update.add_argument("flags", metavar="FLAGS", type=str, help="flags used in this residual [str]")
-        parser_update.add_argument(
-            "frequency", metavar="FREQ", type=float, help="frequency of this residual in MHz [float]]"
-        )
-        parser_update.add_argument(
-            "mjd", metavar="MJD", type=str, help="modified julian data for this residual in days [str]"
-        )
-        parser_update.add_argument("site", metavar="SITE", type=str, help="site of code of this residual [str[1]]")
-        parser_update.add_argument("uncertainty", metavar="ERR", type=float, help="uncertainty of this residual [float]")
-        parser_update.add_argument("quality", metavar="QUAL", type=str, help="quality of this residual [nominal, bad]")
-        parser_update.add_argument("comment", metavar="COMMENT", type=str, help="comment about the residual [str]")
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing residual")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of the residual to update [int]")
-

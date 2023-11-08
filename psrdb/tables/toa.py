@@ -1,5 +1,12 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.utils.toa import toa_line_to_dict, toa_dict_to_line
+from psrdb.utils.toa import toa_dict_to_line
+
+
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Toa database object on the command line in different ways based on the sub-commands.")
+    Toa.configure_parsers(parser)
+    return parser
 
 
 class Toa(GraphQLTable):
@@ -346,61 +353,6 @@ class Toa(GraphQLTable):
             "--template", metavar="TEMPL", type=int, help="list toa matching the template id [int]"
         )
 
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="Create a new TOA")
-        parser_create.add_argument(
-            "pipeline_run_id", metavar="RUN", type=int, help="ID of the PipelineRun of this TOA [int]"
-        )
-        parser_create.add_argument(
-            "ephemeris_id", metavar="EPH", type=int, help="ID of the timing ephemeris used in this this TOA [int]"
-        )
-        parser_create.add_argument(
-            "template_id", metavar="TEMPL", type=int, help="ID of the standard/template used in this this TOA [int]"
-        )
-        parser_create.add_argument(
-            "toa_path", metavar="TOA", type=str, help="Path to the TOA file [str]"
-        )
-        parser_create.add_argument(
-            "--dm_corrected", action="store_true", help="If the TOA was DM corrected [bool]"
-        )
-        parser_create.add_argument(
-            "--minimum_nsubs", action="store_true", help="If the TOA was generated with the minimum number of time subbands [bool]"
-        )
-        parser_create.add_argument(
-            "--maximum_nsubs", action="store_true", help="If the TOA was generated with the maximum number of time subbands [bool]"
-        )
-
-        # create the parser for the "update" command
-        parser_update = subs.add_parser("update", help="update an existing toa")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of the toa to update [int]")
-        parser_update.add_argument(
-            "processing", metavar="PROC", type=int, help="id of the processing to which this toa applies [int]"
-        )
-        parser_update.add_argument(
-            "folding", metavar="FOLD", type=int, help="id of the folding which is input to this toa [int]"
-        )
-        parser_update.add_argument(
-            "ephemeris", metavar="EPH", type=int, help="id of the timing ephemeris used in this this toa [int]"
-        )
-        parser_update.add_argument(
-            "template", metavar="TEMPL", type=int, help="id of the standard/template used in this this toa [int]"
-        )
-        parser_update.add_argument("flags", metavar="FLAGS", type=str, help="flags used in this toa [str]")
-        parser_update.add_argument(
-            "frequency", metavar="FREQ", type=float, help="frequency of this toa in MHz [float]]"
-        )
-        parser_update.add_argument(
-            "mjd", metavar="MJD", type=str, help="modified julian data for this toa in days [str]"
-        )
-        parser_update.add_argument("site", metavar="SITE", type=str, help="site of code of this toa [str[1]]")
-        parser_update.add_argument("uncertainty", metavar="ERR", type=float, help="uncertainty of this toa [float]")
-        parser_update.add_argument("quality", metavar="QUAL", type=str, help="quality of this toa [nominal, bad]")
-        parser_update.add_argument("comment", metavar="COMMENT", type=str, help="comment about the toa [str]")
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing toa")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of the toa to update [int]")
-
         # create the parser for the "download" command
         parser_download = subs.add_parser("download", help="Download TOAs for a pulsar to a .tim file")
         parser_download.add_argument("pulsar", type=str, help="Name of the pulsar [str]")
@@ -411,14 +363,3 @@ class Toa(GraphQLTable):
         parser_download.add_argument("--maximum_nsubs", action="store_true", help="Only use TOAs with the maximum number of subints per observation (can be 1 but is often more) [bool]")
         parser_download.add_argument("--nchan", type=int, help="Only use TOAs with this many subchans (common values are 1,4 and 16) [int]")
 
-
-if __name__ == "__main__":
-    parser = Toa.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    t = Toa(client, args.url, args.token)
-    t.process(args)

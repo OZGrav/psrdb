@@ -242,5 +242,4 @@ class GraphQLTable:
         parser.add_argument("-u", "--url", nargs=1, default=environ.get("PSRDB_URL", "https://pulsars.org.au/api/"), help="GraphQL URL")
         parser.add_argument("-q", "--quiet", action="store_true", default=False, help="Return ID only")
         parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase verbosity")
-        parser.add_argument("-vv", "--very_verbose", action="store_true", default=False, help="Increase verbosity")
         return parser

@@ -3,6 +3,13 @@ import requests
 from psrdb.graphql_table import GraphQLTable
 
 
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Template database object on the command line in different ways based on the sub-commands.")
+    Template.configure_parsers(parser)
+    return parser
+
+
 class Template(GraphQLTable):
     """Class for interacting with the Template database object.
 
@@ -152,57 +159,3 @@ class Template(GraphQLTable):
         parser_list.add_argument(
             "--bandwidth", metavar="BW", type=float, help="list template matching the pulsar bandwidth in MHz [float]]"
         )
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new template")
-        parser_create.add_argument(
-            "pulsar", metavar="PULSAR", type=str, help="Name of the pulsar for which this template applies [int]"
-        )
-        parser_create.add_argument(
-            "band", metavar="BAND", type=str, help="Band of this template (e.g. LBAND) [str]"
-        )
-        parser_create.add_argument(
-            "project_code", metavar="PROJECT", type=str, help="Code of the project [str]"
-        )
-        parser_create.add_argument(
-            "template_path", metavar="PATH", type=str, help="Path to the template file [str]"
-        )
-
-        # create the parser for the "update" command
-        parser_update = subs.add_parser("update", help="update an existing template")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of the template to update [int]")
-        parser_update.add_argument(
-            "pulsar", metavar="ID", type=int, help="id of the pulsar for which this template applies [int]"
-        )
-        parser_update.add_argument(
-            "frequency", metavar="FREQ", type=float, help="frequency of this template in MHz [float]"
-        )
-        parser_update.add_argument(
-            "bandwidth", metavar="BW", type=float, help="bandwidth of this template in MHz [float]"
-        )
-        parser_update.add_argument(
-            "created_at", metavar="DATE", type=str, help="template creation date [YYYY-MM-DDTHH:MM:SS+000:00]"
-        )
-        parser_update.add_argument("created_by", metavar="AUTHOR", type=str, help="creator of the template [str]")
-        parser_update.add_argument(
-            "location", metavar="LOC", type=str, help="filesystem location of the template [str]"
-        )
-        parser_update.add_argument("method", metavar="METHOD", type=str, help="method (TBC) of the template [str]")
-        parser_update.add_argument("type", metavar="TYPE", type=str, help="type (TBC) of the template [str]")
-        parser_update.add_argument("comment", metavar="COMMENT", type=str, help="comment about the template [str]")
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing template")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of the template to update [int]")
-
-
-if __name__ == "__main__":
-    parser = Template.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    t = Template(client, args.url, args.token)
-    t.process(args)

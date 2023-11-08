@@ -1,7 +1,14 @@
-import hashlib
 import json
+import hashlib
 
 from psrdb.graphql_table import GraphQLTable
+
+
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Ephemeris database object on the command line in different ways based on the sub-commands.")
+    Ephemeris.configure_parsers(parser)
+    return parser
 
 
 class Ephemeris(GraphQLTable):
@@ -282,13 +289,6 @@ class Ephemeris(GraphQLTable):
         return "A pulsar ephemeris"
 
     @classmethod
-    def get_parsers(cls):
-        """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("Ephemeris model parser")
-        cls.configure_parsers(parser)
-        return parser
-
-    @classmethod
     def configure_parsers(cls, parser):
         """Add sub-parsers for each of the valid commands."""
         # create the parser for the "list" command
@@ -311,43 +311,4 @@ class Ephemeris(GraphQLTable):
             "--rm", metavar="RM", type=float, help="list ephemeris matching the pulsar RM [float]"
         )
         parser_list.add_argument("--eph", metavar="EPH", type=str, help="list ephemeris matching the ephemeris [JSON]")
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new ephemeris")
-        parser_create.add_argument(
-            "pulsar", metavar="PSR", type=str, help="Name of the pulsar to which this ephemeris relates [str]"
-        )
-        parser_create.add_argument("ephemeris_loc", metavar="EPHEM", type=str, help="Location of the ephemeris file [str]")
-        parser_create.add_argument("project_code", metavar="PROJ", type=str, help="Project code (e.g. SCI-20180516-MB-05) [str]")
-        parser_create.add_argument("comment", metavar="COMMENT", type=str, help="comment about the ephemeris [str]")
-
-        # create the parser for the "update" command
-        parser_update = subs.add_parser("update", help="update an existing ephemeris")
-        parser_update.add_argument("id", metavar="ID", type=int, help="database id of the ephemeris to update [int]")
-
-        parser_update.add_argument(
-            "pulsar", metavar="PSR", type=int, help="id of the pulsar to which this ephemeris relates [int]"
-        )
-        parser_update.add_argument(
-            "created_at", metavar="DATE", type=str, help="creation date of the ephemeris [YYYY-MM-DDTHH:MM:SS+HH:MM]"
-        )
-        parser_update.add_argument("created_by", metavar="AUTHOR", type=str, help="creator of the ephemeris [str]")
-        parser_update.add_argument("ephemeris", metavar="EPHEM", type=str, help="JSON containing the ephemeris [str]")
-        parser_update.add_argument("p0", metavar="P0", type=float, help="period in the ephemeris [float]")
-        parser_update.add_argument("dm", metavar="DM", type=float, help="DM in the ephemeris [float]")
-        parser_update.add_argument("rm", metavar="RM", type=float, help="RM in the ephemeris [float]")
-        parser_update.add_argument("comment", metavar="COMMENT", type=str, help="comment about the ephemeris [str]")
-        parser_update.add_argument(
-            "valid_from",
-            metavar="FROM",
-            type=str,
-            help="start of the validity of the ephemeris [YYYY-MM-DDTHH:MM:SS+HH:MM]",
-        )
-        parser_update.add_argument(
-            "valid_to", metavar="TO", type=str, help="end of the validity of the ephemeris [YYYY-MM-DDTHH:MM:SS+HH:MM]"
-        )
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing ephemeris")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of the ephemeris [int]")
 

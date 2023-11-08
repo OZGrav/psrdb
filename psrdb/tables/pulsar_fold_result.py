@@ -1,6 +1,13 @@
 from psrdb.graphql_table import GraphQLTable
 
 
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the PulsarFoldResult database object on the command line in different ways based on the sub-commands.")
+    PulsarFoldResult.configure_parsers(parser)
+    return parser
+
+
 class PulsarFoldResult(GraphQLTable):
     """Class for interacting with the PulsarFoldResult database object.
 

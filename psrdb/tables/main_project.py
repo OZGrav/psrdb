@@ -1,6 +1,12 @@
 from psrdb.graphql_table import GraphQLTable
 
 
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the MainProject database object on the command line in different ways based on the sub-commands.")
+    MainProject.configure_parsers(parser)
+    return parser
+
 class MainProject(GraphQLTable):
     """Class for interacting with the MainProject database object.
 
@@ -154,18 +160,11 @@ class MainProject(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "mainproject"
+        return "main_project"
 
     @classmethod
     def get_description(cls):
         return "A MainProject defined by a code, short name, embargo period and a description"
-
-    @classmethod
-    def get_parsers(cls):
-        """Returns the default parser for this model"""
-        parser = GraphQLTable.get_default_parser("MainProject model parser")
-        cls.configure_parsers(parser)
-        return parser
 
     @classmethod
     def configure_parsers(cls, parser):
@@ -181,18 +180,4 @@ class MainProject(GraphQLTable):
             "--telescope", metavar="TEL", type=int, help="list MainProject matching the telescope id [int]"
         )
         parser_list.add_argument("--name", metavar="NAME", type=str, help="list MainProject matching the name [str]")
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new MainProject")
-        parser_create.add_argument("telescope", metavar="TEL", type=str, help="name of the telescope [str]")
-        parser_create.add_argument("name", metavar="NAME", type=str, help="of the MainProject [str]")
-
-        parser_update = subs.add_parser("update", help="update an existing MainProject")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of existing MainProject [int]")
-        parser_update.add_argument("telescope", metavar="TEL", type=int, help="name of the telescope [str]")
-        parser_update.add_argument("name", metavar="NAME", type=str, help="of the MainProject [str]")
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing MainProject")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of existing MainProject [int]")
 

@@ -1,6 +1,13 @@
 from psrdb.graphql_table import GraphQLTable
 
 
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Telescope database object on the command line in different ways based on the sub-commands.")
+    Telescope.configure_parsers(parser)
+    return parser
+
+
 class Telescope(GraphQLTable):
     """Class for interacting with the Telescope database object.
 
@@ -167,17 +174,5 @@ class Telescope(GraphQLTable):
         parser_list = subs.add_parser("list", help="list existing telescopes")
         parser_list.add_argument("--id", metavar="ID", type=int, help="list telescopes matching the id [int]")
         parser_list.add_argument("--name", metavar="NAME", type=str, help="list telescopes matching the name [str]")
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new telescope")
-        parser_create.add_argument("name", metavar="NAME", type=str, help="name of the telescope [str]")
-
-        # create the parser for the "update" command
-        parser_update = subs.add_parser("update", help="update an existing telescope")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of an existing telescope [int]")
-        parser_update.add_argument("name", metavar="NAME", type=str, help="name of the telescope [str]")
-
-        parser_delete = subs.add_parser("delete", help="delete an existing telescope")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of an existing telescope [int]")
 
 

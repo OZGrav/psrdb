@@ -3,6 +3,13 @@ from pulsar_paragraph.pulsar_paragraph import create_pulsar_paragraph
 from psrdb.graphql_table import GraphQLTable
 
 
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Pulsar database object on the command line in different ways based on the sub-commands.")
+    Pulsar.configure_parsers(parser)
+    return parser
+
+
 class Pulsar(GraphQLTable):
     """Class for interacting with the Pulsar database object.
 
@@ -187,20 +194,4 @@ class Pulsar(GraphQLTable):
         parser_list = subs.add_parser("list", help="list existing Pulsars")
         parser_list.add_argument("--id", metavar="ID", type=int, help="list Pulsars matching the id [int]")
         parser_list.add_argument("--name", metavar="name", type=str, help="list Pulsars matching the name [str]")
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new pulsar")
-        parser_create.add_argument("name", metavar="name", type=str, help="name of the pulsar [str]")
-        parser_create.add_argument("--comment", metavar="COMMENT", type=str, help="description of the pulsar [str]")
-
-        # create the parser for the "update" command
-        parser_update = subs.add_parser("update", help="update the values of an existing pulsar")
-        parser_update.add_argument("id", metavar="ID", type=int, help="database id of the pulsar [int]")
-        parser_update.add_argument("name", metavar="name", type=str, help="name of the pulsar [str]")
-        parser_update.add_argument("--comment", metavar="COMMENT", type=str, help="description of the pulsar [str]")
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing pulsar")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="database id of the pulsar [int]")
-
 

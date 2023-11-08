@@ -3,6 +3,13 @@ import requests
 from psrdb.graphql_table import GraphQLTable
 
 
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the PipelineImage database object on the command line in different ways based on the sub-commands.")
+    PipelineImage.configure_parsers(parser)
+    return parser
+
+
 class PipelineImage(GraphQLTable):
     """Class for interacting with the PipelineImage database object.
 
@@ -102,7 +109,7 @@ class PipelineImage(GraphQLTable):
 
     @classmethod
     def get_name(cls):
-        return "pipelineimage"
+        return "pipeline_image"
 
     @classmethod
     def get_description(cls):
@@ -128,31 +135,3 @@ class PipelineImage(GraphQLTable):
         parser_list.add_argument(
             "--processing_id", metavar="PROC", type=int, help="list PipelineImage matching the processing id [int]"
         )
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="Create a new PipelineImage")
-        parser_create.add_argument(
-            "pipeline_run_id", metavar="RUN", type=int, help="ID of the related pipeline run [int]"
-        )
-        parser_create.add_argument(
-            "image_path", metavar="IMG", type=str, help="Path to the image to be uploaded [str]"
-        )
-        parser_create.add_argument(
-            "image_type",
-            metavar="TYPE",
-            type=str,
-            help='Description of image type from ("profile", "profile-pol", "phase-time", "phase-freq", "bandpass", "snr-cumul", "snr-single") [str]',
-        )
-        parser_create.add_argument(
-            "resolution",
-            metavar="RES",
-            type=str,
-            help='Resolution of the image from ("high", "low") [str]',
-        )
-        parser_create.add_argument(
-            "--cleaned",
-            action="store_true",
-            default=False,
-            help='If the image is from cleaned data (RFI removed) [bool] (default: False)',
-        )
-
