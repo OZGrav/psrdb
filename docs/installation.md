@@ -10,8 +10,8 @@ or if you don't use poetry, you can instead run
 pip install .
 ```
 
-To interact with the database you need to get an account on the https://pulsars.org.au/ website.
-Once you have an account you then need to generate a token on the page https://pulsars.org.au/token_generate/.
+To interact with the database you need to get an account on the [pulsars.org.au](https://pulsars.org.au) website.
+Once you have an account you then need to generate a token on this [page](https://pulsars.org.au/token_generate/).
 
 Set this token using the following command (you can put this in your `~/.bashrc`):
 ```
