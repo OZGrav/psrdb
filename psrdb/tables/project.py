@@ -1,29 +1,78 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
+
+
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Project database object on the command line in different ways based on the sub-commands.")
+    Project.configure_parsers(parser)
+    return parser
 
 
 class Project(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.table_name = "project"
+    """Class for interacting with the Project database object.
 
-        self.literal_field_names = ["id", "mainProject {id}", "code", "short", "embargoPeriod", "description"]
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "project"
         self.field_names = ["id", "mainProject {name}", "code", "short", "embargoPeriod", "description"]
 
     def list(self, id=None, mainProject=None, code=None):
-        """Return a list of records matching the id and/or the program id, code."""
+        """Return a list of Project information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        mainProject : str, optional
+            Filter by the mainProject name, by default None
+        code : str, optional
+            Filter by the code, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
+            {"field": "id", "value": id},
             {"field": "mainProject", "value": mainProject},
             {"field": "code", "value": code},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
-    def create(self, mainproject, code, short, embargo_period, description):
+    def create(self, main_project, code, short, embargo_period, description):
+        """Create a new Project database object.
+
+        Parameters
+        ----------
+        main_project : str
+            The name of the MainProject this project is under.
+        code : str
+            The code of the project.
+        short : str
+            The short name of the project (e.g. PTA).
+        embargo_period : int
+            The embargo period in days.
+        description : str
+            A description of the project.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createProject"
         self.mutation = """
-        mutation ($code: String!, $mainproject: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
+        mutation ($code: String!, $main_project: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
             createProject(input: {
-                mainProjectName: $mainproject,
+                mainProjectName: $main_project,
                 code: $code,
                 short: $short,
                 embargoPeriod: $embargoPeriod,
@@ -36,7 +85,7 @@ class Project(GraphQLTable):
         }
         """
         self.variables = {
-            "mainproject": mainproject,
+            "main_project": main_project,
             "code": code,
             "short": short,
             "embargoPeriod": embargo_period,
@@ -44,12 +93,34 @@ class Project(GraphQLTable):
         }
         return self.mutation_graphql()
 
-    def update(self, id, mainproject, code, short, embargo_period, description):
+    def update(self, id, main_project, code, short, embargo_period, description):
+        """Update a Project database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+        main_project : str
+            The name of the MainProject this project is under.
+        code : str
+            The code of the project.
+        short : str
+            The short name of the project (e.g. PTA).
+        embargo_period : int
+            The embargo period in days.
+        description : str
+            A description of the project.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "updateProject"
         self.mutation = """
-        mutation ($id: Int!, $mainproject: String!, $code: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
+        mutation ($id: Int!, $main_project: String!, $code: String!, $short: String!, $embargoPeriod: Int!, $description: String!) {
             updateProject(id: $id, input: {
-                mainProjectName: $mainproject,
+                mainProjectName: $main_project,
                 code: $code,
                 short: $short,
                 embargoPeriod: $embargoPeriod,
@@ -68,7 +139,7 @@ class Project(GraphQLTable):
         """
         self.variables = {
             "id": id,
-            "mainproject": mainproject,
+            "main_project": main_project,
             "code": code,
             "short": short,
             "embargoPeriod": embargo_period,
@@ -77,6 +148,18 @@ class Project(GraphQLTable):
         return self.mutation_graphql()
 
     def delete(self, id):
+        """Delete a Project database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deleteProject"
         self.mutation = """
         mutation ($id: Int!) {
@@ -103,7 +186,7 @@ class Project(GraphQLTable):
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):
@@ -135,42 +218,4 @@ class Project(GraphQLTable):
         )
         parser_list.add_argument("--code", metavar="CODE", type=str, help="list projects matching the code [str]")
 
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new project")
-        parser_create.add_argument(
-            "mainproject", metavar="MAIN", type=str, help="ID of the program in which governs the project [str]"
-        )
-        parser_create.add_argument("code", metavar="CODE", type=str, help="code of the project [str]")
-        parser_create.add_argument("short", metavar="SHORT", type=str, help="short name of the project [str]")
-        parser_create.add_argument(
-            "embargo_period", metavar="EMB", type=int, help="emabrgo period of the project in days [int]"
-        )
-        parser_create.add_argument("description", metavar="DESC", type=str, help="description of the project [str]")
 
-        parser_update = subs.add_parser("update", help="update an existing project")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of existing project [int]")
-        parser_update.add_argument(
-            "mainproject", metavar="MAIN", type=str, help="Name of the mainproject in which governs the project [str]"
-        )
-        parser_update.add_argument("code", metavar="CODE", type=str, help="code of the project [str]")
-        parser_update.add_argument("short", metavar="SHORT", type=str, help="short name of the project [str]")
-        parser_update.add_argument(
-            "embargo_period", metavar="EMB", type=int, help="emabrgo period of the project in days [int]"
-        )
-        parser_update.add_argument("description", metavar="DESC", type=str, help="description of the project [str]")
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing project")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of existing project [int]")
-
-
-if __name__ == "__main__":
-    parser = Project.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    p = Project(client, args.url, args.token)
-    p.process(args)

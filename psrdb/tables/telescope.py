@@ -1,22 +1,62 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
+
+
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Telescope database object on the command line in different ways based on the sub-commands.")
+    Telescope.configure_parsers(parser)
+    return parser
 
 
 class Telescope(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.record_name = "telescope"
+    """Class for interacting with the Telescope database object.
 
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "telescope"
         self.field_names = ["id", "name"]
 
     def list(self, id=None, name=None):
-        """Return a list of records matching the id and/or the name."""
+        """Return a list of Telescope information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        name : str, optional
+            Filter by the name, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
+            {"field": "id", "value": id},
             {"field": "name", "value": name},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def create(self, name):
+        """Create a new Telescope database object.
+
+        Parameters
+        ----------
+        name : str
+            The name of the Telescope.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createTelescope"
         self.mutation = """
         mutation ($name: String!) {
@@ -35,6 +75,20 @@ class Telescope(GraphQLTable):
         return self.mutation_graphql()
 
     def update(self, id, name):
+        """Update a Telescope database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID.
+        name : str
+            The name of the Telescope.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "updateTelescope"
         self.mutation = """
         mutation ($id: Int!, $name: String!) {
@@ -55,6 +109,18 @@ class Telescope(GraphQLTable):
         return self.mutation_graphql()
 
     def delete(self, id):
+        """Delete a Telescope database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deleteTelescope"
         self.mutation = """
         mutation ($id: Int!) {
@@ -80,7 +146,7 @@ class Telescope(GraphQLTable):
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):
@@ -109,26 +175,4 @@ class Telescope(GraphQLTable):
         parser_list.add_argument("--id", metavar="ID", type=int, help="list telescopes matching the id [int]")
         parser_list.add_argument("--name", metavar="NAME", type=str, help="list telescopes matching the name [str]")
 
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new telescope")
-        parser_create.add_argument("name", metavar="NAME", type=str, help="name of the telescope [str]")
 
-        # create the parser for the "update" command
-        parser_update = subs.add_parser("update", help="update an existing telescope")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of an existing telescope [int]")
-        parser_update.add_argument("name", metavar="NAME", type=str, help="name of the telescope [str]")
-
-        parser_delete = subs.add_parser("delete", help="delete an existing telescope")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of an existing telescope [int]")
-
-
-if __name__ == "__main__":
-    parser = Telescope.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    t = Telescope(client, args.url, args.token)
-    t.process(args)

@@ -1,41 +1,29 @@
 import json
-from datetime import datetime
 
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
+
+
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the PipelineRun database object on the command line in different ways based on the sub-commands.")
+    PipelineRun.configure_parsers(parser)
+    return parser
 
 
 class PipelineRun(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.table_name = "pipeline_run"
-        self.record_name = "pipeline_run"
-        self.client = client
+    """Class for interacting with the PipelineRun database object.
 
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "pipeline_run"
         self.field_names = [
             "id",
             "observation { id }",
-            "template { id }",
-            "pipelineName",
-            "pipelineDescription",
-            "pipelineVersion",
-            "jobState",
-            "location",
-            "dm",
-            "dmErr",
-            "dmEpoch",
-            "dmChi2r",
-            "dmTres",
-            "sn",
-            "flux",
-            "rm",
-            "percentRfiZapped",
-            "configuration",
-        ]
-        self.literal_field_names = [
-            "id",
-            "observation { id }",
-            "ephemeris { id }",
             "template { id }",
             "pipelineName",
             "pipelineDescription",
@@ -75,6 +63,54 @@ class PipelineRun(GraphQLTable):
         rm=None,
         percentRfiZapped=None,
     ):
+        """Return a list of PipelineRun information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        observation_id : int, optional
+            Filter by the Observation database ID, by default None
+        ephemeris_id : int, optional
+            Filter by the Ephemeris database ID, by default None
+        template_id : int, optional
+            Filter by the Template database ID, by default None
+        pipelineName : str, optional
+            Filter by the pipeline name, by default None
+        pipelineDescription : str, optional
+            Filter by the pipeline description, by default None
+        pipelineVersion : str, optional
+            Filter by the pipeline version, by default None
+        jobState : str, optional
+            Filter by the job state, by default None
+        location : str, optional
+            Filter by the location, by default None
+        dm : float, optional
+            Filter by the dm, by default None
+        dmErr : float, optional
+            Filter by the dmErr, by default None
+        dmEpoch : float, optional
+            Filter by the dmEpoch, by default None
+        dmChi2r : float, optional
+            Filter by the dmChi2r, by default None
+        dmTres : float, optional
+            Filter by the dmTres, by default None
+        sn : float, optional
+            Filter by the sn, by default None
+        flux : float, optional
+            Filter by the flux, by default None
+        rm : float, optional
+            Filter by the rm, by default None
+        percentRfiZapped : float, optional
+            Filter by the percentRfiZapped, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
             {"field": "id", "value": id},
             {"field": "observation_Id", "value": observation_id},
@@ -110,6 +146,36 @@ class PipelineRun(GraphQLTable):
         configuration,
         results_dict=None,
     ):
+        """Create a new PipelineRun database object.
+
+        Parameters
+        ----------
+        observationId : int
+            The ID of the Observation database object of this PipelineRun.
+        ephemerisId : int
+            The ID of the Ephemeris database object of this PipelineRun.
+        templateId : int
+            The ID of the Template database object of this PipelineRun.
+        pipelineName : str
+            The name of the pipeline used for this PipelineRun.
+        pipelineDescription : str
+            The description of the pipeline used for this PipelineRun.
+        pipelineVersion : str
+            The version of the pipeline used for this PipelineRun.
+        jobState : str
+            The state of the job from ("Pending", "Running", "Completed", "Failed", "Cancelled").
+        location : str
+            The location of the job outputs.
+        configuration : dict
+            The input parameters of the pipeline used for this PipelineRun.
+        results_dict : dict, optional
+            The results of the pipeline which is only uploaded when the run is completed, by default None
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createPipelineRun"
         self.mutation = """
         mutation (
@@ -206,6 +272,23 @@ class PipelineRun(GraphQLTable):
         jobState,
         results_dict=None,
     ):
+        """Update a PipelineRun database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+        jobState : str
+            The state of the job from ("Pending", "Running", "Completed", "Failed", "Cancelled").
+        results_dict : dict, optional
+            The results of the pipeline which is only uploaded when the run is completed, by default None
+
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "updatePipelineRun"
         self.mutation = """
         mutation (
@@ -279,6 +362,18 @@ class PipelineRun(GraphQLTable):
         self,
         id,
     ):
+        """Delete a PipelineRun database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deletePipelineRun"
         self.mutation = """
         mutation ($id: Int!) {
@@ -342,7 +437,7 @@ class PipelineRun(GraphQLTable):
         elif args.subcommand == "delete":
             return self.delete(args.id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):
@@ -388,53 +483,3 @@ class PipelineRun(GraphQLTable):
         parser_list.add_argument("--rm", metavar="RM", type=float, help="List pipeline run with matching rm [float]")
         parser_list.add_argument("--percentRfiZapped", metavar="RFI", type=float, help="List pipeline run with matching percentRfiZapped [float]")
 
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new PipelineRun")
-        parser_create.add_argument("target", metavar="TGT", type=int, help="target id of the PipelineRun [int]")
-        parser_create.add_argument(
-            "calibration", metavar="CAL", type=int, help="calibration id of the PipelineRun [int]"
-        )
-        parser_create.add_argument("telescope", metavar="TEL", type=int, help="telescope id of the PipelineRun [int]")
-        parser_create.add_argument(
-            "instrument_config", metavar="IC", type=int, help="instrument config id of the PipelineRun [int]"
-        )
-        parser_create.add_argument("project", metavar="PROJ", type=int, help="project id of the PipelineRun [int]")
-        parser_create.add_argument("config", metavar="CFG", type=str, help="json config of the PipelineRun [json]")
-        parser_create.add_argument(
-            "utc", metavar="UTC", type=str, help="start utc of the PipelineRun [YYYY-MM-DDTHH:MM:SS+00:00]"
-        )
-        parser_create.add_argument(
-            "duration", metavar="DUR", type=float, help="duration of the PipelineRun in seconds [float]"
-        )
-        parser_create.add_argument(
-            "nant", metavar="NANT", type=int, help="number of antennas used during the PipelineRun [int]"
-        )
-        parser_create.add_argument(
-            "nanteff",
-            metavar="NANTEFF",
-            type=int,
-            help="effective number of antennas used during the PipelineRun [int]",
-        )
-        parser_create.add_argument("suspect", metavar="SUS", type=bool, help="status of the PipelineRun [bool]")
-        parser_create.add_argument("comment", metavar="COM", type=str, help="any comment on the PipelineRun [str]")
-
-        parser_update = subs.add_parser("update", help="create a new PipelineRun")
-        parser_update.add_argument("id", metavar="ID", type=int, help="ID of the existing PipelineRun [int]")
-        parser_update.add_argument("job_state", metavar="STATE", type=str, help="State of the job from ('started', 'finished', 'error') [str]")
-        parser_update.add_argument("results_json", metavar="JSON", type=str, help="Path to the results.json file [str]", default="results.json")
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing PipelineRun")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of the existing PipelineRun [int]")
-
-
-if __name__ == "__main__":
-    parser = PipelineRun.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    o = PipelineRun(client, args.url, args.token)
-    o.process(args)

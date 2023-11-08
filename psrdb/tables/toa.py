@@ -1,12 +1,25 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
-from psrdb.utils.toa import toa_line_to_dict, toa_dict_to_line
+from psrdb.utils.toa import toa_dict_to_line
+
+
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Toa database object on the command line in different ways based on the sub-commands.")
+    Toa.configure_parsers(parser)
+    return parser
 
 
 class Toa(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.record_name = "toa"
+    """Class for interacting with the Toa database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "toa"
 
         self.field_names = [
             "id",
@@ -33,29 +46,54 @@ class Toa(GraphQLTable):
             "length",
             "subint",
         ]
-        self.literal_field_names = [
-            "id",
-            "processing {id}",
-            "inputFolding {id}",
-            "timingEphemeris {id}",
-            "template {id}",
-            "flags",
-            "frequency",
-            "mjd",
-            "site",
-            "uncertainty",
-            "quality",
-            "comment",
-        ]
 
-    def list(self, id=None, processing_id=None, input_folding_id=None, timing_ephemeris_id=None, template_id=None):
-        """Return a list of records matching the id and/or the provided arguments."""
+    def list(
+        self,
+        id=None,
+        pulsar=None,
+        pipeline_run_id=None,
+        dm_corrected=None,
+        minimum_nsubs=None,
+        maximum_nsubs=None,
+        obs_nchan=None,
+    ):
+        """Return a list of Toa information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        pulsar : str, optional
+            Filter by the pulsar name, by default None
+        pipeline_run_id : int, optional
+            Filter by the pipeline run id, by default None
+        dm_corrected : bool, optional
+            Filter by if the toa was DM corrected, by default None
+        minimum_nsubs : bool, optional
+            Filter by if the toa was generated with the minimum number of time subbands, by default None
+        maximum_nsubs : bool, optional
+            Filter by if the toa was generated with the maximum number of time subbands, by default None
+        obs_nchan : int, optional
+            Filter by the number of channels, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
-            {"field": "processingId", "value": processing_id},
-            {"field": "inputFoldingId", "value": input_folding_id},
-            {"field": "timingEphemerisId", "value": timing_ephemeris_id},
-            {"field": "templateId", "value": template_id},
+            {"field": "id", "value": id},
+            {"field": "pulsar", "value": pulsar},
+            {"field": "pipelineRunId", "value": pipeline_run_id},
+            {"field": "dmCorrected", "value": dm_corrected},
+            {"field": "obsNchan", "value": obs_nchan},
         ]
+        if minimum_nsubs:
+            filters.append({"field": "minimumNsubs", "value": minimum_nsubs})
+        if maximum_nsubs:
+            filters.append({"field": "maximumNsubs", "value": maximum_nsubs})
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def create(
@@ -68,6 +106,30 @@ class Toa(GraphQLTable):
         minimumNsubs,
         maximumNsubs,
     ):
+        """Create a new Toa database object.
+
+        Parameters
+        ----------
+        pipeline_run_id : int
+            The ID of the PipelineRun database object for this Toa.
+        ephemeris_id : int
+            The ID of the Ephemeris database object for this Toa.
+        template_id : int
+            The ID of the Template database object for this Toa.
+        toa_lines : list
+            A list containing the toa lines.
+        dmCorrected : bool
+            If the toa was DM corrected.
+        minimumNsubs : bool
+            If the toa was generated with the minimum number of time subbands.
+        maximumNsubs : bool
+            If the toa was generated with the maximum number of time subbands.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createToa"
         self.mutation = """
         mutation (
@@ -106,74 +168,22 @@ class Toa(GraphQLTable):
         }
         return self.mutation_graphql()
 
-    def update(
-        self,
-        id,
-        processing,
-        input_folding,
-        timing_ephemeris,
-        template,
-        flags,
-        frequency,
-        mjd,
-        site,
-        uncertainty,
-        quality,
-        comment,
-    ):
-        self.mutation_name = "updateToa"
-        self.mutation = """
-        mutation ($id: Int!, $processing: Int!, $inputFolding: Int!, $timingEphemeris: Int!, $template: Int!, $flags: JSONString!, $frequency: Float!, $mjd: String!, $site: String!, $uncertainty: Float!, $quality: String!, $comment: String!) {
-            updateToa (id: $id, input: {
-                processing_id: $processing,
-                input_folding_id: $inputFolding,
-                timing_ephemeris_id: $timingEphemeris,
-                template_id: $template,
-                flags: $flags,
-                frequency: $frequency,
-                mjd: $mjd,
-                site: $site,
-                uncertainty: $uncertainty,
-                quality: $quality,
-                comment: $comment
-            }) {
-                toa {
-                    id,
-                    processing {id},
-                    inputFolding {id},
-                    timingEphemeris {id},
-                    template {id},
-                    flags,
-                    frequency,
-                    mjd,
-                    site,
-                    uncertainty,
-                    quality,
-                    comment
-                }
-            }
-        }
-        """
-        self.variables = {
-            "id": id,
-            "processing": processing,
-            "inputFolding": input_folding,
-            "timingEphemeris": timing_ephemeris,
-            "template": template,
-            "flags": flags,
-            "frequency": frequency,
-            "mjd": mjd,
-            "site": site,
-            "uncertainty": uncertainty,
-            "quality": quality,
-            "comment": comment,
-        }
-        return self.mutation_graphql()
-
     def delete(
         self,
         id,
     ):
+        """Delete a Toa database object.
+
+        Parameters
+        ----------
+        id : int
+            The database ID
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "deleteToa"
         self.mutation = """
         mutation ($id: Int!) {
@@ -197,7 +207,32 @@ class Toa(GraphQLTable):
         maximum_nsubs=None,
         obs_nchan=None,
     ):
-        # Grab a dictionary of the toas
+        """Download a file containing ToAs based on the filters.
+
+        Parameters
+        ----------
+        pulsar : str
+            Filter by the pulsar name
+        id : int, optional
+            Filter by the database ID, by default None
+        pipeline_run_id : int, optional
+            Filter by the pipeline run id, by default None
+        dm_corrected : bool, optional
+            Filter by if the toa was DM corrected, by default None
+        minimum_nsubs : bool, optional
+            Filter by if the toa was generated with the minimum number of time subbands, by default None
+        maximum_nsubs : bool, optional
+            Filter by if the toa was generated with the maximum number of time subbands, by default None
+        obs_nchan : int, optional
+            Filter by the number of channels, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
             {"field": "id", "value": id},
             {"field": "pulsar", "value": pulsar},
@@ -220,11 +255,11 @@ class Toa(GraphQLTable):
         if pipeline_run_id is not None:
             output_name += f"_pipeline_run_id{pipeline_run_id}"
         if dm_corrected is not None and dm_corrected:
-            output_name += f"_dm_corrected"
+            output_name += "_dm_corrected"
         if minimum_nsubs is not None and minimum_nsubs:
-            output_name += f"_minimum_nsubs"
+            output_name += "_minimum_nsubs"
         if maximum_nsubs is not None and maximum_nsubs:
-            output_name += f"_maximum_nsubs"
+            output_name += "_maximum_nsubs"
         if obs_nchan is not None:
             output_name += f"_nchan{obs_nchan}"
         output_name += ".tim"
@@ -265,21 +300,6 @@ class Toa(GraphQLTable):
                         args.minimumNsubs,
                         args.maximumNsubs,
                     )
-        elif args.subcommand == "update":
-            return self.update(
-                args.id,
-                args.processing,
-                args.folding,
-                args.ephemeris,
-                args.template,
-                args.flags,
-                args.frequency,
-                args.mjd,
-                args.site,
-                args.uncertainty,
-                args.quality,
-                args.comment,
-            )
         elif args.subcommand == "delete":
             return self.delete(args.id)
         elif args.subcommand == "list":
@@ -295,7 +315,7 @@ class Toa(GraphQLTable):
                 args.nchan,
             )
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):
@@ -333,61 +353,6 @@ class Toa(GraphQLTable):
             "--template", metavar="TEMPL", type=int, help="list toa matching the template id [int]"
         )
 
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="Create a new TOA")
-        parser_create.add_argument(
-            "pipeline_run_id", metavar="RUN", type=int, help="ID of the PipelineRun of this TOA [int]"
-        )
-        parser_create.add_argument(
-            "ephemeris_id", metavar="EPH", type=int, help="ID of the timing ephemeris used in this this TOA [int]"
-        )
-        parser_create.add_argument(
-            "template_id", metavar="TEMPL", type=int, help="ID of the standard/template used in this this TOA [int]"
-        )
-        parser_create.add_argument(
-            "toa_path", metavar="TOA", type=str, help="Path to the TOA file [str]"
-        )
-        parser_create.add_argument(
-            "--dm_corrected", action="store_true", help="If the TOA was DM corrected [bool]"
-        )
-        parser_create.add_argument(
-            "--minimum_nsubs", action="store_true", help="If the TOA was generated with the minimum number of time subbands [bool]"
-        )
-        parser_create.add_argument(
-            "--maximum_nsubs", action="store_true", help="If the TOA was generated with the maximum number of time subbands [bool]"
-        )
-
-        # create the parser for the "update" command
-        parser_update = subs.add_parser("update", help="update an existing toa")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of the toa to update [int]")
-        parser_update.add_argument(
-            "processing", metavar="PROC", type=int, help="id of the processing to which this toa applies [int]"
-        )
-        parser_update.add_argument(
-            "folding", metavar="FOLD", type=int, help="id of the folding which is input to this toa [int]"
-        )
-        parser_update.add_argument(
-            "ephemeris", metavar="EPH", type=int, help="id of the timing ephemeris used in this this toa [int]"
-        )
-        parser_update.add_argument(
-            "template", metavar="TEMPL", type=int, help="id of the standard/template used in this this toa [int]"
-        )
-        parser_update.add_argument("flags", metavar="FLAGS", type=str, help="flags used in this toa [str]")
-        parser_update.add_argument(
-            "frequency", metavar="FREQ", type=float, help="frequency of this toa in MHz [float]]"
-        )
-        parser_update.add_argument(
-            "mjd", metavar="MJD", type=str, help="modified julian data for this toa in days [str]"
-        )
-        parser_update.add_argument("site", metavar="SITE", type=str, help="site of code of this toa [str[1]]")
-        parser_update.add_argument("uncertainty", metavar="ERR", type=float, help="uncertainty of this toa [float]")
-        parser_update.add_argument("quality", metavar="QUAL", type=str, help="quality of this toa [nominal, bad]")
-        parser_update.add_argument("comment", metavar="COMMENT", type=str, help="comment about the toa [str]")
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing toa")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of the toa to update [int]")
-
         # create the parser for the "download" command
         parser_download = subs.add_parser("download", help="Download TOAs for a pulsar to a .tim file")
         parser_download.add_argument("pulsar", type=str, help="Name of the pulsar [str]")
@@ -398,14 +363,3 @@ class Toa(GraphQLTable):
         parser_download.add_argument("--maximum_nsubs", action="store_true", help="Only use TOAs with the maximum number of subints per observation (can be 1 but is often more) [bool]")
         parser_download.add_argument("--nchan", type=int, help="Only use TOAs with this many subchans (common values are 1,4 and 16) [int]")
 
-
-if __name__ == "__main__":
-    parser = Toa.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    t = Toa(client, args.url, args.token)
-    t.process(args)

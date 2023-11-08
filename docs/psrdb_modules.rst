@@ -9,172 +9,80 @@ psrdb modules
 ================
 
 
-
-psrdb tables classes
-===================
-
-Basebandings
-------------
-
-.. autoclass:: psrdb.tables.basebandings.Basebandings
-   :members:
-
-Calibrations
-------------
-
-.. autoclass:: psrdb.tables.calibrations.Calibrations
-   :members:
-
-Collections
+Calibration
 -----------
 
-.. autoclass:: psrdb.tables.collections.Collections
-   :members:
-
-Ephemerides
------------
-
-.. autoclass:: psrdb.tables.ephemerides.Ephemerides
-   :members:
-
-Filterbankings
---------------
-
-.. autoclass:: psrdb.tables.filterbankings.Filterbankings
-   :members:
-
-Foldings
---------
-
-.. autoclass:: psrdb.tables.foldings.Foldings
-   :members:
-
-GraphQLClause
--------------
-
-.. autoclass:: psrdb.graphql_query.GraphQLClause
-   :members:
-
-GraphQLTable
-------------
-
-.. autoclass:: psrdb.graphql_table.GraphQLTable
-   :members:
-
-Instrumentconfigs
------------------
-
-.. autoclass:: psrdb.tables.instrumentconfigs.Instrumentconfigs
-   :members:
-
-Launches
---------
-
-.. autoclass:: psrdb.tables.launches.Launches
-   :members:
-
-Observations
-------------
-
-.. autoclass:: psrdb.tables.observations.Observations
-   :members:
-
-Pipelinefiles
--------------
-
-.. autoclass:: psrdb.tables.pipelinefiles.Pipelinefiles
-   :members:
-
-Pipelineimages
---------------
-
-.. autoclass:: psrdb.tables.pipelineimages.Pipelineimages
-   :members:
-
-Pipelines
----------
-
-.. autoclass:: psrdb.tables.pipelines.Pipelines
-   :members:
-
-Processingcollections
----------------------
-
-.. autoclass:: psrdb.tables.processingcollections.Processingcollections
-   :members:
-
-Processings
------------
-
-.. autoclass:: psrdb.tables.processings.Processings
-   :members:
-
-Programs
---------
-
-.. autoclass:: psrdb.tables.programs.Programs
-   :members:
-
-Projects
---------
-
-.. autoclass:: psrdb.tables.projects.Projects
-   :members:
-
-Pulsars
--------
-
-.. autoclass:: psrdb.tables.pulsars.Pulsars
-   :members:
-
-Pulsartargets
--------------
-
-.. autoclass:: psrdb.tables.pulsartargets.Pulsartargets
-   :members:
-
-Sessions
---------
-
-.. autoclass:: psrdb.tables.sessions.Sessions
-   :members:
-
-Targets
--------
-
-.. autoclass:: psrdb.tables.targets.Targets
-   :members:
-
-Telescopes
-----------
-
-.. autoclass:: psrdb.tables.telescopes.Telescopes
-   :members:
-
-Templates
----------
-
-.. autoclass:: psrdb.tables.templates.Templates
-   :members:
-
-Toas
-----
-
-.. autoclass:: psrdb.tables.toas.Toas
-   :members:
-
-
-psrdb util classes
-==================
+.. autoclass:: psrdb.tables.calibration::Calibration
+   :members: list, create, update, delete
 
 Ephemeris
 ---------
 
-.. autoclass:: psrdb.util.ephemeris.Ephemeris
-   :members:
+.. autoclass:: psrdb.tables.ephemeris.Ephemeris
+   :members: list, create, update, delete
 
-KeyValueStore
+MainProject
+-----------
+
+.. autoclass:: psrdb.tables.main_project.MainProject
+   :members: list, create, update, delete
+
+Observation
+-----------
+
+.. autoclass:: psrdb.tables.observation.Observation
+   :members: list, create, update, delete
+
+PipelineImage
 -------------
 
-.. autoclass:: psrdb.util.header.KeyValueStore
-   :members:
+.. autoclass:: psrdb.tables.pipeline_image.PipelineImage
+   :members: list, create
+
+PipelineRun
+-----------
+
+.. autoclass:: psrdb.tables.pipeline_run.PipelineRun
+   :members: list, create, update, delete
+
+Project
+-------
+
+.. autoclass:: psrdb.tables.project.Project
+   :members: list, create, update, delete
+
+PulsarFoldResult
+----------------
+
+.. autoclass:: psrdb.tables.pulsar_fold_result.PulsarFoldResult
+   :members: list, download
+
+Pulsar
+------
+
+.. autoclass:: psrdb.tables.pulsar.Pulsar
+   :members: list, create, update, delete
+
+Residual
+--------
+
+.. autoclass:: psrdb.tables.residual.Residual
+   :members: list, create
+
+Telescope
+---------
+
+.. autoclass:: psrdb.tables.telescope.Telescope
+   :members: list, create
+
+Template
+--------
+
+.. autoclass:: psrdb.tables.template.Template
+   :members: list, create
+
+Toa
+---
+
+.. autoclass:: psrdb.tables.toa.Toa
+   :members: list, create, delete, download

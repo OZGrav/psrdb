@@ -1,14 +1,26 @@
 import requests
 
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
+
+
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Template database object on the command line in different ways based on the sub-commands.")
+    Template.configure_parsers(parser)
+    return parser
 
 
 class Template(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.record_name = "template"
+    """Class for interacting with the Template database object.
 
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "template"
         self.field_names = [
             "id",
             "pulsar {jname}",
@@ -21,25 +33,33 @@ class Template(GraphQLTable):
             "type",
             "comment",
         ]
-        self.literal_field_names = [
-            "id",
-            "pulsar {id}",
-            "frequency",
-            "bandwidth",
-            "createdAt",
-            "createdBy",
-            "location",
-            "method",
-            "type",
-            "comment",
-        ]
 
-    def list(self, id=None, pulsar_id=None, frequency=None, bandwidth=None):
-        """Return a list of records matching the id and/or the pulsar id, frequency, bandwidth."""
+    def list(self, id=None, pulsar_name=None, band=None, project_short=None):
+        """Return a list of Template information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        pulsar_name : str, optional
+            Filter by the pulsar name, by default None
+        band : str, optional
+            Filter by the band, by default None
+        project_short : str, optional
+            Filter by the project short name, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
-            {"field": "pulsar_Id", "value": pulsar_id},
-            {"field": "frequency", "value": frequency},
-            {"field": "bandwidth", "value": bandwidth},
+            {"field": "id", "value": id},
+            {"field": "pulsar_Name", "value": pulsar_name},
+            {"field": "band", "value": band},
+            {"field": "project_Short", "value": project_short},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
@@ -51,6 +71,26 @@ class Template(GraphQLTable):
             project_code=None,
             project_short=None,
         ):
+        """Create a new Template database object.
+
+        Parameters
+        ----------
+        pulsar_name : str
+            The name of the pulsar.
+        band : str
+            The band of the template (e.g. SBAND).
+        template_path : str
+            The path to the template file.
+        project_code : str, optional
+            The code of the project, by default None
+        project_short : str, optional
+            The short name of the project (e.g. PTA), by default None
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         # Open the file in binary mode
         with open(template_path, 'rb') as file:
             variables = {
@@ -80,7 +120,7 @@ class Template(GraphQLTable):
         elif args.subcommand == "list":
             return self.list(args.id, args.pulsar, args.frequency, args.bandwidth)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):
@@ -119,57 +159,3 @@ class Template(GraphQLTable):
         parser_list.add_argument(
             "--bandwidth", metavar="BW", type=float, help="list template matching the pulsar bandwidth in MHz [float]]"
         )
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="create a new template")
-        parser_create.add_argument(
-            "pulsar", metavar="PULSAR", type=str, help="Name of the pulsar for which this template applies [int]"
-        )
-        parser_create.add_argument(
-            "band", metavar="BAND", type=str, help="Band of this template (e.g. LBAND) [str]"
-        )
-        parser_create.add_argument(
-            "project_code", metavar="PROJECT", type=str, help="Code of the project [str]"
-        )
-        parser_create.add_argument(
-            "template_path", metavar="PATH", type=str, help="Path to the template file [str]"
-        )
-
-        # create the parser for the "update" command
-        parser_update = subs.add_parser("update", help="update an existing template")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of the template to update [int]")
-        parser_update.add_argument(
-            "pulsar", metavar="ID", type=int, help="id of the pulsar for which this template applies [int]"
-        )
-        parser_update.add_argument(
-            "frequency", metavar="FREQ", type=float, help="frequency of this template in MHz [float]"
-        )
-        parser_update.add_argument(
-            "bandwidth", metavar="BW", type=float, help="bandwidth of this template in MHz [float]"
-        )
-        parser_update.add_argument(
-            "created_at", metavar="DATE", type=str, help="template creation date [YYYY-MM-DDTHH:MM:SS+000:00]"
-        )
-        parser_update.add_argument("created_by", metavar="AUTHOR", type=str, help="creator of the template [str]")
-        parser_update.add_argument(
-            "location", metavar="LOC", type=str, help="filesystem location of the template [str]"
-        )
-        parser_update.add_argument("method", metavar="METHOD", type=str, help="method (TBC) of the template [str]")
-        parser_update.add_argument("type", metavar="TYPE", type=str, help="type (TBC) of the template [str]")
-        parser_update.add_argument("comment", metavar="COMMENT", type=str, help="comment about the template [str]")
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing template")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of the template to update [int]")
-
-
-if __name__ == "__main__":
-    parser = Template.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    t = Template(client, args.url, args.token)
-    t.process(args)

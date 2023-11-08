@@ -1,13 +1,24 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
+
+
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the PulsarFoldResult database object on the command line in different ways based on the sub-commands.")
+    PulsarFoldResult.configure_parsers(parser)
+    return parser
 
 
 class PulsarFoldResult(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.record_name = "pulsar_fold_result"
-        self.table_name = "pulsar_fold_result"
+    """Class for interacting with the PulsarFoldResult database object.
 
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "pulsar_fold_result"
         self.field_names = [
             "id",
             "observation { utcStart }",
@@ -34,7 +45,26 @@ class PulsarFoldResult(GraphQLTable):
             utcStart=None,
             beam=None
         ):
-        """Return a list of records matching the id and/or the provided arguments."""
+        """Return a list of PulsarFoldResult information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        pulsar : str, optional
+            Filter by the pulsar name, by default None
+        mainProject : str, optional
+            Filter by the main project name, by default None
+        utcStart : str, optional
+            Filter by the utcStart, by default None
+        beam : int, optional
+            Filter by the beam number, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
             {"field": "pulsar", "value": pulsar},
             {"field": "mainProject", "value": mainProject},
@@ -112,7 +142,7 @@ class PulsarFoldResult(GraphQLTable):
                 args.beam,
             )
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):
@@ -150,14 +180,3 @@ class PulsarFoldResult(GraphQLTable):
         parser_download.add_argument("--utcStart",  type=str, help="UTC start time you want the results of [str]")
         parser_download.add_argument("--beam", type=int, help="Beam number you want to filter pulsar_fold_results by [int]")
 
-
-if __name__ == "__main__":
-    parser = PulsarFoldResult.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    t = PulsarFoldResult(client, args.url, args.token)
-    t.process(args)

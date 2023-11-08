@@ -29,6 +29,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'numpydoc',
     'myst_parser',
+    'sphinxarg.ext',
 ]
 
 templates_path = ['_templates']
@@ -51,3 +52,5 @@ html_js_files = [
     'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js',
     '_static/flyout.js'
 ]
+
+numpydoc_show_class_members = False

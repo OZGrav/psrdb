@@ -1,21 +1,49 @@
 import requests
-from base64 import b64encode
 
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
+
+
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the PipelineImage database object on the command line in different ways based on the sub-commands.")
+    PipelineImage.configure_parsers(parser)
+    return parser
 
 
 class PipelineImage(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
+    """Class for interacting with the PipelineImage database object.
+
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
         self.record_name = "pipeline_image"
 
         self.field_names = ["id", "image", "imageType", "resolution", "cleaned", "pipelineRun {id}"]
 
     def list(self, id=None, pipeline_run_id=None):
-        """Return a list of records matching the id and/or the pipelineRun id."""
+        """Return a list of PipelineImage information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        pipeline_run_id : int, optional
+            Filter by the pipeline run ID, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
-            {"field": "processing", "value": pipeline_run_id},
+            {"field": "id", "value": id},
+            {"field": "pipelineRunId", "value": pipeline_run_id},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
@@ -27,6 +55,26 @@ class PipelineImage(GraphQLTable):
             resolution,
             cleaned,
         ):
+        """Create a new PipelineImage database object.
+
+        Parameters
+        ----------
+        pipeline_run_id : int
+            The ID of the PipelineRun database object this image is associated with.
+        image_path : str
+            The path to the image file.
+        image_type : str
+            The type of image (profile, profile-pol, phase-time, phase-freq, bandpass, snr-cumul, snr-single).
+        resolution : str
+            The resolution of the image (high or low).
+        cleaned : bool
+            Whether the image is from cleaned data (RFI removed).
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         # Open the file in binary mode
         with open(image_path, 'rb') as file:
             variables = {
@@ -57,11 +105,11 @@ class PipelineImage(GraphQLTable):
         elif args.subcommand == "list":
             return self.list(args.id, args.processing_id)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):
-        return "pipelineimage"
+        return "pipeline_image"
 
     @classmethod
     def get_description(cls):
@@ -87,42 +135,3 @@ class PipelineImage(GraphQLTable):
         parser_list.add_argument(
             "--processing_id", metavar="PROC", type=int, help="list PipelineImage matching the processing id [int]"
         )
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="Create a new PipelineImage")
-        parser_create.add_argument(
-            "pipeline_run_id", metavar="RUN", type=int, help="ID of the related pipeline run [int]"
-        )
-        parser_create.add_argument(
-            "image_path", metavar="IMG", type=str, help="Path to the image to be uploaded [str]"
-        )
-        parser_create.add_argument(
-            "image_type",
-            metavar="TYPE",
-            type=str,
-            help='Description of image type from ("profile", "profile-pol", "phase-time", "phase-freq", "bandpass", "snr-cumul", "snr-single") [str]',
-        )
-        parser_create.add_argument(
-            "resolution",
-            metavar="RES",
-            type=str,
-            help='Resolution of the image from ("high", "low") [str]',
-        )
-        parser_create.add_argument(
-            "--cleaned",
-            action="store_true",
-            default=False,
-            help='If the image is from cleaned data (RFI removed) [bool] (default: False)',
-        )
-
-
-if __name__ == "__main__":
-    parser = PipelineImage.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    p = PipelineImage(client, args.url, args.token)
-    p.process(args)

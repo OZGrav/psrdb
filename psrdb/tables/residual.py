@@ -1,7 +1,13 @@
 from psrdb.graphql_table import GraphQLTable
-from psrdb.graphql_query import graphql_query_factory
 from psrdb.utils.residual import residual_line_to_dict
 from psrdb.utils.other import decode_id
+
+
+def get_parsers():
+    """Returns the default parser for this model"""
+    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Residual database object on the command line in different ways based on the sub-commands.")
+    Residual.configure_parsers(parser)
+    return parser
 
 
 def chunk_list(lst, chunk_size):
@@ -10,10 +16,16 @@ def chunk_list(lst, chunk_size):
 
 
 class Residual(GraphQLTable):
-    def __init__(self, client, token):
-        GraphQLTable.__init__(self, client, token)
-        self.table_name = "residual"
+    """Class for interacting with the Residual database object.
 
+    Parameters
+    ----------
+    client : GraphQLClient
+        GraphQLClient class instance with the URL and Token already set.
+    """
+    def __init__(self, client):
+        GraphQLTable.__init__(self, client)
+        self.table_name = "residual"
         self.field_names = [
             "id",
             "pipelineRun{ id }",
@@ -39,28 +51,34 @@ class Residual(GraphQLTable):
             "length",
             "subint",
         ]
-        self.literal_field_names = [
-            "id",
-            "processing {id}",
-            "inputFolding {id}",
-            "timingEphemeris {id}",
-            "template {id}",
-            "flags",
-            "frequency",
-            "mjd",
-            "site",
-            "uncertainty",
-            "quality",
-            "comment",
-        ]
 
-    def list(self, id=None, processing_id=None, input_folding_id=None, timing_ephemeris_id=None, template_id=None):
-        """Return a list of records matching the id and/or the provided arguments."""
+    def list(
+        self,
+        pulsar,
+        project_short,
+    ):
+        """Return a list of Residual information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        pulsar : str, optional
+            Filter by the pulsar name, by default None
+        project_short : str, optional
+            Filter by the project short code, by default None
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
         filters = [
-            {"field": "processingId", "value": processing_id},
-            {"field": "inputFoldingId", "value": input_folding_id},
-            {"field": "timingEphemerisId", "value": timing_ephemeris_id},
-            {"field": "templateId", "value": template_id},
+            {"field": "id", "value": id},
+            {"field": "pulsar_Name", "value": pulsar},
+            {"field": "projectShort", "value": project_short},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
@@ -71,6 +89,24 @@ class Residual(GraphQLTable):
         ephemeris,
         residual_lines,
     ):
+        """Create a new Residual database object.
+
+        Parameters
+        ----------
+        pulsar : str
+            The name of the pulsar.
+        project_short : str
+            The short code of the project (e.g. PTA).
+        ephemeris : str
+            The path to the ephemeris file used to create the residuals.
+        residual_lines : list of str
+            A list of strings containing the residual lines.
+
+        Returns
+        -------
+        client_response:
+            A client response object.
+        """
         self.mutation_name = "createResidual"
         self.mutation = """
         mutation (
@@ -112,87 +148,6 @@ class Residual(GraphQLTable):
             }
             self.mutation_graphql()
 
-    def update(
-        self,
-        id,
-        processing,
-        input_folding,
-        timing_ephemeris,
-        template,
-        flags,
-        frequency,
-        mjd,
-        site,
-        uncertainty,
-        quality,
-        comment,
-    ):
-        self.mutation_name = "updateResidual"
-        self.mutation = """
-        mutation ($id: Int!, $processing: Int!, $inputFolding: Int!, $timingEphemeris: Int!, $template: Int!, $flags: JSONString!, $frequency: Float!, $mjd: String!, $site: String!, $uncertainty: Float!, $quality: String!, $comment: String!) {
-            updateResidual (id: $id, input: {
-                processing_id: $processing,
-                input_folding_id: $inputFolding,
-                timing_ephemeris_id: $timingEphemeris,
-                template_id: $template,
-                flags: $flags,
-                frequency: $frequency,
-                mjd: $mjd,
-                site: $site,
-                uncertainty: $uncertainty,
-                quality: $quality,
-                comment: $comment
-            }) {
-                residual {
-                    id,
-                    processing {id},
-                    inputFolding {id},
-                    timingEphemeris {id},
-                    template {id},
-                    flags,
-                    frequency,
-                    mjd,
-                    site,
-                    uncertainty,
-                    quality,
-                    comment
-                }
-            }
-        }
-        """
-        self.variables = {
-            "id": id,
-            "processing": processing,
-            "inputFolding": input_folding,
-            "timingEphemeris": timing_ephemeris,
-            "template": template,
-            "flags": flags,
-            "frequency": frequency,
-            "mjd": mjd,
-            "site": site,
-            "uncertainty": uncertainty,
-            "quality": quality,
-            "comment": comment,
-        }
-        return self.mutation_graphql()
-
-    def delete(
-        self,
-        id,
-    ):
-        self.mutation_name = "deleteResidual"
-        self.mutation = """
-        mutation ($id: Int!) {
-            deleteResidual(id: $id) {
-                ok
-            }
-        }
-        """
-        self.variables = {
-            "id": id,
-        }
-        return self.mutation_graphql()
-
     def process(self, args):
         """Parse the arguments collected by the CLI."""
         self.print_stdout = True
@@ -205,27 +160,10 @@ class Residual(GraphQLTable):
                     args.ephemeris,
                     residual_lines,
                 )
-        elif args.subcommand == "update":
-            return self.update(
-                args.id,
-                args.processing,
-                args.folding,
-                args.ephemeris,
-                args.template,
-                args.flags,
-                args.frequency,
-                args.mjd,
-                args.site,
-                args.uncertainty,
-                args.quality,
-                args.comment,
-            )
-        elif args.subcommand == "delete":
-            return self.delete(args.id)
         elif args.subcommand == "list":
             return self.list(args.id, args.processing, args.folding, args.ephemeris, args.template)
         else:
-            raise RuntimeError(args.subcommand + " command is not implemented")
+            raise RuntimeError(f"{args.subcommand} command is not implemented")
 
     @classmethod
     def get_name(cls):
@@ -262,61 +200,3 @@ class Residual(GraphQLTable):
         parser_list.add_argument(
             "--template", metavar="TEMPL", type=int, help="list residual matching the template id [int]"
         )
-
-        # create the parser for the "create" command
-        parser_create = subs.add_parser("create", help="Create a new Residual")
-        parser_create.add_argument(
-            "pulsar", metavar="PULSAR", type=str, help="Name of the pulsar [str]"
-        )
-        parser_create.add_argument(
-            "ephemeris", metavar="EPH", type=str, help="Path to the timing ephemeris used to create this residual file [str]"
-        )
-        parser_create.add_argument(
-            "project_short", metavar="PROJ", type=str, help="Short code of the project [str]"
-        )
-        parser_create.add_argument(
-            "residual_path", metavar="TOA", type=str, help="Path to the residual file [str]"
-        )
-
-        # create the parser for the "update" command
-        parser_update = subs.add_parser("update", help="update an existing residual")
-        parser_update.add_argument("id", metavar="ID", type=int, help="id of the residual to update [int]")
-        parser_update.add_argument(
-            "processing", metavar="PROC", type=int, help="id of the processing to which this residual applies [int]"
-        )
-        parser_update.add_argument(
-            "folding", metavar="FOLD", type=int, help="id of the folding which is input to this residual [int]"
-        )
-        parser_update.add_argument(
-            "ephemeris", metavar="EPH", type=int, help="id of the timing ephemeris used in this this residual [int]"
-        )
-        parser_update.add_argument(
-            "template", metavar="TEMPL", type=int, help="id of the standard/template used in this this residual [int]"
-        )
-        parser_update.add_argument("flags", metavar="FLAGS", type=str, help="flags used in this residual [str]")
-        parser_update.add_argument(
-            "frequency", metavar="FREQ", type=float, help="frequency of this residual in MHz [float]]"
-        )
-        parser_update.add_argument(
-            "mjd", metavar="MJD", type=str, help="modified julian data for this residual in days [str]"
-        )
-        parser_update.add_argument("site", metavar="SITE", type=str, help="site of code of this residual [str[1]]")
-        parser_update.add_argument("uncertainty", metavar="ERR", type=float, help="uncertainty of this residual [float]")
-        parser_update.add_argument("quality", metavar="QUAL", type=str, help="quality of this residual [nominal, bad]")
-        parser_update.add_argument("comment", metavar="COMMENT", type=str, help="comment about the residual [str]")
-
-        # create the parser for the "delete" command
-        parser_delete = subs.add_parser("delete", help="delete an existing residual")
-        parser_delete.add_argument("id", metavar="ID", type=int, help="id of the residual to update [int]")
-
-
-if __name__ == "__main__":
-    parser = Residual.get_parsers()
-    args = parser.parse_args()
-
-    from psrdb.graphql_client import GraphQLClient
-
-    client = GraphQLClient(args.url, args.very_verbose)
-
-    t = Residual(client, args.url, args.token)
-    t.process(args)
