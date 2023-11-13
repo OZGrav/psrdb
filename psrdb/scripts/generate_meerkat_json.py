@@ -36,9 +36,22 @@ def get_sf_length(sf_files):
     """
     comm = f"vap -c length {' '.join(sf_files)}"
     args = shlex.split(comm)
-    proc = subprocess.Popen(args,stdout=subprocess.PIPE)
-    proc.wait()
-    vap_lines = proc.stdout.read().decode("utf-8").split("\n")
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE, text=True, bufsize=1)
+    vap_lines = []
+    try:
+        # Read and process the output line by line in real-time
+        for line in iter(proc.stdout.readline, ''):
+            print(line, end='', flush=True)
+            vap_lines.append(line)
+
+    # Handle Ctrl+C to gracefully terminate the subprocess
+    except KeyboardInterrupt:
+        logging.error("Process interrupted. Terminating...")
+        sys.exit(1)
+
+    finally:
+        # Wait for the subprocess to complete
+        proc.wait()
 
     lengths = []
     for line in vap_lines[1:]:
