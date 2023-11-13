@@ -8,7 +8,7 @@ from requests.packages.urllib3.util.retry import Retry
 class GraphQLClient:
     """Provides a HTTP client connection to the GraphQL endpoint"""
 
-    def __init__(self, url, token, verbose, logger=None):
+    def __init__(self, url, token, verbose=False, logger=None):
         """Initialise GraphQL connection for the url."""
         self.graphql_url = f"{url}/graphql/"
         self.rest_api_url = f"{url}/upload/"

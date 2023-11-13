@@ -11,8 +11,8 @@ from psrdb.utils.other import setup_logging, decode_id
 
 # PSRDB setup
 logger = setup_logging()
-client = GraphQLClient(os.environ.get("PSRDB_URL"), False, logger=logger)
-puslar_client = Pulsar(client, os.environ.get("PSRDB_TOKEN"))
+client = GraphQLClient(os.environ.get("PSRDB_URL"), os.environ.get("PSRDB_TOKEN"), logger=logger)
+puslar_client = Pulsar(client)
 puslar_client.get_dicts = True
 puslar_client.set_use_pagination(True)
 

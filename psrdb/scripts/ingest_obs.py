@@ -65,9 +65,7 @@ def main():
     )
 
     # Load client
-    url = args.url
-    token = args.token
-    client = GraphQLClient(args.url, args.verbose_client)
+    client = GraphQLClient(args.url, args.token, verbose=args.verbose_client)
 
     for json_path in args.json:
 
@@ -80,13 +78,13 @@ def main():
         utc_start_dt = utc_start_dt.strftime("%Y-%m-%dT%H:%M:%S+0000")
 
         # Create pulsar if it doesn't already exist
-        pulsar = Pulsar(client, token)
+        pulsar = Pulsar(client)
         pulsar.create(
             name=meertime_data["pulsarName"],
         )
 
         # Get or upload calibration
-        calibration = Calibration(client, token)
+        calibration = Calibration(client)
         cal_response = calibration.create(
             schedule_block_id=meertime_data["schedule_block_id"],
             type=meertime_data["cal_type"],
@@ -96,7 +94,7 @@ def main():
         logger.debug(f"Completed ingesting cal_id: {cal_id}")
 
         # Upload observation
-        observation = Observation(client, token)
+        observation = Observation(client)
         response = observation.create(
             pulsarName=meertime_data["pulsarName"],
             telescopeName=meertime_data["telescopeName"],

@@ -56,7 +56,7 @@ def main():
 
     for c in configured:
         if args.command == c["name"]:
-            client = GraphQLClient(args.url, args.token, args.verbose)
+            client = GraphQLClient(args.url, args.token, verbose=args.verbose)
             table = c["table"](client)
             table.set_quiet(args.quiet)
             table.set_use_pagination(True)

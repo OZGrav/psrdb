@@ -20,7 +20,7 @@ for path in $(find /fred/oz005/search -type f -name "obs.header"); do
         EXIT_CODE=0
         generate_meerkat_json $path $beam -o ${path%%obs.header} || EXIT_CODE=$?
         if [ "$EXIT_CODE" -ne 42 ]; then
-            if [ -e "meertime.json" ]; then
+            if [ -e "${path%%obs.header}/meertime.json" ]; then
                 ingest_obs "${path%%obs.header}/meertime.json"
             else
                 echo "meertime.json does not exist."
