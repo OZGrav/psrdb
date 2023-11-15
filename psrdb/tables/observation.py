@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from psrdb.graphql_table import GraphQLTable
+from psrdb.utils.other import decode_id
 
 
 def get_parsers():
@@ -45,6 +46,8 @@ class Observation(GraphQLTable):
         utcs=None,
         utce=None,
         obs_type='fold',
+        unprocessed=None,
+        incomplete=None,
     ):
         """Return a list of Observation information based on the `self.field_names` and filtered by the parameters.
 
@@ -66,6 +69,10 @@ class Observation(GraphQLTable):
             Filter by the utc start time less than or equal to the timestamp in the format YYYY-MM-DDTHH:MM:SS+00:00, by default None
         obs_type : str, optional
             Filter by the observation type (fold, search or cal), by default 'fold'
+        unprocessed : str, optional
+            Filter to only returned unprocessed observations (no PulsarFoldResult)
+        incomplete : str, optional
+            Filter to only return incomplete observations (most recent job run is not "Completed)
 
         Returns
         -------
@@ -100,7 +107,129 @@ class Observation(GraphQLTable):
             {"field": "utcStartLte", "value": utce},
             {"field": "obsType", "value": obs_type},
         ]
+        if unprocessed is not None:
+            filters.append({"field": "unprocessed", "value": unprocessed})
+        if incomplete is not None:
+            filters.append({"field": "incomplete", "value": incomplete})
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+    def download(
+        self,
+        id=None,
+        pulsar_name=None,
+        telescope_name=None,
+        project_id=None,
+        project_short=None,
+        utcs=None,
+        utce=None,
+        obs_type='fold',
+        unprocessed=None,
+        incomplete=None,
+    ):
+        """Return a list of Observation information based on the `self.field_names` and filtered by the parameters.
+
+        Parameters
+        ----------
+        id : int, optional
+            Filter by the database ID, by default None
+        pulsar_name : str, optional
+            Filter by the pulsar name, by default None
+        telescope_name : str, optional
+            Filter by the telescope name, by default None
+        project_id : int, optional
+            Filter by the project id, by default None
+        project_short : str, optional
+            Filter by the project short name, by default None
+        utcs : str, optional
+            Filter by the utc start time greater than or equal to the timestamp in the format YYYY-MM-DDTHH:MM:SS+00:00, by default None
+        utce : str, optional
+            Filter by the utc start time less than or equal to the timestamp in the format YYYY-MM-DDTHH:MM:SS+00:00, by default None
+        obs_type : str, optional
+            Filter by the observation type (fold, search or cal), by default 'fold'
+        unprocessed : str, optional
+            Filter to only returned unprocessed observations (no PulsarFoldResult)
+        incomplete : str, optional
+            Filter to only return incomplete observations (most recent job run is not "Completed)
+
+        Returns
+        -------
+        list of dicts
+            If `self.get_dicts` is `True`, a list of dictionaries containing the results.
+        client_response:
+            Else a client response object.
+        """
+        # Convert dates to correct format
+        if utcs == "":
+            utcs = None
+        elif utcs is not None:
+            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
+            utcs = f"{d.date()}T{d.time()}+00:00"
+        if utce == "":
+            utce = None
+        elif utce is not None:
+            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
+            utce = f"{d.date()}T{d.time()}+00:00"
+        if project_short == "":
+            project_short = None
+        if pulsar_name == "":
+            pulsar_name = None
+        """Return a list of records matching the id and/or any of the arguments."""
+        filters = [
+            {"field": "id", "value": id},
+            {"field": "pulsar_Name", "value": pulsar_name},
+            {"field": "telescope_Name", "value": telescope_name},
+            {"field": "project_Id", "value": project_id},
+            {"field": "project_Short", "value": project_short},
+            {"field": "utcStartGte", "value": utcs},
+            {"field": "utcStartLte", "value": utce},
+            {"field": "obsType", "value": obs_type},
+        ]
+        if unprocessed is not None:
+            filters.append({"field": "unprocessed", "value": unprocessed})
+        if incomplete is not None:
+            filters.append({"field": "incomplete", "value": incomplete})
+
+        self.get_dicts = True
+        observations_dicts = GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+
+        # Create the output name
+        output_name = "observations"
+        if pulsar_name:
+            output_name += f"_{pulsar_name}"
+        if telescope_name:
+            output_name += f"_{telescope_name}"
+        if project_id:
+            output_name += f"_{project_id}"
+        if project_short:
+            output_name += f"_{project_short}"
+        if utcs:
+            output_name += f"_utcs{utcs}"
+        if utce:
+            output_name += f"_utce{utce}"
+        if obs_type:
+            output_name += f"_{obs_type}"
+        if unprocessed:
+            output_name += "_unprocessed"
+        if incomplete:
+            output_name += "_incomplete"
+        output_name += ".csv"
+
+        # Loop over the pulsar_fold_results and dump them as a file
+        with open(output_name, "w") as f:
+            f.write("Obs ID,Pulsar Jname,UTC Start,Project Short Name,Beam #,Observing Band,Duration (s),Calibration Location\n")
+            for observations_dict in observations_dicts:
+                data_line = [
+                    str(decode_id(observations_dict["id"])),
+                    str(observations_dict["pulsar"]["name"]),
+                    str(datetime.strptime(observations_dict['utcStart'], '%Y-%m-%dT%H:%M:%S+00:00').strftime('%Y-%m-%d-%H:%M:%S')),
+                    str(observations_dict["project"]["short"]),
+                    str(observations_dict["beam"]),
+                    str(observations_dict["band"]),
+                    str(observations_dict["duration"]),
+                    str(observations_dict["calibration"]["location"]),
+                ]
+                f.write(f"{','.join(data_line)}\n")
+        return output_name
 
     def create(
         self,
@@ -525,38 +654,7 @@ class Observation(GraphQLTable):
     def process(self, args):
         """Parse the arguments collected by the CLI."""
         self.print_stdout = True
-        if args.subcommand == "create":
-            return self.create(
-                args.target,
-                args.calibration,
-                args.telescope,
-                args.instrument_config,
-                args.project,
-                args.config,
-                args.utc,
-                args.duration,
-                args.nant,
-                args.nanteff,
-                args.suspect,
-                args.comment,
-            )
-        elif args.subcommand == "update":
-            return self.update(
-                args.id,
-                args.target,
-                args.calibration,
-                args.telescope,
-                args.instrument_config,
-                args.project,
-                args.config,
-                args.utc,
-                args.duration,
-                args.nant,
-                args.nanteff,
-                args.suspect,
-                args.comment,
-            )
-        elif args.subcommand == "list":
+        if args.subcommand == "list":
             return self.list(
                 id=args.id,
                 pulsar_name=args.pulsar,
@@ -565,9 +663,23 @@ class Observation(GraphQLTable):
                 project_short=args.project_code,
                 utcs=args.utcs,
                 utce=args.utce,
+                obs_type=args.obs_type,
+                unprocessed=args.unprocessed,
+                incomplete=args.incomplete,
             )
-        elif args.subcommand == "delete":
-            return self.delete(args.id)
+        elif args.subcommand == "download":
+            return self.download(
+                id=args.id,
+                pulsar_name=args.pulsar,
+                telescope_name=args.telescope_name,
+                project_id=args.project_id,
+                project_short=args.project_code,
+                utcs=args.utcs,
+                utce=args.utce,
+                obs_type=args.obs_type,
+                unprocessed=args.unprocessed,
+                incomplete=args.incomplete,
+            )
         else:
             raise RuntimeError(f"{args.subcommand} command is not implemented")
 
@@ -636,6 +748,87 @@ class Observation(GraphQLTable):
             "--utce",
             metavar="UTCLET",
             type=str,
+            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+        )
+        parser_list.add_argument(
+            "--obs_type",
+            metavar="OBSTYPE",
+            type=str,
+            help="An observation type from fold, search and cal",
+        )
+        parser_list.add_argument(
+            "--unprocessed",
+            action='store_true',
+            default=None,
+            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+        )
+        parser_list.add_argument(
+            "--incomplete",
+            action='store_true',
+            default=None,
+            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+        )
+
+        parser_download = subs.add_parser("download", help="download a csv with can be input to meerpipe based on the following filters")
+        parser_download.add_argument("--id", metavar="ID", type=int, help="list observations matching the id [int]")
+        parser_download.add_argument(
+            "--target_id", metavar="TGTID", type=int, help="list observations matching the target (pulsar) id [int]"
+        )
+        parser_download.add_argument(
+            "--pulsar", metavar="TGTNAME", type=str, nargs='+', help="list observations matching the target (pulsar) name [str]"
+        )
+        parser_download.add_argument(
+            "--telescope_id", metavar="TELID", type=int, help="list observations matching the telescope id [int]"
+        )
+        parser_download.add_argument(
+            "--telescope_name", metavar="TELNAME", type=str, help="list observations matching the telescope name [int]"
+        )
+        parser_download.add_argument(
+            "--instrumentconfig_id",
+            metavar="ICID",
+            type=int,
+            help="list observations matching the instrument_config id [int]",
+        )
+        parser_download.add_argument(
+            "--instrumentconfig_name",
+            metavar="ICNAME",
+            type=str,
+            help="list observations matching the instrument_config name [str]",
+        )
+        parser_download.add_argument(
+            "--project_id", metavar="PROJID", type=int, help="list observations matching the project id [id]"
+        )
+        parser_download.add_argument(
+            "--project_code", metavar="PROJCODE", type=str, help="list observations matching the project code [str]"
+        )
+        parser_download.add_argument(
+            "--utcs",
+            metavar="UTCGTE",
+            type=str,
+            help="list observations with utc_start greater than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+        )
+        parser_download.add_argument(
+            "--utce",
+            metavar="UTCLET",
+            type=str,
+            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+        )
+        parser_download.add_argument(
+            "--obs_type",
+            metavar="OBSTYPE",
+            type=str,
+            help="An observation type from fold, search and cal",
+        )
+        parser_download.add_argument(
+            "--unprocessed",
+            action='store_true',
+            default=None,
+            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+        )
+        parser_download.add_argument(
+            "--incomplete",
+            action='store_true',
+            default=None,
             help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
         )
 
