@@ -25,6 +25,7 @@ class PipelineRun(GraphQLTable):
             "id",
             "observation { id }",
             "template { id }",
+            "ephemeris { id }",
             "pipelineName",
             "pipelineDescription",
             "pipelineVersion",
