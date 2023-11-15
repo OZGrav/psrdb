@@ -200,3 +200,18 @@ class Residual(GraphQLTable):
         parser_list.add_argument(
             "--template", metavar="TEMPL", type=int, help="list residual matching the template id [int]"
         )
+
+        # create the parser for the "create" command
+        parser_create = subs.add_parser("create", help="Create a new Residual")
+        parser_create.add_argument(
+            "pulsar", metavar="PULSAR", type=str, help="Name of the pulsar [str]"
+        )
+        parser_create.add_argument(
+            "ephemeris", metavar="EPH", type=str, help="Path to the timing ephemeris used to create this residual file [str]"
+        )
+        parser_create.add_argument(
+            "project_short", metavar="PROJ", type=str, help="Short code of the project [str]"
+        )
+        parser_create.add_argument(
+            "residual_path", metavar="TOA", type=str, help="Path to the residual file [str]"
+        )
