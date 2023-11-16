@@ -7,14 +7,10 @@ Command line interface and python package for interacting with the MeerTime data
 
 ## Installation
 
-To install run
-```
-poetry install
-```
-or if you don't use poetry, you can instead run
+To install `psrdb` run the following command:
 
 ```
-pip install .
+pip install psrdb
 ```
 
 To interact with the database you need to get an account on the [pulsars.org.au](https://pulsars.org.au) website.
@@ -23,6 +19,18 @@ Once you have an account you then need to generate a token on this [page](https:
 Set this token using the following command (you can put this in your `~/.bashrc`):
 ```
 export PSRDB_TOKEN=tokenhere
+```
+
+If you want to the current unreleased version, you can clone the repository and run
+
+```
+poetry install
+```
+
+or if you don't use poetry, you can instead run
+
+```
+pip install .
 ```
 
 ## How to use

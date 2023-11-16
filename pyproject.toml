@@ -15,7 +15,6 @@ remove_fluxcals = "psrdb.scripts.remove_fluxcals:main"
 [tool.poetry.dependencies]
 python = "^3.9"
 requests = "^2.25.1"
-pytest = "^7.3.1"
 python-decouple = "^3.8"
 pulsar-paragraph = "^1.0.1"
 
