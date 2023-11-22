@@ -136,6 +136,10 @@ def main():
     obs_data.parse()
     obs_data.set("BEAM", args.beam)
 
+    if obs_data.schedule_block_id is None or obs_data.schedule_block_id == "None":
+        logging.error(f"No schedule block ID for {obs_data.source} {obs_data.utc_start} {args.beam}")
+        sys.exit(42)
+
     # Find raw archive and frequency summed files
     freq_summed_archive = f"{RESULTS_DIR}/{args.beam}/{obs_data.utc_start}/{obs_data.source}/freq.sum"
     if obs_data.obs_type == "fold":
