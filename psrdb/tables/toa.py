@@ -52,6 +52,7 @@ class Toa(GraphQLTable):
         id=None,
         pulsar=None,
         pipeline_run_id=None,
+        project_short=None,
         dm_corrected=None,
         minimum_nsubs=None,
         maximum_nsubs=None,
@@ -67,6 +68,8 @@ class Toa(GraphQLTable):
             Filter by the pulsar name, by default None
         pipeline_run_id : int, optional
             Filter by the pipeline run id, by default None
+        project_short : str
+            The project short name (e.g PTA).
         dm_corrected : bool, optional
             Filter by if the toa was DM corrected, by default None
         minimum_nsubs : bool, optional
@@ -87,6 +90,7 @@ class Toa(GraphQLTable):
             {"field": "id", "value": id},
             {"field": "pulsar", "value": pulsar},
             {"field": "pipelineRunId", "value": pipeline_run_id},
+            {"field": "projectShort", "value": project_short},
             {"field": "dmCorrected", "value": dm_corrected},
             {"field": "obsNchan", "value": obs_nchan},
         ]
@@ -99,7 +103,8 @@ class Toa(GraphQLTable):
     def create(
         self,
         pipeline_run_id,
-        ephemeris_id,
+        project_short,
+        ephemeris,
         template_id,
         toa_lines,
         dmCorrected,
@@ -112,8 +117,10 @@ class Toa(GraphQLTable):
         ----------
         pipeline_run_id : int
             The ID of the PipelineRun database object for this Toa.
-        ephemeris_id : int
-            The ID of the Ephemeris database object for this Toa.
+        project_short : str
+            The project short name (e.g PTA).
+        ephemeris : str
+            The path to the ephemeris file used to create the residuals.
         template_id : int
             The ID of the Template database object for this Toa.
         toa_lines : list
@@ -134,8 +141,9 @@ class Toa(GraphQLTable):
         self.mutation = """
         mutation (
             $pipelineRunId: Int!,
-            $ephemerisId: Int!,
+            $projectShort: String!,
             $templateId: Int!,
+            $ephemerisText: String!,
             $toaLines: [String]!,
             $dmCorrected: Boolean!,
             $minimumNsubs: Boolean!,
@@ -143,8 +151,9 @@ class Toa(GraphQLTable):
         ) {
             createToa (input: {
                 pipelineRunId: $pipelineRunId,
-                ephemerisId: $ephemerisId,
+                projectShort: $projectShort,
                 templateId: $templateId,
+                ephemerisText: $ephemerisText,
                 toaLines: $toaLines,
                 dmCorrected: $dmCorrected,
                 minimumNsubs: $minimumNsubs,
@@ -156,11 +165,15 @@ class Toa(GraphQLTable):
             }
         }
         """
+        # Read ephemeris file
+        with open(ephemeris, "r") as f:
+            ephemeris_str = f.read()
         # Upload the toa
         self.variables = {
             'pipelineRunId': pipeline_run_id,
-            'ephemerisId': ephemeris_id,
+            'projectShort': project_short,
             'templateId': template_id,
+            'ephemerisText': ephemeris_str,
             'toaLines': toa_lines,
             'dmCorrected': dmCorrected,
             'minimumNsubs': minimumNsubs,
@@ -202,6 +215,7 @@ class Toa(GraphQLTable):
         pulsar,
         id=None,
         pipeline_run_id=None,
+        project_short=None,
         dm_corrected=None,
         minimum_nsubs=None,
         maximum_nsubs=None,
@@ -217,6 +231,8 @@ class Toa(GraphQLTable):
             Filter by the database ID, by default None
         pipeline_run_id : int, optional
             Filter by the pipeline run id, by default None
+        project_short : str
+            The project short name (e.g PTA).
         dm_corrected : bool, optional
             Filter by if the toa was DM corrected, by default None
         minimum_nsubs : bool, optional
@@ -237,6 +253,7 @@ class Toa(GraphQLTable):
             {"field": "id", "value": id},
             {"field": "pulsar", "value": pulsar},
             {"field": "pipelineRunId", "value": pipeline_run_id},
+            {"field": "projectShort", "value": project_short},
             {"field": "dmCorrected", "value": dm_corrected},
             {"field": "obsNchan", "value": obs_nchan},
         ]
@@ -309,6 +326,7 @@ class Toa(GraphQLTable):
                 args.pulsar,
                 args.id,
                 args.pipeline_run_id,
+                args.project,
                 args.dm_corrected,
                 args.minimum_nsubs,
                 args.maximum_nsubs,
@@ -356,6 +374,7 @@ class Toa(GraphQLTable):
         # create the parser for the "download" command
         parser_download = subs.add_parser("download", help="Download TOAs for a pulsar to a .tim file")
         parser_download.add_argument("pulsar", type=str, help="Name of the pulsar [str]")
+        parser_download.add_argument("--project", type=str, help="The project short (e.g. PTA) [str]")
         parser_download.add_argument("--id", type=int, help="id of the toa [int]")
         parser_download.add_argument("--pipeline_run_id", type=int, help="pipeline_run_id of the toa [int]")
         parser_download.add_argument("--dm_corrected",  action="store_true", help="Return TOAs that have had their DM corrected for each observation [bool]")

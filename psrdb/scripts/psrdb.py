@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 
 from psrdb.graphql_table import GraphQLTable
 from psrdb.graphql_client import GraphQLClient
@@ -61,11 +62,15 @@ def main():
             table.set_quiet(args.quiet)
             table.set_use_pagination(True)
             response = table.process(args)
-            if args.verbose:
-                import json
-
-                print(response.status_code)
-                print(json.loads(response.content))
+            if 'status_code' in dir(response):
+                if response.status_code not in (200, 201):
+                    logger.error(f"Query failed with the error code {response.status_code}, error:")
+                    print(json.loads(response.content))
+                    sys.exit(response.status_code)
+                if args.verbose:
+                    import json
+                    print(response.status_code)
+                    print(json.loads(response.content))
 
 
 if __name__ == "__main__":
