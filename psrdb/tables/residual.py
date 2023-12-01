@@ -114,7 +114,7 @@ class Residual(GraphQLTable):
         """
         # Loop over the lines and grab the important info to reduce upload size
         residual_line_info = []
-        for residual_line in residual_lines[1:]:
+        for residual_line in residual_lines:
             residual_line = residual_line.rstrip("\n")
             # Loop over residual lines and turn into a dict
             residual_dict = residual_line_to_dict(residual_line)
@@ -127,7 +127,10 @@ class Residual(GraphQLTable):
                 'residualLines': residual_chunk,
             }
             responses.append(self.mutation_graphql())
-        return responses[-1]
+        if len(responses) == 0:
+            return None
+        else:
+            return responses[-1]
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""
