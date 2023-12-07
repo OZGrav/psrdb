@@ -9,6 +9,7 @@ packages = [{include = "psrdb"}]
 [tool.poetry.scripts]
 psrdb = "psrdb.scripts.psrdb:main"
 generate_meerkat_json = "psrdb.scripts.generate_meerkat_json:main"
+generate_molonglo_json = "psrdb.scripts.generate_molonglo_json:main"
 ingest_obs = "psrdb.scripts.ingest_obs:main"
 remove_fluxcals = "psrdb.scripts.remove_fluxcals:main"
 
