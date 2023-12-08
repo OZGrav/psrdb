@@ -195,7 +195,7 @@ class Observation(GraphQLTable):
         # Create the output name
         output_name = "observations"
         if pulsar_name:
-            output_name += f"_{pulsar_name}"
+            output_name += f"_{'_'.join(pulsar_name)}"
         if telescope_name:
             output_name += f"_{telescope_name}"
         if project_id:
