@@ -10,7 +10,7 @@ import subprocess
 from decouple import config
 from datetime import datetime
 
-import psrchive as psr
+# import psrchive as psr
 
 from psrdb.utils import header
 
@@ -98,9 +98,8 @@ def get_archive_ephemeris(freq_summed_archive):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Ingest PTUSE fold mode observation")
+    parser = argparse.ArgumentParser(description="Ingest Molonglo fold mode observation")
     parser.add_argument("obs_header", type=str, help="obs.header file location")
-    parser.add_argument("beam", type=int, help="beam number of the observation")
     parser.add_argument(
         "-o",
         "--output_dir",
@@ -134,11 +133,6 @@ def main():
     # Load data from header
     obs_data = header.PTUSEHeader(args.obs_header)
     obs_data.parse()
-    obs_data.set("BEAM", args.beam)
-
-    if obs_data.schedule_block_id is None or obs_data.schedule_block_id == "None":
-        logging.error(f"No schedule block ID for {obs_data.source} {obs_data.utc_start} {args.beam}")
-        sys.exit(42)
 
     # Find raw archive and frequency summed files
     freq_summed_archive = f"{RESULTS_DIR}/{args.beam}/{obs_data.utc_start}/{obs_data.source}/freq.sum"
@@ -156,7 +150,7 @@ def main():
     if obs_data.obs_type == "cal":
         obs_length = -1
     elif not os.path.exists(freq_summed_archive):
-        logging.warning(f"Could not find freq.sum file for {obs_data.source} {obs_data.utc_start} {args.beam}")
+        logging.warning(f"Could not find freq.sum file for {obs_data.source} {obs_data.utc_start}")
         logging.warning("Finding observation length from archive files (This may take a while)")
         obs_length = get_sf_length(archive_files)
     else:
@@ -177,7 +171,7 @@ def main():
         "frequency": obs_data.frequency,
         "bandwidth": obs_data.bandwidth,
         "nchan": obs_data.nchan,
-        "beam": args.beam,
+        "beam": obs_data.beam,
         "nant": obs_data.nant,
         "nantEff": obs_data.nant_eff,
         "npol": obs_data.npol,

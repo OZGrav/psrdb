@@ -84,21 +84,12 @@ class Residual(GraphQLTable):
 
     def create(
         self,
-        pulsar,
-        project_short,
-        ephemeris,
         residual_lines,
     ):
         """Create a new Residual database object.
 
         Parameters
         ----------
-        pulsar : str
-            The name of the pulsar.
-        project_short : str
-            The short code of the project (e.g. PTA).
-        ephemeris : str
-            The path to the ephemeris file used to create the residuals.
         residual_lines : list of str
             A list of strings containing the residual lines.
 
@@ -110,15 +101,9 @@ class Residual(GraphQLTable):
         self.mutation_name = "createResidual"
         self.mutation = """
         mutation (
-            $pulsar: String!,
-            $projectShort: String!,
-            $ephemerisText: String!,
             $residualLines: [String]!,
         ) {
             createResidual (input: {
-                pulsar: $pulsar,
-                projectShort: $projectShort,
-                ephemerisText: $ephemerisText,
                 residualLines: $residualLines,
             }) {
                 residual {
@@ -127,26 +112,25 @@ class Residual(GraphQLTable):
             }
         }
         """
-        # Read ephemeris file
-        with open(ephemeris, "r") as f:
-            ephemeris_str = f.read()
         # Loop over the lines and grab the important info to reduce upload size
         residual_line_info = []
-        for residual_line in residual_lines[1:]:
+        for residual_line in residual_lines:
             residual_line = residual_line.rstrip("\n")
             # Loop over residual lines and turn into a dict
             residual_dict = residual_line_to_dict(residual_line)
             # return only important info as a comma sperated string
             residual_line_info.append(f"{decode_id(residual_dict['id'])},{residual_dict['mjd']},{residual_dict['residual']},{residual_dict['residual_error']},{residual_dict['residual_phase']}")
         # Upload the residuals 1000 at a time
+        responses = []
         for residual_chunk in chunk_list(residual_line_info, 1000):
             self.variables = {
-                'pulsar': pulsar,
-                'projectShort': project_short,
-                'ephemerisText': ephemeris_str,
                 'residualLines': residual_chunk,
             }
-            self.mutation_graphql()
+            responses.append(self.mutation_graphql())
+        if len(responses) == 0:
+            return None
+        else:
+            return responses[-1]
 
     def process(self, args):
         """Parse the arguments collected by the CLI."""
@@ -155,9 +139,6 @@ class Residual(GraphQLTable):
             with open(args.residual_path, "r") as f:
                 residual_lines = f.readlines()
                 return self.create(
-                    args.pulsar,
-                    args.project_short,
-                    args.ephemeris,
                     residual_lines,
                 )
         elif args.subcommand == "list":
@@ -203,15 +184,6 @@ class Residual(GraphQLTable):
 
         # create the parser for the "create" command
         parser_create = subs.add_parser("create", help="Create a new Residual")
-        parser_create.add_argument(
-            "pulsar", metavar="PULSAR", type=str, help="Name of the pulsar [str]"
-        )
-        parser_create.add_argument(
-            "ephemeris", metavar="EPH", type=str, help="Path to the timing ephemeris used to create this residual file [str]"
-        )
-        parser_create.add_argument(
-            "project_short", metavar="PROJ", type=str, help="Short code of the project [str]"
-        )
         parser_create.add_argument(
             "residual_path", metavar="TOA", type=str, help="Path to the residual file [str]"
         )

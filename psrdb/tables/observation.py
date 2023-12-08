@@ -817,6 +817,7 @@ class Observation(GraphQLTable):
             "--obs_type",
             metavar="OBSTYPE",
             type=str,
+            default="fold",
             help="An observation type from fold, search and cal",
         )
         parser_download.add_argument(

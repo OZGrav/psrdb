@@ -80,18 +80,22 @@ class PTUSEHeader(Header):
 
         self.nant = len(self.get("ANTENNAE").split(","))
 
-        h_weights = self.get("WEIGHTS_POLH").split(",")
-        v_weights = self.get("WEIGHTS_POLV").rstrip(",").split(",")
         if self.get("WEIGHTS_POLH") == "Unknown" or self.get("WEIGHTS_POLV") == "Unknown":
             self.nant_eff = self.nant
         else:
-            nant_eff_h = 0
-            nant_eff_v = 0
-            for w in h_weights:
-                nant_eff_h += float(w)
-            for w in v_weights:
-                nant_eff_v += float(w)
-            self.nant_eff = int((nant_eff_h + nant_eff_v) / 2)
+            h_weights = self.get("WEIGHTS_POLH")
+            v_weights = self.get("WEIGHTS_POLV")
+            if h_weights == "None" or v_weights == "None":
+                # No weights given so return None
+                self.nant_eff = None
+            else:
+                nant_eff_h = 0
+                nant_eff_v = 0
+                for w in h_weights.split(","):
+                    nant_eff_h += float(w)
+                for w in v_weights.rstrip(",").split(","):
+                    nant_eff_v += float(w)
+                self.nant_eff = int((nant_eff_h + nant_eff_v) / 2)
         self.configuration = json.dumps(self.cfg)
 
         self.machine = "PTUSE"
@@ -102,7 +106,8 @@ class PTUSEHeader(Header):
         if self.get("PERFORM_FOLD") == "1":
             self.fold_dm = float(self.get("FOLD_DM"))
             self.fold_nchan = int(self.get("FOLD_OUTNCHAN"))
-            self.fold_npol = int(self.get("FOLD_OUTNPOL"))
+            if self.get("FOLD_OUTNPOL") != "None":
+                self.fold_npol = int(self.get("FOLD_OUTNPOL"))
             self.fold_nbin = int(self.get("FOLD_OUTNBIN"))
             self.fold_tsubint = int(self.get("FOLD_OUTTSUBINT"))
             if self.source.endswith(("_N", "_S", "_O")):
