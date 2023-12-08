@@ -36,6 +36,10 @@ class Header(KeyValueStore):
         self.source = self.cfg["SOURCE"]
         self.utc_start = self.cfg["UTC_START"]
         self.telescope = self.cfg["TELESCOPE"]
+        if "BEAM" in self.cfg.keys():
+            self.beam = self.cfg["BEAM"]
+        else:
+            self.beam = None
         if "DELAYCAL_ID" in self.cfg.keys():
             self.delaycal_id = self.cfg["DELAYCAL_ID"]
         else:

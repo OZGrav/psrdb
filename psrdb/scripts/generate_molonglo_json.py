@@ -8,17 +8,15 @@ import shlex
 import logging
 import subprocess
 from decouple import config
-from datetime import datetime
+from datetime import datetime, timezone
 
-# import psrchive as psr
+import psrchive as psr
 
 from psrdb.utils import header
+from psrdb.load_data import MOLONGLO_CALIBRATIONS
 
 
-CALIBRATIONS_DIR = config("CALIBRATIONS_DIR", "/fred/oz005/users/aparthas/reprocessing_MK/poln_calibration")
-RESULTS_DIR = config("RESULTS_DIR", "/fred/oz005/kronos")
-FOLDING_DIR = config("FOLDING_DIR", "/fred/oz005/timing")
-SEARCH_DIR  = config("SEARCH_DIR",  "/fred/oz005/search")
+RESULTS_DIR = config("RESULTS_DIR", "/fred/oz002/ldunn/meertime_dataportal/data/post")
 
 
 def generate_obs_length(archive):
@@ -63,21 +61,19 @@ def get_sf_length(sf_files):
 
 def get_calibration(utc_start):
     utc_start_dt = datetime.strptime(utc_start, "%Y-%m-%d-%H:%M:%S")
-    auto_cal_epoch = "2020-04-04-00:00:00"
-    auto_cal_epoch_dt = datetime.strptime(auto_cal_epoch, "%Y-%m-%d-%H:%M:%S")
+    with open(MOLONGLO_CALIBRATIONS) as f:
+        for line in f.readlines():
+            if line[0] == '#':
+                continue
 
-    if utc_start_dt > auto_cal_epoch_dt:
-        return ("pre", None)
+            date = utc_start_dt.strptime(line.split(' ')[0], '%Y-%m-%d').replace(tzinfo=timezone.utc)
+            delta = date - utc_start_dt
+            if delta.total_seconds() > 0:
+                break
 
-    cals = sorted(glob.glob(f"{CALIBRATIONS_DIR}/*.jones"), reverse=True)
-    for cal in cals:
-        cal_file = os.path.basename(cal)
-        cal_epoch = cal_file.rstrip(".jones")
-        cal_epoch_dt = datetime.strptime(cal_epoch, "%Y-%m-%d-%H:%M:%S")
-        if cal_epoch_dt < utc_start_dt:
-            return ("post", cal)
+            calibration = line.split(' ')[1].strip()
 
-    raise RuntimeError(f"Could not find calibration file for utc_start={utc_start}")
+    return calibration
 
 
 def get_archive_ephemeris(freq_summed_archive):
@@ -135,29 +131,11 @@ def main():
     obs_data.parse()
 
     # Find raw archive and frequency summed files
-    freq_summed_archive = f"{RESULTS_DIR}/{args.beam}/{obs_data.utc_start}/{obs_data.source}/freq.sum"
-    if obs_data.obs_type == "fold":
-        archive_files = glob.glob(f"{FOLDING_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.ar")
-    elif obs_data.obs_type == "search":
-        archive_files = glob.glob(f"{SEARCH_DIR}/{obs_data.source}/{obs_data.utc_start}/{args.beam}/*/*.sf")
-    if obs_data.obs_type != "cal":
-        if not os.path.exists(freq_summed_archive) and not archive_files:
-            logging.error(f"Could not find freq.sum and archive files for {obs_data.source} {obs_data.utc_start} {args.beam}")
-            sys.exit(42)
+    freq_summed_archive = f"{RESULTS_DIR}/{obs_data.source}/{obs_data.utc_start}/{obs_data.source}_{obs_data.utc_start}.FT"
+    # Check if there are freq.sum and archive files
+    obs_length = generate_obs_length(freq_summed_archive)
 
-
-    # Check if ther are freq.sum and archive files
-    if obs_data.obs_type == "cal":
-        obs_length = -1
-    elif not os.path.exists(freq_summed_archive):
-        logging.warning(f"Could not find freq.sum file for {obs_data.source} {obs_data.utc_start}")
-        logging.warning("Finding observation length from archive files (This may take a while)")
-        obs_length = get_sf_length(archive_files)
-    else:
-        # Grab observation length from the frequency summed archive
-        obs_length = generate_obs_length(freq_summed_archive)
-
-    cal_type, cal_location = get_calibration(obs_data.utc_start)
+    cal_location = get_calibration(obs_data.utc_start)
 
     ephemeris_text = get_archive_ephemeris(freq_summed_archive)
 
@@ -166,7 +144,7 @@ def main():
         "telescopeName": obs_data.telescope,
         "projectCode": obs_data.proposal_id,
         "schedule_block_id": obs_data.schedule_block_id,
-        "cal_type": cal_type,
+        "cal_type": "pre",
         "cal_location": cal_location,
         "frequency": obs_data.frequency,
         "bandwidth": obs_data.bandwidth,
