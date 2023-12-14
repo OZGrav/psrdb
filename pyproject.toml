@@ -5,6 +5,7 @@ description = "CLI for pulsars.org.au"
 authors = ["GWDC"]
 license = "MIT"
 packages = [{include = "psrdb"}]
+include = ["psrdb/data/molonglo_phasing.txt"]
 
 [tool.poetry.scripts]
 psrdb = "psrdb.scripts.psrdb:main"

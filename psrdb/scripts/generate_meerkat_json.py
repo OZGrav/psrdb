@@ -10,9 +10,8 @@ import subprocess
 from decouple import config
 from datetime import datetime
 
-import psrchive as psr
-
 from psrdb.utils import header
+from psrdb.utils.upload import generate_obs_length, get_archive_ephemeris
 
 
 CALIBRATIONS_DIR = config("CALIBRATIONS_DIR", "/fred/oz005/users/aparthas/reprocessing_MK/poln_calibration")
@@ -20,15 +19,6 @@ RESULTS_DIR = config("RESULTS_DIR", "/fred/oz005/kronos")
 FOLDING_DIR = config("FOLDING_DIR", "/fred/oz005/timing")
 SEARCH_DIR  = config("SEARCH_DIR",  "/fred/oz005/search")
 
-
-def generate_obs_length(archive):
-    """
-    Determine the length of the observation from the input archive file
-    """
-
-    ar = psr.Archive_load(archive)
-    ar = ar.total()
-    return ar.get_first_Integration().get_duration()
 
 def get_sf_length(sf_files):
     """
@@ -79,21 +69,6 @@ def get_calibration(utc_start):
 
     raise RuntimeError(f"Could not find calibration file for utc_start={utc_start}")
 
-
-def get_archive_ephemeris(freq_summed_archive):
-    """
-    Get the ephemeris from the archive file using the vap command.
-    """
-    comm = "vap -E {0}".format(freq_summed_archive)
-    args = shlex.split(comm)
-    proc = subprocess.Popen(args,stdout=subprocess.PIPE)
-    proc.wait()
-    ephemeris_text = proc.stdout.read().decode("utf-8")
-
-    if ephemeris_text.startswith('\n'):
-        # Remove newline character at start of output
-        ephemeris_text = ephemeris_text.lstrip('\n')
-    return ephemeris_text
 
 def main():
     import argparse
