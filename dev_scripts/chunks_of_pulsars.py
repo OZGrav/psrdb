@@ -26,16 +26,6 @@ for pulsar in pulsar_data:
         continue
     pulsar_name = pulsar['name']
 
-    if pulsar_name in [
-            "J1939-6342", # J0437 mislabeled
-            "J1924-2914", # J0437 mislabeled
-            "J2052-3640", # J0437 mislabeled
-            "J2214-3835", # J0437 mislabeled
-            "J0710-1604", # Perhaps a candidate that wasn't detectable
-            "J2003-0934", # A craft candidate
-            "J1823-3022", # A trapum candidate
-        ]:
-        continue
 
     if pulsar_name in [
             "J1644-4657",
@@ -62,5 +52,5 @@ query = QueryATNF(psrs=pulsars_with_templates).pandas
 
 print(len(query))
 
-for pulsar_chunk in chunk_list(list(query.sort_values("P0")["PSRJ"]), 100):
+for pulsar_chunk in chunk_list(list(query.sort_values("P0")["PSRJ"]), 200):
     print(",".join(pulsar_chunk))
