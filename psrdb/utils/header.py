@@ -1,5 +1,8 @@
 import re
+import csv
 import json
+
+from psrdb.load_data import LBAND_CALIBRATORS, UHFBAND_CALIBRATORS, SBAND_CALIBRATORS, POLARISATION_CALIBRATORS
 
 
 class KeyValueStore:
@@ -114,7 +117,16 @@ class PTUSEHeader(Header):
                 self.fold_npol = int(self.get("FOLD_OUTNPOL"))
             self.fold_nbin = int(self.get("FOLD_OUTNBIN"))
             self.fold_tsubint = int(self.get("FOLD_OUTTSUBINT"))
-            if self.source.endswith(("_N", "_S", "_O")):
+
+            # Get all calibrator names from data files
+            calibrator_names = ("J1939-6342", "J0408-6545")# Flux and bandpass calibration https://skaafrica.atlassian.net/wiki/spaces/ESDKB/pages/1481408634/Flux+and+bandpass+calibration
+            for cal_file in [LBAND_CALIBRATORS, UHFBAND_CALIBRATORS, SBAND_CALIBRATORS, POLARISATION_CALIBRATORS]:
+                with open(cal_file, 'r') as csv_file:
+                    csv_reader = csv.reader(csv_file)
+                    calibrator_names += tuple(row[0] for row in csv_reader)
+            print(calibrator_names)
+            # Ends with are labels for calibrations and starts with are calibrator source names
+            if self.source.endswith(("_N", "_S", "_O")) or self.source.endswith(calibrator_names):
                 self.obs_type = "cal"
             else:
                 self.obs_type = "fold"
