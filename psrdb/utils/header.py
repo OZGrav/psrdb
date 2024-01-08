@@ -124,7 +124,6 @@ class PTUSEHeader(Header):
                 with open(cal_file, 'r') as csv_file:
                     csv_reader = csv.reader(csv_file)
                     calibrator_names += tuple(row[0] for row in csv_reader)
-            print(calibrator_names)
             # Ends with are labels for calibrations and starts with are calibrator source names
             if self.source.endswith(("_N", "_S", "_O")) or self.source.endswith(calibrator_names):
                 self.obs_type = "cal"
