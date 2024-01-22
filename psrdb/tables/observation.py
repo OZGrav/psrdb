@@ -122,6 +122,7 @@ class Observation(GraphQLTable):
         telescope_name=None,
         project_id=None,
         project_short=None,
+        main_project="meertime",
         utcs=None,
         utce=None,
         obs_type='fold',
@@ -182,6 +183,7 @@ class Observation(GraphQLTable):
             {"field": "telescope_Name", "value": telescope_name},
             {"field": "project_Id", "value": project_id},
             {"field": "project_Short", "value": project_short},
+            {"field": "mainProject", "value": main_project},
             {"field": "utcStartGte", "value": utcs},
             {"field": "utcStartLte", "value": utce},
             {"field": "obsType", "value": obs_type},
@@ -196,6 +198,8 @@ class Observation(GraphQLTable):
 
         # Create the output name
         output_name = "observations"
+        if main_project:
+            output_name += f"_{main_project}"
         if pulsar_name:
             output_name += f"_{'_'.join(pulsar_name)}"
         if telescope_name:
@@ -663,6 +667,7 @@ class Observation(GraphQLTable):
                 telescope_name=args.telescope_name,
                 project_id=args.project_id,
                 project_short=args.project_code,
+                main_project=args.main_project,
                 utcs=args.utcs,
                 utce=args.utce,
                 obs_type=args.obs_type,
@@ -676,6 +681,7 @@ class Observation(GraphQLTable):
                 telescope_name=args.telescope_name,
                 project_id=args.project_id,
                 project_short=args.project_code,
+                main_project=args.main_project,
                 utcs=args.utcs,
                 utce=args.utce,
                 obs_type=args.obs_type,
@@ -741,6 +747,13 @@ class Observation(GraphQLTable):
             "--project_code", metavar="PROJCODE", type=str, help="list observations matching the project code [str]"
         )
         parser_list.add_argument(
+            "--main_project",
+            metavar="MAINPROJECT",
+            type=str,
+            default="MeerTIME",
+            help="list observations matching the mainproject [str]",
+        )
+        parser_list.add_argument(
             "--utcs",
             metavar="UTCGTE",
             type=str,
@@ -802,6 +815,13 @@ class Observation(GraphQLTable):
         )
         parser_download.add_argument(
             "--project_code", metavar="PROJCODE", type=str, help="list observations matching the project code [str]"
+        )
+        parser_download.add_argument(
+            "--main_project",
+            metavar="MAINPROJECT",
+            type=str,
+            default="MeerTIME",
+            help="list observations matching the mainproject [str]"
         )
         parser_download.add_argument(
             "--utcs",
