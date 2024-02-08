@@ -110,6 +110,8 @@ class Toa(GraphQLTable):
         dmCorrected,
         minimumNsubs,
         maximumNsubs,
+        npol,
+        nchan,
     ):
         """Create a new Toa database object.
 
@@ -131,6 +133,10 @@ class Toa(GraphQLTable):
             If the toa was generated with the minimum number of time subbands.
         maximumNsubs : bool
             If the toa was generated with the maximum number of time subbands.
+        npol : int
+            The number of Stokes polarisations.
+        nchan : int
+            The number of frequency channels.
 
         Returns
         -------
@@ -148,6 +154,8 @@ class Toa(GraphQLTable):
             $dmCorrected: Boolean!,
             $minimumNsubs: Boolean!,
             $maximumNsubs: Boolean!,
+            $obsNpol: Int!,
+            $obsNchan: Int!,
         ) {
             createToa (input: {
                 pipelineRunId: $pipelineRunId,
@@ -158,6 +166,8 @@ class Toa(GraphQLTable):
                 dmCorrected: $dmCorrected,
                 minimumNsubs: $minimumNsubs,
                 maximumNsubs: $maximumNsubs,
+                obsNpol: $obsNpol,
+                obsNchan: $obsNchan,
             }) {
                 toa {
                     id,
@@ -178,6 +188,8 @@ class Toa(GraphQLTable):
             'dmCorrected': dmCorrected,
             'minimumNsubs': minimumNsubs,
             'maximumNsubs': maximumNsubs,
+            "obsNpol": npol,
+            "obsNchan": nchan,
         }
         return self.mutation_graphql()
 
@@ -220,6 +232,7 @@ class Toa(GraphQLTable):
         minimum_nsubs=None,
         maximum_nsubs=None,
         obs_nchan=None,
+        npol=None,
     ):
         """Download a file containing ToAs based on the filters.
 
@@ -241,6 +254,8 @@ class Toa(GraphQLTable):
             Filter by if the toa was generated with the maximum number of time subbands, by default None
         obs_nchan : int, optional
             Filter by the number of channels, by default None
+        npol : int
+            The number of Stokes polarisations.
 
         Returns
         -------
@@ -256,6 +271,7 @@ class Toa(GraphQLTable):
             {"field": "projectShort", "value": project_short},
             {"field": "dmCorrected", "value": dm_corrected},
             {"field": "obsNchan", "value": obs_nchan},
+            {"field": "obsNpol", "value": npol},
         ]
         if minimum_nsubs:
             filters.append({"field": "minimumNsubs", "value": minimum_nsubs})
@@ -279,6 +295,8 @@ class Toa(GraphQLTable):
             output_name += "_maximum_nsubs"
         if obs_nchan is not None:
             output_name += f"_nchan{obs_nchan}"
+        if npol is not None:
+            output_name += f"_npol{npol}"
         output_name += ".tim"
 
         # Loop over the toas and dump them as a file
@@ -316,6 +334,7 @@ class Toa(GraphQLTable):
                         args.dm_corrected,
                         args.minimumNsubs,
                         args.maximumNsubs,
+                        args.npol,
                     )
         elif args.subcommand == "delete":
             return self.delete(args.id)
@@ -331,6 +350,7 @@ class Toa(GraphQLTable):
                 args.minimum_nsubs,
                 args.maximum_nsubs,
                 args.nchan,
+                args.npol,
             )
         else:
             raise RuntimeError(f"{args.subcommand} command is not implemented")
@@ -380,5 +400,6 @@ class Toa(GraphQLTable):
         parser_download.add_argument("--dm_corrected",  action="store_true", help="Return TOAs that have had their DM corrected for each observation [bool]")
         parser_download.add_argument("--minimum_nsubs", action="store_true", help="Only use TOAs with the minimum number of subints per observation (1) [bool]")
         parser_download.add_argument("--maximum_nsubs", action="store_true", help="Only use TOAs with the maximum number of subints per observation (can be 1 but is often more) [bool]")
-        parser_download.add_argument("--nchan", type=int, help="Only use TOAs with this many subchans (common values are 1,4 and 16) [int]")
+        parser_download.add_argument("--nchan", type=int, help="Only use TOAs with this many subchans (common values are 1,4 and 16) [int]", required=True)
+        parser_download.add_argument("--npol", type=int, help="Only use TOAs with this many stokes polarisations (4 for all and 1 for summed) [int]", required=True)
 
