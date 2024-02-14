@@ -25,7 +25,7 @@ class Residual(GraphQLTable):
     """
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
-        self.table_name = "residual"
+        self.table_name = "toa"
         self.field_names = [
             "id",
             "pipelineRun{ id }",
@@ -106,7 +106,7 @@ class Residual(GraphQLTable):
             createResidual (input: {
                 residualLines: $residualLines,
             }) {
-                residual {
+                toa {
                     id,
                 }
             }
