@@ -124,19 +124,41 @@ class GraphQLTable:
         self.parse_mutation_response(response, self.table_name, self.mutation_name)
         return response
 
-    def list_graphql(self, table_name, input_filters, input_connection_fields, input_node_fields):
+    def list_graphql(
+        self,
+        table_name,
+        input_filters,
+        connection_fields,
+        input_node_fields,
+        paginate_num=100,
+    ):
+        """
+        Perform a list query on a table
+
+        Parameters
+        ----------
+        table_name : str
+            The name of the table to query
+        input_filters : list
+            A list of dictionaries with the fields and values to filter the query
+        connection_fields : list
+            A list of fields to return from the connection
+        input_node_fields : list
+            A list of fields to return from the node
+        paginate_num: int, optional
+            The number of records to return per page, default is 100
+        """
         print_headers = True
         cursor = None
-        has_next_page = True
+        connection_fields.append("pageInfo { hasNextPage endCursor }")
         result = []
+        has_next_page = True
         while has_next_page:
             # Append page information to input filters and fields
             filters = copy(input_filters)
-            filters.append({"field": "first", "value": 100})
+            filters.append({"field": "first", "value": paginate_num})
             if cursor is not None:
                 filters.append({"field": "after", "value": cursor})
-            connection_fields = input_connection_fields
-            connection_fields.append("pageInfo { hasNextPage endCursor }")
 
             # Generate the query
             query = generate_graphql_query(table_name, filters, connection_fields, input_node_fields)

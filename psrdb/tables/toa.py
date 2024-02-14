@@ -279,7 +279,7 @@ class Toa(GraphQLTable):
             filters.append({"field": "maximumNsubs", "value": maximum_nsubs})
 
         self.get_dicts = True
-        toa_dicts = GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+        toa_dicts = GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names, paginate_num=10000)
 
         # Create the output name
         output_name = f"toa_{pulsar}"
