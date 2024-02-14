@@ -3,6 +3,7 @@ import sys
 
 from psrdb.graphql_table import GraphQLTable
 from psrdb.graphql_client import GraphQLClient
+from psrdb.utils.other import setup_logging
 
 from psrdb.tables.pulsar import Pulsar
 from psrdb.tables.telescope import Telescope
@@ -20,6 +21,8 @@ from psrdb.tables.residual import Residual
 
 
 def main():
+    logger = setup_logging()
+
     parser = GraphQLTable.get_default_parser()
     subparsers = parser.add_subparsers(
         dest="command", help="Database models which can be interrogated"
