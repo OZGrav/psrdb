@@ -324,18 +324,16 @@ class Toa(GraphQLTable):
 
             with open(args.toa_path, "r") as f:
                 toa_lines = f.readlines()
-                for toa_line in toa_lines[1:]:
-                    input_toa_line = toa_line.rstrip("\n")
-                    self.create(
-                        args.pipeline_run_id,
-                        args.ephemeris_id,
-                        args.template_id,
-                        input_toa_line,
-                        args.dm_corrected,
-                        args.minimumNsubs,
-                        args.maximumNsubs,
-                        args.npol,
-                    )
+                self.create(
+                    args.pipeline_run_id,
+                    args.ephemeris_id,
+                    args.template_id,
+                    input_toa_line,
+                    args.dm_corrected,
+                    args.minimumNsubs,
+                    args.maximumNsubs,
+                    args.npol,
+                )
         elif args.subcommand == "delete":
             return self.delete(args.id)
         elif args.subcommand == "list":

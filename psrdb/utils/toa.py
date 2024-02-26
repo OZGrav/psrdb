@@ -40,6 +40,6 @@ def toa_dict_to_line(toa_dict):
     toa_line = ""
     toa_line += f"{toa_dict['archive']} {toa_dict['freq_MHz']:.6f} {toa_dict['mjd']}{toa_dict['mjd_err']:>8.3f}  {toa_dict['telescope']} "
     for key, value in toa_dict.items():
-        if key not in ["archive", "freq_MHz", "mjd", "mjd_err", "telescope"]:
+        if key not in ["archive", "freq_MHz", "mjd", "mjd_err", "telescope"] and value is not None:
             toa_line += f" -{key} {value}"
     return toa_line
