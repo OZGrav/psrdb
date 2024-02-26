@@ -51,12 +51,12 @@ class GraphQLClient:
     def post(self, payload):
         """Post the payload and header to the GraphQL URL."""
         self.logger.debug(f"Using url: {self.graphql_url}")
-        self.logger.debug(f"Using payload: {payload}")
+        self.logger.debug(f"Using payload: {json.dumps(payload, indent=4)}")
         header_log = copy.deepcopy(self.header)
         if "Authorization" in self.header.keys():
             if "JWT" in header_log["Authorization"]:
                 header_log["Authorization"] = "JWT [redacted]"
-        self.logger.debug(f"Using header: {header_log}")
+        self.logger.debug(f"Using header: {json.dumps(header_log, indent=4)}")
         response = self.graphql_session.post(self.graphql_url, headers=self.header, json=payload, timeout=(60, 60))
         content = json.loads(response.content)
 
