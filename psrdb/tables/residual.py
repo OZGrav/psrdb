@@ -1,6 +1,6 @@
 from psrdb.graphql_table import GraphQLTable
 from psrdb.utils.residual import residual_line_to_dict
-from psrdb.utils.other import decode_id
+from psrdb.utils.other import decode_id, chunk_list
 
 
 def get_parsers():
@@ -8,11 +8,6 @@ def get_parsers():
     parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Residual database object on the command line in different ways based on the sub-commands.")
     Residual.configure_parsers(parser)
     return parser
-
-
-def chunk_list(lst, chunk_size):
-    for i in range(0, len(lst), chunk_size):
-        yield lst[i:i + chunk_size]
 
 
 class Residual(GraphQLTable):

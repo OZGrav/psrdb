@@ -1,5 +1,6 @@
 from psrdb.graphql_table import GraphQLTable
 from psrdb.utils.toa import toa_dict_to_line
+from psrdb.utils.other import chunk_list
 
 
 def get_parsers():
@@ -178,20 +179,27 @@ class Toa(GraphQLTable):
         # Read ephemeris file
         with open(ephemeris, "r") as f:
             ephemeris_str = f.read()
-        # Upload the toa
-        self.variables = {
-            'pipelineRunId': pipeline_run_id,
-            'projectShort': project_short,
-            'templateId': template_id,
-            'ephemerisText': ephemeris_str,
-            'toaLines': toa_lines,
-            'dmCorrected': dmCorrected,
-            'minimumNsubs': minimumNsubs,
-            'maximumNsubs': maximumNsubs,
-            "obsNpol": npol,
-            "obsNchan": nchan,
-        }
-        return self.mutation_graphql()
+
+        responses = []
+        for toa_chunk in chunk_list(toa_lines, 1000):
+            # Upload the toa
+            self.variables = {
+                'pipelineRunId': pipeline_run_id,
+                'projectShort': project_short,
+                'templateId': template_id,
+                'ephemerisText': ephemeris_str,
+                'toaLines': toa_chunk,
+                'dmCorrected': dmCorrected,
+                'minimumNsubs': minimumNsubs,
+                'maximumNsubs': maximumNsubs,
+                "obsNpol": npol,
+                "obsNchan": nchan,
+            }
+            responses.append(self.mutation_graphql())
+        if len(responses) == 0:
+            return None
+        else:
+            return responses[-1]
 
     def delete(
         self,

@@ -123,3 +123,8 @@ def get_rest_api_id(response, logger):
 def decode_id(encoded):
     decoded = b64decode(encoded).decode("ascii")
     return decoded.split(":")[1]
+
+
+def chunk_list(lst, chunk_size):
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i + chunk_size]
