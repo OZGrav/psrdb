@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "psrdb"
-version = "3.0.3"
+version = "3.0.4"
 description = "CLI for pulsars.org.au"
 authors = ["GWDC"]
 license = "MIT"
