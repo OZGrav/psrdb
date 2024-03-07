@@ -49,16 +49,39 @@ for pulsar in pulsar_data:
         pulsar_name = "J1653-45"
     elif pulsar_name == "J0837-2454":
         pulsar_name = "J0837-24"
+    elif pulsar_name == "J1804-0735A":
+        pulsar_name = "J1804-0735"
+    elif pulsar_name == "J1326-4728K":
+        pulsar_name = "J1326-4728D"
 
     elif pulsar_name in [
             "J1939-6342", # J0437 mislabeled
             "J1924-2914", # J0437 mislabeled
             "J2052-3640", # J0437 mislabeled
             "J2214-3835", # J0437 mislabeled
+            "J1735-3028A", # J0437 mislabeled
             "J0710-1604", # Perhaps a candidate that wasn't detectable
             "J2003-0934", # A craft candidate
             "J1823-3022", # A trapum candidate
+            "J0103-7050A", # can't find
+            "J1808-1949A", # can't find
+            "J2140-2310", # can't find
+            "J1823-3021K", # can't find
+            "J1701-3006I", # can't find
+            "J1848-0129A", # can't find
+            "J0103-7050E", # can't find
+            "J1546-3747B", # can't find
+            "J0000-0000", # yeh that must be a joke
+            "J1721-1936A", # can't find
+            "J1808-4342A", # can't find
+            "J0103-7050G", # can't find
+            "J1701-3006H", # can't find
+            "J1701-3006J", # can't find
+            "J1326-4728L", # can't find in ANTF
         ]:
+        continue
+    elif not pulsar_name.startswith("J"):
+        # Skip all the non jname likes searchbeamUH and OmegaCen
         continue
     print(pulsar_name)
     comment = create_pulsar_paragraph(
