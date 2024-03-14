@@ -34,6 +34,8 @@ class Observation(GraphQLTable):
             "beam",
             "band",
             "duration",
+            "foldNchan",
+            "foldNbin",
         ]
 
     def list(
@@ -222,7 +224,7 @@ class Observation(GraphQLTable):
 
         # Loop over the pulsar_fold_results and dump them as a file
         with open(output_name, "w") as f:
-            f.write("Obs ID,Pulsar Jname,UTC Start,Project Short Name,Beam #,Observing Band,Duration (s),Calibration Location\n")
+            f.write("Obs ID,Pulsar Jname,UTC Start,Project Short Name,Beam #,Observing Band,Duration (s),Nchan,Nbin,Calibration Location\n")
             for observations_dict in observations_dicts:
                 data_line = [
                     str(decode_id(observations_dict["id"])),
@@ -232,6 +234,8 @@ class Observation(GraphQLTable):
                     str(observations_dict["beam"]),
                     str(observations_dict["band"]),
                     str(observations_dict["duration"]),
+                    str(observations_dict["foldNchan"]),
+                    str(observations_dict["foldNbin"]),
                     str(observations_dict["calibration"]["location"]),
                 ]
                 f.write(f"{','.join(data_line)}\n")
