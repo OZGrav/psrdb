@@ -1,0 +1,2 @@
+FORMAT 1
+J0835-4510_2019-04-17-22:39:05_zap.1ch1p1t.ar 1285.371000 58590.944531165520569   1.170  meerkat  -fe KAT -be MKBF -f KAT_MKBF -bw 775.8 -tobs 96 -tmplt J0835-4510.std -gof 1.8e+03 -nbin 1024 -nch 928 -chan 0 -rcvr KAT -snr 825.78 -length 96 -subint 0

@@ -1,0 +1,2 @@
+FORMAT 1
+J1644-4559_2019-09-06-14:27:14_zap.1ch1p1t.ar 1283.002000 58732.604001834461428   3.509  meerkat  -fe KAT -be MKBF -f KAT_MKBF -bw 775.8 -tobs 296 -tmplt J1644-4559.std -gof 1.44e+03 -nbin 1024 -nch 928 -chan 0 -rcvr KAT -snr 1725.4 -length 296 -subint 0

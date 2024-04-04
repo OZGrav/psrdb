@@ -1,0 +1,2 @@
+FORMAT 1
+J1757-1854_2020-03-08-06:50:57_zap.1ch1p1t.ar 1459.031000 58916.285422152018384   0.000  meerkat  -fe KAT -be MKBF -f KAT_MKBF -bw 856 -tobs 6.9982 -tmplt J1757-1854.std -nbin 1024 -nch 4096 -chan 0 -rcvr KAT -snr 0 -length 6.99822654205606 -subint 0

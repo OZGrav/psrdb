@@ -1,0 +1,2 @@
+FORMAT 1
+J0437-4715_2019-03-26-16:29:52_zap.1ch1p1t.ar 1297.570000 58568.688896944128270   0.140  meerkat  -fe KAT -be MKBF -f KAT_MKBF -bw 856 -tobs 240 -tmplt J0437-4715.std -gof 1.2e+03 -nbin 1024 -nch 1024 -chan 0 -rcvr KAT -snr 722.3 -length 240 -subint 0
