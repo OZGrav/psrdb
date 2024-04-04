@@ -295,6 +295,8 @@ class Toa(GraphQLTable):
             output_name += f"_id{id}"
         if pipeline_run_id is not None:
             output_name += f"_pipeline_run_id{pipeline_run_id}"
+        if project_short is not None:
+            output_name += f"_{project_short}"
         if dm_corrected is not None and dm_corrected:
             output_name += "_dm_corrected"
         if minimum_nsubs is not None and minimum_nsubs:
