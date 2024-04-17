@@ -108,11 +108,13 @@ class Toa(GraphQLTable):
         ephemeris,
         template_id,
         toa_lines,
-        dmCorrected,
-        minimumNsubs,
-        maximumNsubs,
-        npol,
-        nchan,
+        dmCorrected=False,
+        minimumNsubs=False,
+        maximumNsubs=False,
+        allNsubs=False,
+        modeNsubs=False,
+        npol=1,
+        nchan=1,
     ):
         """Create a new Toa database object.
 
@@ -155,6 +157,8 @@ class Toa(GraphQLTable):
             $dmCorrected: Boolean!,
             $minimumNsubs: Boolean!,
             $maximumNsubs: Boolean!,
+            $allNsubs: Boolean!,
+            $modeNsubs: Boolean!,
             $obsNpol: Int!,
             $obsNchan: Int!,
         ) {
@@ -167,6 +171,8 @@ class Toa(GraphQLTable):
                 dmCorrected: $dmCorrected,
                 minimumNsubs: $minimumNsubs,
                 maximumNsubs: $maximumNsubs,
+                allNsubs: $allNsubs,
+                modeNsubs: $modeNsubs,
                 obsNpol: $obsNpol,
                 obsNchan: $obsNchan,
             }) {
@@ -192,6 +198,8 @@ class Toa(GraphQLTable):
                 'dmCorrected': dmCorrected,
                 'minimumNsubs': minimumNsubs,
                 'maximumNsubs': maximumNsubs,
+                'allNsubs': allNsubs,
+                'modeNsubs': modeNsubs,
                 "obsNpol": npol,
                 "obsNchan": nchan,
             }
@@ -237,8 +245,7 @@ class Toa(GraphQLTable):
         pipeline_run_id=None,
         project_short=None,
         dm_corrected=None,
-        minimum_nsubs=None,
-        maximum_nsubs=None,
+        nsub_type=None,
         obs_nchan=None,
         npol=None,
     ):
@@ -256,10 +263,12 @@ class Toa(GraphQLTable):
             The project short name (e.g PTA).
         dm_corrected : bool, optional
             Filter by if the toa was DM corrected, by default None
-        minimum_nsubs : bool, optional
-            Filter by if the toa was generated with the minimum number of time subbands, by default None
-        maximum_nsubs : bool, optional
-            Filter by if the toa was generated with the maximum number of time subbands, by default None
+        nsub_type : str
+            The method used to calculate the number of subintegrations. The choices are:
+                "1": a single nsub,
+                "max" the maximum number of subints possible for the observation based on the S/N ratio,
+                "mode" the length of each subintegration is equal to the most common observation duration,
+                "all": all available nsubs (no time scrunching).
         obs_nchan : int, optional
             Filter by the number of channels, by default None
         npol : int
@@ -281,10 +290,14 @@ class Toa(GraphQLTable):
             {"field": "obsNchan", "value": obs_nchan},
             {"field": "obsNpol", "value": npol},
         ]
-        if minimum_nsubs:
-            filters.append({"field": "minimumNsubs", "value": minimum_nsubs})
-        if maximum_nsubs:
-            filters.append({"field": "maximumNsubs", "value": maximum_nsubs})
+        if nsub_type == "1":
+            filters.append({"field": "minimumNsubs", "value": True})
+        if nsub_type == "max":
+            filters.append({"field": "maximumNsubs", "value": True})
+        if nsub_type == "all":
+            filters.append({"field": "allNsubs", "value": True})
+        if nsub_type == "mode":
+            filters.append({"field": "modeNsubs", "value": True})
 
         self.get_dicts = True
         toa_dicts = GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names, paginate_num=10000)
@@ -299,10 +312,8 @@ class Toa(GraphQLTable):
             output_name += f"_{project_short}"
         if dm_corrected is not None and dm_corrected:
             output_name += "_dm_corrected"
-        if minimum_nsubs is not None and minimum_nsubs:
-            output_name += "_minimum_nsubs"
-        if maximum_nsubs is not None and maximum_nsubs:
-            output_name += "_maximum_nsubs"
+        if nsub_type is not None:
+            output_name += f"_{nsub_type}_nsub"
         if obs_nchan is not None:
             output_name += f"_nchan{obs_nchan}"
         if npol is not None:
@@ -355,8 +366,7 @@ class Toa(GraphQLTable):
                 args.pipeline_run_id,
                 args.project,
                 args.dm_corrected,
-                args.minimum_nsubs,
-                args.maximum_nsubs,
+                args.nsub_type,
                 args.nchan,
                 args.npol,
             )
@@ -402,12 +412,21 @@ class Toa(GraphQLTable):
         # create the parser for the "download" command
         parser_download = subs.add_parser("download", help="Download TOAs for a pulsar to a .tim file")
         parser_download.add_argument("pulsar", type=str, help="Name of the pulsar [str]")
-        parser_download.add_argument("--project", type=str, help="The project short (e.g. PTA) [str]")
+        parser_download.add_argument("--project", type=str, help="The project short (e.g. PTA) [str]", required=True)
         parser_download.add_argument("--id", type=int, help="id of the toa [int]")
         parser_download.add_argument("--pipeline_run_id", type=int, help="pipeline_run_id of the toa [int]")
         parser_download.add_argument("--dm_corrected",  action="store_true", help="Return TOAs that have had their DM corrected for each observation [bool]")
-        parser_download.add_argument("--minimum_nsubs", action="store_true", help="Only use TOAs with the minimum number of subints per observation (1) [bool]")
-        parser_download.add_argument("--maximum_nsubs", action="store_true", help="Only use TOAs with the maximum number of subints per observation (can be 1 but is often more) [bool]")
+        parser_download.add_argument(
+            '--nsub_type',
+            type=str,
+            choices=['1', 'max', 'mode', 'all'],
+            required=True,
+            help='The method used to calculate the number of subintegrations. The choices are: '
+                '"1": a single nsub, '
+                '"max" the maximum number of subints possible for the observation based on the S/N ratio, '
+                '"mode" the length of each subintegration is equal to the most common observation duration, '
+                '"all": all available nsubs (no time scrunching).'
+        )
         parser_download.add_argument("--nchan", type=int, help="Only use TOAs with this many subchans (common values are 1,4 and 16) [int]", required=True)
         parser_download.add_argument("--npol", type=int, help="Only use TOAs with this many stokes polarisations (4 for all and 1 for summed) [int]", required=True)
 
