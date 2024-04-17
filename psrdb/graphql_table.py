@@ -12,19 +12,27 @@ def generate_graphql_query(table_name, filters, conection_fields, node_fields):
 
     # From filter create query arguments
     arguments = []
+    argument_definitions = []
     for f in filters:
         field = f["field"]
         value = f["value"]
         if value is not None:
+            arguments.append(f'{field}: ${field}')
             if type(value) == str:
-                arguments.append(f'{field}: "{value}"')
+                argument_definitions.append(f'${field}: String')
             elif type(value) == bool:
-                arguments.append(f"{field}: {str(value).lower()}")
+                argument_definitions.append(f"${field}: Boolean")
             elif type(value) == list:
                 value_list = '","'.join(value)
-                arguments.append(f'{field}: ["{value_list}"]')
+                argument_definitions.append(f'${field}: [String]')
             else:
-                arguments.append(f"{field}: {value}")
+                argument_definitions.append(f"${field}: Int")
+    # Prepare the argument definitions to the template format
+    if len(argument_definitions) > 0:
+        argument_definitions = ',\n        '.join(argument_definitions)
+        query_argument_definitions = f"(\n        {argument_definitions}\n    )"
+    else:
+        query_argument_definitions = ""
     # Prepare the arguments to the template format
     if len(arguments) > 0:
         arguments = ',\n        '.join(arguments)
@@ -40,7 +48,7 @@ def generate_graphql_query(table_name, filters, conection_fields, node_fields):
     query_name = to_camel_case(table_name)
 
     # Combine everything into a query
-    query = f"""query {{
+    query = f"""query {query_name} {query_argument_definitions} {{
     {query_name} {query_arguments} {{
         {conection_fields}
         edges {{
@@ -159,13 +167,16 @@ class GraphQLTable:
             filters.append({"field": "first", "value": paginate_num})
             if cursor is not None:
                 filters.append({"field": "after", "value": cursor})
+            variables = {}
+            for f in filters:
+                variables[f["field"]] = f["value"]
 
             # Generate the query
             query = generate_graphql_query(table_name, filters, connection_fields, input_node_fields)
             self.logger.debug(f"Using query: {query}")
 
             # Send the query
-            payload = {"query": query}
+            payload = {"query": query, "variables": json.dumps(variables)}
             response = self.client.post(payload)
             has_next_page = False
             if response.status_code == 200:
