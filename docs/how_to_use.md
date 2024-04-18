@@ -74,12 +74,18 @@ Which is not quite ready for publication but is a good starting point.
 
 The `toa` table contains the times of arrival for each observation.
 The ToAs can be generated a number of ways so to make sure you only download the ToAs you require,
-always use the `--nchan` option and either the `--minimum_nsubs` or `--maximum_nsubs` option.
+you must use the following options:
 
-For example if I only wanted the minimum number of subbands (one) and a single frequency channel I could use:
+- `--project`: the project short name (PTA, TPA, RelBin and GC), uses the ephemeris and template from the [private repository](https://ozgrav.github.io/meerkat_pulsar_docs/ephem_template/)
+- `--nchan`: number of frequency channels. 1, 16, 32, 58, 116 and 928 are the currently processed options
+- `--npol`: 1 for summed polarisations or 4 for full Stokes
+- `--nsub_type`: either "1", "max", "mode" or "all" which are methods to calculate the number of nsubs explained [here](http://localhost:8005/meerkat_pulsar_docs/ozstar_storage/#nsub-types)
+
+
+For example if you wanted ToAs that use the PTA ephemeris and templates and has a single frequency channel, a single nsub, and summed polarisations, you could use:
 
 ```
-psrdb toa download J1652-4838 --nchan 1 --minimum_nsubs
+psrdb toa download J1652-4838 --project PTA --nchan 1 --npol 1 --nsub_type 1
 ```
 
-Which will download a `toa_J1652-4838_minimum_nsubs_nchan1.tim` file that is ready to be used by pulsar tools such as `tempo2`.
+Which will download a `toa_J1652-4838_PTA_1_nsub_nchan1_npol1.tim` file that is ready to be used by pulsar tools such as `tempo2`.
