@@ -79,7 +79,7 @@ you must use the following options:
 - `--project`: the project short name (PTA, TPA, RelBin and GC), uses the ephemeris and template from the [private repository](https://ozgrav.github.io/meerkat_pulsar_docs/ephem_template/)
 - `--nchan`: number of frequency channels. 1, 16, 32, 58, 116 and 928 are the currently processed options
 - `--npol`: 1 for summed polarisations or 4 for full Stokes
-- `--nsub_type`: either "1", "max", "mode" or "all" which are methods to calculate the number of nsubs explained [here](http://localhost:8005/meerkat_pulsar_docs/ozstar_storage/#nsub-types)
+- `--nsub_type`: either "1", "max", "mode" or "all" which are methods to calculate the number of nsubs explained [here](https://ozgrav.github.io/meerkat_pulsar_docs/ozstar_storage/#nsub-types)
 
 
 For example if you wanted ToAs that use the PTA ephemeris and templates and has a single frequency channel, a single nsub, and summed polarisations, you could use:
