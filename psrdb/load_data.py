@@ -17,3 +17,11 @@ SBAND_CALIBRATORS = os.path.join(DATA_DIR, "s_band_gain_calibrators.csv")
 
 # https://skaafrica.atlassian.net/wiki/spaces/ESDKB/pages/1465548801/Polarisation+calibrators
 POLARISATION_CALIBRATORS = os.path.join(DATA_DIR, "polarisation_calibrators.csv")
+
+EXCLUDE_BADGES_CHOICES = [
+    "Strong RFI",
+    "RM Drift",
+    "DM Drift",
+    "Session Timing Jump",
+    "Session Sensitivity Reduction",
+]

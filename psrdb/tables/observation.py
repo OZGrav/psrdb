@@ -767,7 +767,7 @@ class Observation(GraphQLTable):
         )
         parser_list.add_argument(
             "--utce",
-            metavar="UTCLET",
+            metavar="UTCLTE",
             type=str,
             help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
         )
@@ -837,7 +837,7 @@ class Observation(GraphQLTable):
         )
         parser_download.add_argument(
             "--utce",
-            metavar="UTCLET",
+            metavar="UTCLTE",
             type=str,
             help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
         )

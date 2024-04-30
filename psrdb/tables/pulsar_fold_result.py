@@ -1,4 +1,7 @@
+from datetime import datetime
+
 from psrdb.graphql_table import GraphQLTable
+from psrdb.load_data import EXCLUDE_BADGES_CHOICES
 
 
 def get_parsers():
@@ -78,7 +81,10 @@ class PulsarFoldResult(GraphQLTable):
             pulsar,
             mainProject=None,
             utcStart=None,
-            beam=None
+            beam=None,
+            exclude_badges=None,
+            utcs=None,
+            utce=None,
         ):
         # Grab a dictionary of the pulsar_fold_results
         filters = [
@@ -87,6 +93,14 @@ class PulsarFoldResult(GraphQLTable):
             {"field": "utcStart", "value": utcStart},
             {"field": "beam", "value": beam},
         ]
+        if exclude_badges is not None:
+            filters.append({"field": "excludeBadges", "value": exclude_badges})
+        if utcs is not None:
+            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
+            filters.append({"field": "utcStartGte", "value": f"{d.date()}T{d.time()}+00:00"})
+        if utce is not None:
+            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
+            filters.append({"field": "utcStartLte", "value": f"{d.date()}T{d.time()}+00:00"})
         self.get_dicts = True
         pulsar_fold_result_dicts = GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
@@ -140,6 +154,9 @@ class PulsarFoldResult(GraphQLTable):
                 args.mainProject,
                 args.utcStart,
                 args.beam,
+                args.exclude_badges,
+                args.utcs,
+                args.utce,
             )
         else:
             raise RuntimeError(f"{args.subcommand} command is not implemented")
@@ -179,4 +196,20 @@ class PulsarFoldResult(GraphQLTable):
         parser_download.add_argument("--mainProject", type=str, help="Name of the main project you want to filter pulsar_fold_results by [str]")
         parser_download.add_argument("--utcStart",  type=str, help="UTC start time you want the results of [str]")
         parser_download.add_argument("--beam", type=int, help="Beam number you want to filter pulsar_fold_results by [int]")
+        parser_download.add_argument(
+            '--exclude_badges',
+            nargs='*',
+            choices=EXCLUDE_BADGES_CHOICES,
+            help=f'List of observation badges/flags to exclude from download ToAs. The choices are: {EXCLUDE_BADGES_CHOICES}'
+        )
+        parser_download.add_argument(
+            "--utcs",
+            type=str,
+            help="Only use observations with utc_start greater than or equal to the timestamp [YYYY-MM-DD-HH:MM:SS]",
+        )
+        parser_download.add_argument(
+            "--utce",
+            type=str,
+            help="Only use observations with utc_start less than or equal to the timestamp [YYYY-MM-DD-HH:MM:SS]",
+        )
 

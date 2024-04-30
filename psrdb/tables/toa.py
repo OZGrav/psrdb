@@ -1,6 +1,9 @@
+from datetime import datetime
+
 from psrdb.graphql_table import GraphQLTable
 from psrdb.utils.toa import toa_dict_to_line
 from psrdb.utils.other import chunk_list
+from psrdb.load_data import EXCLUDE_BADGES_CHOICES
 
 
 def get_parsers():
@@ -248,6 +251,9 @@ class Toa(GraphQLTable):
         nsub_type=None,
         obs_nchan=None,
         npol=None,
+        exclude_badges=None,
+        utcs=None,
+        utce=None,
     ):
         """Download a file containing ToAs based on the filters.
 
@@ -289,15 +295,17 @@ class Toa(GraphQLTable):
             {"field": "dmCorrected", "value": dm_corrected},
             {"field": "obsNchan", "value": obs_nchan},
             {"field": "obsNpol", "value": npol},
+            {"field": "nsubType", "value": nsub_type},
         ]
-        if nsub_type == "1":
-            filters.append({"field": "minimumNsubs", "value": True})
-        if nsub_type == "max":
-            filters.append({"field": "maximumNsubs", "value": True})
-        if nsub_type == "all":
-            filters.append({"field": "allNsubs", "value": True})
-        if nsub_type == "mode":
-            filters.append({"field": "modeNsubs", "value": True})
+        if exclude_badges is not None:
+            filters.append({"field": "excludeBadges", "value": exclude_badges})
+        if utcs is not None:
+            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
+            filters.append({"field": "utcStartGte", "value": f"{d.date()}T{d.time()}+00:00"})
+        if utce is not None:
+            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
+            filters.append({"field": "utcStartLte", "value": f"{d.date()}T{d.time()}+00:00"})
+
 
         self.get_dicts = True
         toa_dicts = GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names, paginate_num=10000)
@@ -349,7 +357,7 @@ class Toa(GraphQLTable):
                     args.pipeline_run_id,
                     args.ephemeris_id,
                     args.template_id,
-                    input_toa_line,
+                    toa_lines,
                     args.dm_corrected,
                     args.minimumNsubs,
                     args.maximumNsubs,
@@ -369,6 +377,9 @@ class Toa(GraphQLTable):
                 args.nsub_type,
                 args.nchan,
                 args.npol,
+                args.exclude_badges,
+                args.utcs,
+                args.utce,
             )
         else:
             raise RuntimeError(f"{args.subcommand} command is not implemented")
@@ -429,4 +440,20 @@ class Toa(GraphQLTable):
         )
         parser_download.add_argument("--nchan", type=int, help="Only use TOAs with this many subchans (common values are 1,4 and 16) [int]", required=True)
         parser_download.add_argument("--npol", type=int, help="Only use TOAs with this many stokes polarisations (4 for all and 1 for summed) [int]", required=True)
+        parser_download.add_argument(
+            '--exclude_badges',
+            nargs='*',
+            choices=EXCLUDE_BADGES_CHOICES,
+            help=f'List of observation badges/flags to exclude from download ToAs. The choices are: {EXCLUDE_BADGES_CHOICES}'
+        )
+        parser_download.add_argument(
+            "--utcs",
+            type=str,
+            help="Only use observations with utc_start greater than or equal to the timestamp [YYYY-MM-DD-HH:MM:SS]",
+        )
+        parser_download.add_argument(
+            "--utce",
+            type=str,
+            help="Only use observations with utc_start less than or equal to the timestamp [YYYY-MM-DD-HH:MM:SS]",
+        )
 
