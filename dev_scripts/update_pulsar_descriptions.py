@@ -12,9 +12,9 @@ from psrdb.utils.other import setup_logging, decode_id
 # PSRDB setup
 logger = setup_logging()
 client = GraphQLClient(os.environ.get("PSRDB_URL"), os.environ.get("PSRDB_TOKEN"), logger=logger)
-puslar_client = Pulsar(client)
-puslar_client.get_dicts = True
-puslar_client.set_use_pagination(True)
+pulsar_client = Pulsar(client)
+pulsar_client.get_dicts = True
+pulsar_client.set_use_pagination(True)
 
 query = psrqpy.QueryATNF().pandas
 pulsar_paragraph = PulsarParagraph()
@@ -90,4 +90,4 @@ for pulsar in pulsar_data:
         pulsar_paragraph=pulsar_paragraph,
     )[0]
     # print(comment)
-    puslar_client.update(pulsar_id, pulsar_name, comment)
+    pulsar_client.update(pulsar_id, pulsar_name, comment)
