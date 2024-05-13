@@ -15,6 +15,7 @@ from psrdb.tables.calibration import Calibration
 from psrdb.tables.observation import Observation
 from psrdb.tables.pipeline_run import PipelineRun
 from psrdb.tables.pulsar_fold_result import PulsarFoldResult
+from psrdb.tables.pulsar_fold_summary import PulsarFoldSummary
 from psrdb.tables.pipeline_image import PipelineImage
 from psrdb.tables.toa import Toa
 from psrdb.tables.residual import Residual
@@ -40,6 +41,7 @@ def main():
         Observation,
         PipelineRun,
         PulsarFoldResult,
+        PulsarFoldSummary,
         PipelineImage,
         Toa,
         Residual,
