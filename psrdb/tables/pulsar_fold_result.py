@@ -46,7 +46,9 @@ class PulsarFoldResult(GraphQLTable):
             pulsar=None,
             mainProject=None,
             utcStart=None,
-            beam=None
+            beam=None,
+            utcs=None,
+            utce=None,
         ):
         """Return a list of PulsarFoldResult information based on the `self.field_names` and filtered by the parameters.
 
@@ -74,6 +76,12 @@ class PulsarFoldResult(GraphQLTable):
             {"field": "utcStart", "value": utcStart},
             {"field": "beam", "value": beam},
         ]
+        if utcs is not None:
+            d = datetime.strptime(utcs, '%Y-%m-%d-%H:%M:%S')
+            filters.append({"field": "utcStartGte", "value": f"{d.date()}T{d.time()}+00:00"})
+        if utce is not None:
+            d = datetime.strptime(utce, '%Y-%m-%d-%H:%M:%S')
+            filters.append({"field": "utcStartLte", "value": f"{d.date()}T{d.time()}+00:00"})
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def download(
