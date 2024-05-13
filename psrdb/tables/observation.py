@@ -852,13 +852,13 @@ class Observation(GraphQLTable):
             "--unprocessed",
             action='store_true',
             default=None,
-            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+            help="Filter to only returned unprocessed observations (no PulsarFoldResult)",
         )
         parser_download.add_argument(
             "--incomplete",
             action='store_true',
             default=None,
-            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+            help='Filter to only return incomplete observations (most recent job run is not "Completed"',
         )
 
 
