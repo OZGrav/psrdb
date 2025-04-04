@@ -53,7 +53,7 @@ def get_sf_length(sf_files):
 
 def get_calibration(utc_start):
     utc_start_dt = datetime.strptime(utc_start, "%Y-%m-%d-%H:%M:%S")
-    auto_cal_epoch = "2020-04-04-00:00:00"
+    auto_cal_epoch = "2020-04-11-00:00:00"
     auto_cal_epoch_dt = datetime.strptime(auto_cal_epoch, "%Y-%m-%d-%H:%M:%S")
 
     if utc_start_dt > auto_cal_epoch_dt:
