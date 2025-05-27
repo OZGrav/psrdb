@@ -36,3 +36,11 @@ pip install .
 ## How to use
 
 Instructions and examples of how to use `psrdb` can be found in the [documentation](https://psrdb.readthedocs.io/en/latest/how_to_use.html).
+
+## Running Tests
+
+This project uses pytest as the testing framework. To run the tests:
+
+```bash
+poetry run pytest
+```
