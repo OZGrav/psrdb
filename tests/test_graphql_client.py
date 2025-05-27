@@ -280,4 +280,90 @@ class TestGraphQLClient:
             assert "Bearer [redacted]" in header_log
             assert self.test_token not in header_log
 
+    @patch('psrdb.tables.template.requests.post')
+    @patch('builtins.open', create=True)
+    def test_template_upload_uses_authorization_header(self, mock_open, mock_requests_post):
+        """Test that template upload requests include Authorization header."""
+        from psrdb.tables.template import Template
+        
+        # Setup mock file
+        mock_file = Mock()
+        mock_open.return_value.__enter__.return_value = mock_file
+        
+        # Setup mock response
+        mock_response = Mock()
+        mock_response.status_code = 201
+        mock_requests_post.return_value = mock_response
+        
+        # Create client with Authorization header
+        with patch.object(GraphQLClient, 'connect'):
+            client = GraphQLClient(self.test_url, self.test_token)
+        
+        # Create template instance and call create
+        template = Template(client)
+        template.create(
+            pulsar_name="J0437-4715",
+            band="SBAND",
+            template_path="/path/to/template.std",
+            project_code="TEST",
+            project_short="PTA"
+        )
+        
+        # Verify that requests.post was called with the Authorization header
+        mock_requests_post.assert_called_once()
+        call_args = mock_requests_post.call_args
+        
+        # Check that headers parameter includes Authorization
+        assert 'headers' in call_args.kwargs
+        assert call_args.kwargs['headers'] == {"Authorization": f"Bearer {self.test_token}"}
+        
+        # Check URL and other parameters
+        expected_url = f"{self.test_rest_api_url}template/"
+        assert call_args.args[0] == expected_url
+        assert 'data' in call_args.kwargs
+        assert 'files' in call_args.kwargs
+
+    @patch('psrdb.tables.pipeline_image.requests.post')
+    @patch('builtins.open', create=True)
+    def test_pipeline_image_upload_uses_authorization_header(self, mock_open, mock_requests_post):
+        """Test that pipeline image upload requests include Authorization header."""
+        from psrdb.tables.pipeline_image import PipelineImage
+        
+        # Setup mock file
+        mock_file = Mock()
+        mock_open.return_value.__enter__.return_value = mock_file
+        
+        # Setup mock response
+        mock_response = Mock()
+        mock_response.status_code = 201
+        mock_requests_post.return_value = mock_response
+        
+        # Create client with Authorization header
+        with patch.object(GraphQLClient, 'connect'):
+            client = GraphQLClient(self.test_url, self.test_token)
+        
+        # Create pipeline image instance and call create
+        pipeline_image = PipelineImage(client)
+        pipeline_image.create(
+            pipeline_run_id=123,
+            image_path="/path/to/image.png",
+            image_type="profile",
+            resolution="high",
+            cleaned=True
+        )
+        
+        # Verify that requests.post was called with the Authorization header
+        mock_requests_post.assert_called_once()
+        call_args = mock_requests_post.call_args
+        
+        # Check that headers parameter includes Authorization
+        assert 'headers' in call_args.kwargs
+        assert call_args.kwargs['headers'] == {"Authorization": f"Bearer {self.test_token}"}
+        
+        # Check URL and other parameters
+        expected_url = f"{self.test_rest_api_url}image/"
+        assert call_args.args[0] == expected_url
+        assert 'data' in call_args.kwargs
+        assert 'files' in call_args.kwargs
+
 
