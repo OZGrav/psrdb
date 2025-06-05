@@ -75,36 +75,6 @@ class Header(KeyValueStore):
         self.nbit = int(self.cfg["NBIT"])
         self.tsamp = float(self.cfg["TSAMP"])
 
-        # Additional numeric fields
-        if "ADC_SAMPLE_RATE" in self.cfg:
-            self.adc_sample_rate = float(self.cfg["ADC_SAMPLE_RATE"])
-        if "ADC_SYNC_TIME" in self.cfg:
-            self.adc_sync_time = float(self.cfg["ADC_SYNC_TIME"])
-        if "CALFREQ" in self.cfg:
-            self.calfreq = float(self.cfg["CALFREQ"])
-        if "CAL_FREQ" in self.cfg:
-            self.cal_freq = float(self.cfg["CAL_FREQ"])
-        if "CAL_PHASE" in self.cfg:
-            self.cal_phase = float(self.cfg["CAL_PHASE"])
-        if "CAL_DUTY_CYCLE" in self.cfg:
-            self.cal_duty_cycle = float(self.cfg["CAL_DUTY_CYCLE"])
-        if "BYTES_PER_SECOND" in self.cfg:
-            self.bytes_per_second = float(self.cfg["BYTES_PER_SECOND"])
-        if "PICOSECONDS" in self.cfg:
-            self.picoseconds = float(self.cfg["PICOSECONDS"])
-        if "PRECISETIME_FRACTION" in self.cfg:
-            self.precisetime_fraction = float(self.cfg["PRECISETIME_FRACTION"])
-        if "PRECISETIME_FRACTION_POLH" in self.cfg:
-            self.precisetime_fraction_polh = float(self.cfg["PRECISETIME_FRACTION_POLH"])
-        if "PRECISETIME_FRACTION_POLV" in self.cfg:
-            self.precisetime_fraction_polv = float(self.cfg["PRECISETIME_FRACTION_POLV"])
-        if "PRECISETIME_UNCERTAINTY_POLH" in self.cfg:
-            self.precisetime_uncertainty_polh = float(self.cfg["PRECISETIME_UNCERTAINTY_POLH"])
-        if "PRECISETIME_UNCERTAINTY_POLV" in self.cfg:
-            self.precisetime_uncertainty_polv = float(self.cfg["PRECISETIME_UNCERTAINTY_POLV"])
-        if "TFR_KTT_GNSS" in self.cfg:
-            self.tfr_ktt_gnss = float(self.cfg["TFR_KTT_GNSS"])
-
 
 class PTUSEHeader(Header):
     def __init__(self, fname):
