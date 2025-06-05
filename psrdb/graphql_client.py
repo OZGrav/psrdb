@@ -47,6 +47,7 @@ class GraphQLClient:
             if "message" in content["errors"][0]:
                 message = content["errors"][0]["message"]
             self.logger.error(f"Error: {message}")
+            raise Exception(f"Error: {message}")
 
     def post(self, payload):
         """Post the payload and header to the GraphQL URL."""
