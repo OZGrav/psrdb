@@ -40,7 +40,7 @@ class MainProject(GraphQLTable):
             Else a client response object.
         """
         filters = [
-            {"field": "id", "value": id},
+            {"field": "id", "value": int(id) if id is not None else None},
             {"field": "telescope", "value": telescope},
             {"field": "name", "value": name},
         ]
@@ -112,7 +112,7 @@ class MainProject(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
             "telescope": telescope,
             "name": name,
         }
@@ -140,7 +140,7 @@ class MainProject(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
         }
         return self.mutation_graphql()
 

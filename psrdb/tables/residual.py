@@ -71,7 +71,7 @@ class Residual(GraphQLTable):
             Else a client response object.
         """
         filters = [
-            {"field": "id", "value": id},
+            {"field": "id", "value": int(id) if id is not None else None},
             {"field": "pulsar_Name", "value": pulsar},
             {"field": "projectShort", "value": project_short},
         ]

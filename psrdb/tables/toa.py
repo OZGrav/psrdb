@@ -91,9 +91,9 @@ class Toa(GraphQLTable):
             Else a client response object.
         """
         filters = [
-            {"field": "id", "value": id},
+            {"field": "id", "value": int(id) if id is not None else None},
             {"field": "pulsar", "value": pulsar},
-            {"field": "pipelineRunId", "value": pipeline_run_id},
+            {"field": "pipelineRunId", "value": int(pipeline_run_id) if pipeline_run_id is not None else None},
             {"field": "projectShort", "value": project_short},
             {"field": "dmCorrected", "value": dm_corrected},
             {"field": "obsNchan", "value": obs_nchan},
@@ -184,9 +184,9 @@ class Toa(GraphQLTable):
         for toa_chunk in chunk_list(toa_lines, 1000):
             # Upload the toa
             self.variables = {
-                'pipelineRunId': pipeline_run_id,
+                'pipelineRunId': int(pipeline_run_id),
                 'projectShort': project_short,
-                'templateId': template_id,
+                'templateId': int(template_id),
                 'ephemerisText': ephemeris_str,
                 'toaLines': toa_chunk,
                 'dmCorrected': dmCorrected,
@@ -225,7 +225,7 @@ class Toa(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
         }
         return self.mutation_graphql()
 
@@ -276,14 +276,14 @@ class Toa(GraphQLTable):
             Else a client response object.
         """
         filters = [
-            {"field": "id", "value": id},
+            {"field": "id", "value": int(id) if id is not None else None},
             {"field": "pulsar", "value": pulsar},
-            {"field": "pipelineRunId", "value": pipeline_run_id},
+            {"field": "pipelineRunId", "value": int(pipeline_run_id) if pipeline_run_id is not None else None},
             {"field": "projectShort", "value": project_short},
             {"field": "dmCorrected", "value": dm_corrected},
+            {"field": "nsubType", "value": nsub_type},
             {"field": "obsNchan", "value": obs_nchan},
             {"field": "obsNpol", "value": npol},
-            {"field": "nsubType", "value": nsub_type},
         ]
         if exclude_badges is not None:
             filters.append({"field": "excludeBadges", "value": exclude_badges})

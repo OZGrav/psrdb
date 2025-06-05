@@ -39,7 +39,7 @@ class Calibration(GraphQLTable):
             Else a client response object.
         """
         filters = [
-            {"field": "id", "value": id},
+            {"field": "id", "value": int(id) if id is not None else None},
             {"field": "type", "value": type},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
@@ -121,7 +121,7 @@ class Calibration(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
             "schedule_block_id": schedule_block_id,
             "calibration_type": type,
             "location": location,
@@ -150,7 +150,7 @@ class Calibration(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
         }
         return self.mutation_graphql()
 
