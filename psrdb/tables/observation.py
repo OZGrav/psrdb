@@ -73,9 +73,9 @@ class Observation(GraphQLTable):
             Filter by the utc start time less than or equal to the timestamp in the format YYYY-MM-DDTHH:MM:SS+00:00, by default None
         obs_type : str, optional
             Filter by the observation type (fold, search or cal), by default 'fold'
-        unprocessed : str, optional
+        unprocessed : bool, optional
             Filter to only returned unprocessed observations (no PulsarFoldResult)
-        incomplete : str, optional
+        incomplete : bool, optional
             Filter to only return incomplete observations (most recent job run is not "Completed)
 
         Returns
@@ -102,10 +102,10 @@ class Observation(GraphQLTable):
             pulsar_name = None
         """Return a list of records matching the id and/or any of the arguments."""
         filters = [
-            {"field": "id", "value": id},
+            {"field": "id", "value": int(id) if id is not None else None},
             {"field": "pulsar_Name", "value": pulsar_name},
             {"field": "telescope_Name", "value": telescope_name},
-            {"field": "project_Id", "value": project_id},
+            {"field": "project_Id", "value": int(project_id) if project_id is not None else None},
             {"field": "project_Short", "value": project_short},
             {"field": "mainProject", "value": main_project},
             {"field": "utcStartGte", "value": utcs},
@@ -113,9 +113,9 @@ class Observation(GraphQLTable):
             {"field": "obsType", "value": obs_type},
         ]
         if unprocessed is not None:
-            filters.append({"field": "unprocessed", "value": unprocessed})
+            filters.append({"field": "unprocessed", "value": bool(unprocessed)})
         if incomplete is not None:
-            filters.append({"field": "incomplete", "value": incomplete})
+            filters.append({"field": "incomplete", "value": bool(incomplete)})
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 
     def download(
@@ -232,12 +232,12 @@ class Observation(GraphQLTable):
                     str(observations_dict["pulsar"]["name"]),
                     str(datetime.strptime(observations_dict['utcStart'], '%Y-%m-%dT%H:%M:%S+00:00').strftime('%Y-%m-%d-%H:%M:%S')),
                     str(observations_dict["project"]["short"]),
-                    str(observations_dict["beam"]),
+                    str(int(observations_dict["beam"])),
                     str(observations_dict["band"]),
-                    str(observations_dict["duration"]),
-                    str(observations_dict["modeDuration"]),
-                    str(observations_dict["foldNchan"]),
-                    str(observations_dict["foldNbin"]),
+                    str(float(observations_dict["duration"])),
+                    str(float(observations_dict["modeDuration"])),
+                    str(int(observations_dict["foldNchan"])),
+                    str(int(observations_dict["foldNbin"])),
                     str(observations_dict["calibration"]["location"]),
                 ]
                 f.write(f"{','.join(data_line)}\n")
@@ -254,24 +254,24 @@ class Observation(GraphQLTable):
         bandwidth,
         nchan,
         beam,
-        nant,
-        nantEff,
         npol,
         obsType,
         utcStart,
         raj,
         decj,
-        duration,
         nbit,
         tsamp,
-        foldNbin,
-        foldNchan,
-        foldTsubint,
-        filterbankNbit,
-        filterbankNpol,
-        filterbankNchan,
-        filterbankTsamp,
-        filterbankDm,
+        nant=None,
+        nantEff=None,
+        duration=None,
+        foldNbin=None,
+        foldNchan=None,
+        foldTsubint=None,
+        filterbankNbit=None,
+        filterbankNpol=None,
+        filterbankNchan=None,
+        filterbankTsamp=None,
+        filterbankDm=None,
     ):
         """Create a new Observation database object.
 
@@ -295,10 +295,6 @@ class Observation(GraphQLTable):
             The number of frequency channels.
         beam : int
             The beam number.
-        nant : int
-            The number of antennas used in the observation.
-        nantEff : int
-            The effective number of antennas used in the observation.
         npol : int
             The number of polarisations.
         obsType : str
@@ -309,27 +305,31 @@ class Observation(GraphQLTable):
             The right ascension of the observation in HH:MM:SS.SS format.
         decj : str
             The declination of the observation in DD:MM:SS.SS format.
-        duration : float
-            The duration of the observation in seconds.
         nbit : int
             The number of bits per sample.
         tsamp : float
             The sampling time in microseconds.
-        foldNbin : int
+        nant : int, optional
+            The number of antennas used in the observation.
+        nantEff : int, optional
+            The effective number of antennas used in the observation.
+        duration : float, optional
+            The duration of the observation in seconds.
+        foldNbin : int, optional
             The number of bins in the folded data (None for non fold observations).
-        foldNchan : int
+        foldNchan : int, optional
             The number of frequency channels in the folded data (None for non fold observations).
-        foldTsubint : int
+        foldTsubint : int, optional
             The number of time samples in each sub-integration of the folded data (None for non fold observations).
-        filterbankNbit : int
+        filterbankNbit : int, optional
             The number of bits per sample in the filterbank data (None for non search observations).
-        filterbankNpol : int
+        filterbankNpol : int, optional
             The number of polarisations in the filterbank data (None for non search observations).
-        filterbankNchan : int
+        filterbankNchan : int, optional
             The number of frequency channels in the filterbank data (None for non search observations).
-        filterbankTsamp : float
+        filterbankTsamp : float, optional
             The sampling time in microseconds in the filterbank data (None for non search observations).
-        filterbankDm : float
+        filterbankDm : float, optional
             The dispersion measure in the filterbank data (None for non search observations).
 
         Returns
@@ -349,14 +349,14 @@ class Observation(GraphQLTable):
             $bandwidth: Float!,
             $nchan: Int!,
             $beam: Int!,
-            $nant: Int!,
-            $nantEff: Int!,
+            $nant: Int,
+            $nantEff: Int,
             $npol: Int!,
             $obsType: String!,
             $utcStart: DateTime!,
             $raj: String!,
             $decj: String!,
-            $duration: Float!,
+            $duration: Float,
             $nbit: Int!,
             $tsamp: Float!,
             # Fold options
@@ -407,156 +407,156 @@ class Observation(GraphQLTable):
         }
         """
         self.variables = {
-            "pulsarName": pulsarName,
-            "telescopeName": telescopeName,
-            "projectCode": projectCode,
-            "calibrationId": calibrationId,
-            "ephemerisText": ephemerisText,
-            "frequency": frequency,
-            "bandwidth": bandwidth,
-            "nchan": nchan,
-            "beam": beam,
-            "nant": nant,
-            "nantEff": nantEff,
-            "npol": npol,
-            "obsType": obsType,
+            "pulsarName": str(pulsarName),
+            "telescopeName": str(telescopeName),
+            "projectCode": str(projectCode),
+            "calibrationId": int(calibrationId),
+            "ephemerisText": str(ephemerisText) if ephemerisText is not None else None,
+            "frequency": float(frequency),
+            "bandwidth": float(bandwidth),
+            "nchan": int(nchan),
+            "beam": int(beam),
+            "nant": int(nant) if nant is not None else None,
+            "nantEff": int(nantEff) if nantEff is not None else None,
+            "npol": int(npol),
+            "obsType": str(obsType),
             "utcStart": utcStart,
-            "raj": raj,
-            "decj": decj,
-            "duration": duration,
-            "nbit": nbit,
-            "tsamp": tsamp,
-            "foldNbin": foldNbin,
-            "foldNchan": foldNchan,
-            "foldTsubint": foldTsubint,
-            "filterbankNbit": filterbankNbit,
-            "filterbankNpol": filterbankNpol,
-            "filterbankNchan": filterbankNchan,
-            "filterbankTsamp": filterbankTsamp,
-            "filterbankDm": filterbankDm,
+            "raj": str(raj),
+            "decj": str(decj),
+            "duration": float(duration) if duration is not None else None,
+            "nbit": int(nbit),
+            "tsamp": float(tsamp),
+            "foldNbin": int(foldNbin) if foldNbin is not None else None,
+            "foldNchan": int(foldNchan) if foldNchan is not None else None,
+            "foldTsubint": int(foldTsubint) if foldTsubint is not None else None,
+            "filterbankNbit": int(filterbankNbit) if filterbankNbit is not None else None,
+            "filterbankNpol": int(filterbankNpol) if filterbankNpol is not None else None,
+            "filterbankNchan": int(filterbankNchan) if filterbankNchan is not None else None,
+            "filterbankTsamp": float(filterbankTsamp) if filterbankTsamp is not None else None,
+            "filterbankDm": float(filterbankDm) if filterbankDm is not None else None,
         }
         return self.mutation_graphql()
 
     def update(
         self,
         id,
-        pulsarName,
-        telescopeName,
-        projectCode,
-        calibrationId,
-        ephemerisText,
-        frequency,
-        bandwidth,
-        nchan,
-        beam,
-        nant,
-        nantEff,
-        npol,
-        obsType,
-        utcStart,
-        raj,
-        decj,
-        duration,
-        nbit,
-        tsamp,
-        foldNbin,
-        foldNchan,
-        foldTsubint,
-        filterbankNbit,
-        filterbankNpol,
-        filterbankNchan,
-        filterbankTsamp,
-        filterbankDm,
+        pulsarName=None,
+        telescopeName=None,
+        projectCode=None,
+        calibrationId=None,
+        ephemerisText=None,
+        frequency=None,
+        bandwidth=None,
+        nchan=None,
+        beam=None,
+        nant=None,
+        nantEff=None,
+        npol=None,
+        obsType=None,
+        utcStart=None,
+        raj=None,
+        decj=None,
+        duration=None,
+        nbit=None,
+        tsamp=None,
+        foldNbin=None,
+        foldNchan=None,
+        foldTsubint=None,
+        filterbankNbit=None,
+        filterbankNpol=None,
+        filterbankNchan=None,
+        filterbankTsamp=None,
+        filterbankDm=None,
     ):
-        """Update a Observation database object.
+        """Update an existing Observation database object.
 
         Parameters
         ----------
         id : int
-            The database ID
-        pulsarName : str
+            The ID of the Observation database object.
+        pulsarName : str, optional
             The pulsar name.
-        telescopeName : str
+        telescopeName : str, optional
             The telescope name.
-        projectCode : str
+        projectCode : str, optional
             The project code.
-        calibrationId : int
+        calibrationId : int, optional
             The ID of the Calibration database object.
-        ephemerisText : str
+        ephemerisText : str, optional
             The ephemeris text as a single string (includes new line characters).
-        frequency : float
+        frequency : float, optional
             The frequency of the observation in MHz.
-        bandwidth : float
+        bandwidth : float, optional
             The bandwidth of the observation in MHz.
-        nchan : int
+        nchan : int, optional
             The number of frequency channels.
-        beam : int
+        beam : int, optional
             The beam number.
-        nant : int
+        nant : int, optional
             The number of antennas used in the observation.
-        nantEff : int
+        nantEff : int, optional
             The effective number of antennas used in the observation.
-        npol : int
+        npol : int, optional
             The number of polarisations.
-        obsType : str
+        obsType : str, optional
             The type of observation (fold, search or cal).
-        utcStart : `datetime`
+        utcStart : `datetime`, optional
             The UTC start time of the observation as a `datetime` object.
-        raj : str
+        raj : str, optional
             The right ascension of the observation in HH:MM:SS.SS format.
-        decj : str
+        decj : str, optional
             The declination of the observation in DD:MM:SS.SS format.
-        duration : float
+        duration : float, optional
             The duration of the observation in seconds.
-        nbit : int
+        nbit : int, optional
             The number of bits per sample.
-        tsamp : float
+        tsamp : float, optional
             The sampling time in microseconds.
-        foldNbin : int
+        foldNbin : int, optional
             The number of bins in the folded data (None for non fold observations).
-        foldNchan : int
+        foldNchan : int, optional
             The number of frequency channels in the folded data (None for non fold observations).
-        foldTsubint : int
+        foldTsubint : int, optional
             The number of time samples in each sub-integration of the folded data (None for non fold observations).
-        filterbankNbit : int
+        filterbankNbit : int, optional
             The number of bits per sample in the filterbank data (None for non search observations).
-        filterbankNpol : int
+        filterbankNpol : int, optional
             The number of polarisations in the filterbank data (None for non search observations).
-        filterbankNchan : int
+        filterbankNchan : int, optional
             The number of frequency channels in the filterbank data (None for non search observations).
-        filterbankTsamp : float
+        filterbankTsamp : float, optional
             The sampling time in microseconds in the filterbank data (None for non search observations).
-        filterbankDm : float
+        filterbankDm : float, optional
             The dispersion measure in the filterbank data (None for non search observations).
-
 
         Returns
         -------
         client_response:
             A client response object.
         """
+        # create a new record
         self.mutation_name = "updateObservation"
         self.mutation = """
         mutation (
             $id: Int!,
-            $pulsarName: String!,
-            $telescopeName: String!,
-            $projectCode: String!,
-            $calibrationId: Int!,
-            $frequency: Float!,
-            $bandwidth: Float!,
-            $nchan: Int!,
-            $beam: Int!,
-            $nant: Int!,
-            $nantEff: Int!,
-            $npol: Int!,
-            $obsType: String!,
-            $utcStart: DateTime!,
-            $raj: String!,
-            $decj: String!,
-            $duration: Float!,
-            $nbit: Int!,
-            $tsamp: Float!,
+            $pulsarName: String,
+            $telescopeName: String,
+            $projectCode: String,
+            $calibrationId: Int,
+            $frequency: Float,
+            $bandwidth: Float,
+            $nchan: Int,
+            $beam: Int,
+            $nant: Int,
+            $nantEff: Int,
+            $npol: Int,
+            $obsType: String,
+            $utcStart: DateTime,
+            $raj: String,
+            $decj: String,
+            $duration: Float,
+            $nbit: Int,
+            $tsamp: Float,
             # Fold options
             $ephemerisText: String,
             $foldNbin: Int,
@@ -606,34 +606,34 @@ class Observation(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
-            "pulsarName": pulsarName,
-            "telescopeName": telescopeName,
-            "projectCode": projectCode,
-            "calibrationId": calibrationId,
-            "ephemerisText": ephemerisText,
-            "frequency": frequency,
-            "bandwidth": bandwidth,
-            "nchan": nchan,
-            "beam": beam,
-            "nant": nant,
-            "nantEff": nantEff,
-            "npol": npol,
-            "obsType": obsType,
+            "id": int(id),
+            "pulsarName": str(pulsarName) if pulsarName is not None else None,
+            "telescopeName": str(telescopeName) if telescopeName is not None else None,
+            "projectCode": str(projectCode) if projectCode is not None else None,
+            "calibrationId": int(calibrationId) if calibrationId is not None else None,
+            "ephemerisText": str(ephemerisText) if ephemerisText is not None else None,
+            "frequency": float(frequency) if frequency is not None else None,
+            "bandwidth": float(bandwidth) if bandwidth is not None else None,
+            "nchan": int(nchan) if nchan is not None else None,
+            "beam": int(beam) if beam is not None else None,
+            "nant": int(nant) if nant is not None else None,
+            "nantEff": int(nantEff) if nantEff is not None else None,
+            "npol": int(npol) if npol is not None else None,
+            "obsType": str(obsType) if obsType is not None else None,
             "utcStart": utcStart,
-            "raj": raj,
-            "decj": decj,
-            "duration": duration,
-            "nbit": nbit,
-            "tsamp": tsamp,
-            "foldNbin": foldNbin,
-            "foldNchan": foldNchan,
-            "foldTsubint": foldTsubint,
-            "filterbankNbit": filterbankNbit,
-            "filterbankNpol": filterbankNpol,
-            "filterbankNchan": filterbankNchan,
-            "filterbankTsamp": filterbankTsamp,
-            "filterbankDm": filterbankDm,
+            "raj": str(raj) if raj is not None else None,
+            "decj": str(decj) if decj is not None else None,
+            "duration": float(duration) if duration is not None else None,
+            "nbit": int(nbit) if nbit is not None else None,
+            "tsamp": float(tsamp) if tsamp is not None else None,
+            "foldNbin": int(foldNbin) if foldNbin is not None else None,
+            "foldNchan": int(foldNchan) if foldNchan is not None else None,
+            "foldTsubint": int(foldTsubint) if foldTsubint is not None else None,
+            "filterbankNbit": int(filterbankNbit) if filterbankNbit is not None else None,
+            "filterbankNpol": int(filterbankNpol) if filterbankNpol is not None else None,
+            "filterbankNchan": int(filterbankNchan) if filterbankNchan is not None else None,
+            "filterbankTsamp": float(filterbankTsamp) if filterbankTsamp is not None else None,
+            "filterbankDm": float(filterbankDm) if filterbankDm is not None else None,
         }
         return self.mutation_graphql()
 
@@ -747,7 +747,7 @@ class Observation(GraphQLTable):
             help="list observations matching the instrument_config name [str]",
         )
         parser_list.add_argument(
-            "--project_id", metavar="PROJID", type=int, help="list observations matching the project id [id]"
+            "--project_id", metavar="PROJID", type=int, help="list observations matching the project id [int]"
         )
         parser_list.add_argument(
             "--project_code", metavar="PROJCODE", type=str, help="list observations matching the project code [str]"
@@ -757,7 +757,7 @@ class Observation(GraphQLTable):
             metavar="MAINPROJECT",
             type=str,
             default="MeerTIME",
-            help="list observations matching the mainproject [str]",
+            help="list observations matching the mainproject [str]"
         )
         parser_list.add_argument(
             "--utcs",
