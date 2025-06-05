@@ -271,7 +271,7 @@ class GraphQLTable:
         from os import environ
 
         parser = ArgumentParser(description=desc)
-        parser.add_argument("-t", "--token", default=environ.get("PSRDB_TOKEN"), help="JWT token")
+        parser.add_argument("-t", "--token", default=environ.get("PSRDB_TOKEN"), help="Authentication token from pulsars.org.au")
         parser.add_argument("-u", "--url", default=environ.get("PSRDB_URL", "https://pulsars.org.au/api/"), help="GraphQL URL")
         parser.add_argument("-q", "--quiet", action="store_true", default=False, help="Return ID only")
         parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase verbosity")

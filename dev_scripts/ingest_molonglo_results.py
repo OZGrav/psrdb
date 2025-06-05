@@ -20,7 +20,7 @@ from psrdb.tables.toa import Toa
 logger = setup_logging(console=True, level=logging.INFO)
 
 parser = ArgumentParser(description="Ingest Molonglo fold mode observation results, images and ToAs into PSRDB")
-parser.add_argument("-t", "--token", default=environ.get("PSRDB_TOKEN"), help="JWT token")
+parser.add_argument("-t", "--token", default=environ.get("PSRDB_TOKEN"), help="Authentication token from pulsars.org.au")
 parser.add_argument("-u", "--url", default=environ.get("PSRDB_URL", "https://pulsars.org.au/api/"), help="GraphQL URL")
 parser.add_argument("-p", "--pulsar", help="Pulsar Jname")
 parser.add_argument("-d", "--date", help="UTC date of the observation")

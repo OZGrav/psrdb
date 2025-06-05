@@ -26,7 +26,7 @@ def main():
         "-t",
         "--token",
         action="store",
-        help="JWT token. Best configured via env variable INGEST_TOKEN.",
+        help="Authentication token from pulsars.org.au. Best configured via env variable INGEST_TOKEN.",
         default=os.environ.get("PSRDB_TOKEN"),
     )
     parser.add_argument(

@@ -103,7 +103,7 @@ class Template(GraphQLTable):
                 "template_upload": file,
             }
             # Post to the rest api
-            response = requests.post(f'{self.client.rest_api_url}template/', data=variables, files=files)
+            response = requests.post(f'{self.client.rest_api_url}template/', data=variables, files=files, headers=self.client.header)
 
         return response
 
