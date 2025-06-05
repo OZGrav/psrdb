@@ -113,10 +113,10 @@ class PipelineRun(GraphQLTable):
             Else a client response object.
         """
         filters = [
-            {"field": "id", "value": id},
-            {"field": "observation_Id", "value": observation_id},
-            {"field": "ephemeris_Id", "value": ephemeris_id},
-            {"field": "template_Id", "value": template_id,},
+            {"field": "id", "value": int(id) if id is not None else None},
+            {"field": "observation_Id", "value": int(observation_id) if observation_id is not None else None},
+            {"field": "ephemeris_Id", "value": int(ephemeris_id) if ephemeris_id is not None else None},
+            {"field": "template_Id", "value": int(template_id) if template_id is not None else None},
             {"field": "pipelineName", "value": pipelineName},
             {"field": "pipelineDescription", "value": pipelineDescription},
             {"field": "pipelineVersion", "value": pipelineVersion},
@@ -245,9 +245,9 @@ class PipelineRun(GraphQLTable):
         if results_dict["rm_err"] == "None":
             results_dict["rm_err"] = None
         self.variables = {
-            "observationId": observationId,
-            "ephemerisId": ephemerisId,
-            "templateId": templateId,
+            "observationId": int(observationId),
+            "ephemerisId": int(ephemerisId),
+            "templateId": int(templateId),
             "pipelineName": pipelineName,
             "pipelineDescription": pipelineDescription,
             "pipelineVersion": pipelineVersion,
@@ -344,7 +344,7 @@ class PipelineRun(GraphQLTable):
         if results_dict["rm_err"] == "None":
             results_dict["rm_err"] = None
         self.variables = {
-            "id": id,
+            "id": int(id),
             "jobState": jobState,
             "dm": results_dict["dm"],
             "dm_err": results_dict["dm_err"],
@@ -384,7 +384,7 @@ class PipelineRun(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
         }
         return self.mutation_graphql()
 

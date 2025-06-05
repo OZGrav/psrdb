@@ -56,7 +56,7 @@ class Template(GraphQLTable):
             Else a client response object.
         """
         filters = [
-            {"field": "id", "value": id},
+            {"field": "id", "value": int(id) if id is not None else None},
             {"field": "pulsar_Name", "value": pulsar_name},
             {"field": "band", "value": band},
             {"field": "project_Short", "value": project_short},

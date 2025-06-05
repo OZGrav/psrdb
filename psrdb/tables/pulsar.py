@@ -41,7 +41,7 @@ class Pulsar(GraphQLTable):
             Else a client response object.
         """
         filters = [
-            {"field": "id", "value": id},
+            {"field": "id", "value": int(id) if id is not None else None},
             {"field": "name", "value": name},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
@@ -122,7 +122,7 @@ class Pulsar(GraphQLTable):
             # Generate pulsar paragraph
             comment = create_pulsar_paragraph(pulsar_names=[name])[0]
         self.variables = {
-            "id": id,
+            "id": int(id),
             "name": name,
             "comment": comment,
         }
@@ -150,7 +150,7 @@ class Pulsar(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
         }
         return self.mutation_graphql()
 

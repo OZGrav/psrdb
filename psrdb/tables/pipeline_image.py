@@ -42,8 +42,8 @@ class PipelineImage(GraphQLTable):
             Else a client response object.
         """
         filters = [
-            {"field": "id", "value": id},
-            {"field": "pipelineRunId", "value": pipeline_run_id},
+            {"field": "id", "value": int(id) if id is not None else None},
+            {"field": "pipelineRunId", "value": int(pipeline_run_id) if pipeline_run_id is not None else None},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
 

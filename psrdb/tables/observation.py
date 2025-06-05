@@ -181,10 +181,10 @@ class Observation(GraphQLTable):
             pulsar_name = None
         """Return a list of records matching the id and/or any of the arguments."""
         filters = [
-            {"field": "id", "value": id},
+            {"field": "id", "value": int(id) if id is not None else None},
             {"field": "pulsar_Name", "value": pulsar_name},
             {"field": "telescope_Name", "value": telescope_name},
-            {"field": "project_Id", "value": project_id},
+            {"field": "project_Id", "value": int(project_id) if project_id is not None else None},
             {"field": "project_Short", "value": project_short},
             {"field": "mainProject", "value": main_project},
             {"field": "utcStartGte", "value": utcs},
@@ -659,7 +659,7 @@ class Observation(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
         }
         return self.mutation_graphql()
 

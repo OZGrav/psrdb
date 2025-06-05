@@ -39,7 +39,7 @@ class Telescope(GraphQLTable):
             Else a client response object.
         """
         filters = [
-            {"field": "id", "value": id},
+            {"field": "id", "value": int(id) if id is not None else None},
             {"field": "name", "value": name},
         ]
         return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
@@ -103,7 +103,7 @@ class Telescope(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
             "name": name,
         }
         return self.mutation_graphql()
@@ -130,7 +130,7 @@ class Telescope(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
         }
         return self.mutation_graphql()
 

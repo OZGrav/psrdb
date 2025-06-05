@@ -85,8 +85,8 @@ class Ephemeris(GraphQLTable):
             eph_hash = hashlib.md5(json.dumps(eph_json, sort_keys=True, indent=2).encode("utf-8")).hexdigest()
 
         filters = [
-            {"field": "id", "value": id},
-            {"field": "pulsar_Id", "value": pulsar_id},
+            {"field": "id", "value": int(id) if id is not None else None},
+            {"field": "pulsar_Id", "value": int(pulsar_id) if pulsar_id is not None else None},
             {"field": "p0", "value": p0_filtered},
             {"field": "dm", "value": dm},
             {"field": "ephemerisHash", "value": eph_hash},
@@ -210,8 +210,8 @@ class Ephemeris(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
-            "pulsar": pulsar,
+            "id": int(id),
+            "pulsar": int(pulsar),
             "created_at": created_at,
             "created_by": created_by,
             "ephemeris": ephemeris,
@@ -245,7 +245,7 @@ class Ephemeris(GraphQLTable):
         }
         """
         self.variables = {
-            "id": id,
+            "id": int(id),
         }
         return self.mutation_graphql()
 
