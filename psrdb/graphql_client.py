@@ -57,7 +57,7 @@ class GraphQLClient:
             if "Bearer" in header_log["Authorization"]:
                 header_log["Authorization"] = "Bearer [redacted]"
         self.logger.debug(f"Using header: {json.dumps(header_log, indent=4)}")
-        response = self.graphql_session.post(self.graphql_url, headers=self.header, json=payload, timeout=(60, 60))
+        response = self.graphql_session.post(self.graphql_url, headers=self.header, json=payload, timeout=(30, 3700))
         content = json.loads(response.content)
 
         if response.status_code != 200:
