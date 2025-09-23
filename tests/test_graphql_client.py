@@ -161,7 +161,7 @@ class TestGraphQLClient:
                 self.test_graphql_url,
                 headers={"Authorization": f"Bearer {self.test_token}"},
                 json=payload,
-                timeout=(60, 60)
+                timeout=(30, 3700)
             )
             mock_logger.debug.assert_called_with("Success")
 
