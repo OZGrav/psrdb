@@ -1,4 +1,4 @@
-# meerdb
+# psrdb
 
 [![Documentation Status](https://readthedocs.org/projects/psrdb/badge/?version=latest)](https://psrdb.readthedocs.io/en/latest/?badge=latest)
 ![example workflow](https://github.com/OZGrav/psrdb/actions/workflows/pytest.yaml/badge.svg)
@@ -14,7 +14,7 @@ pip install psrdb
 ```
 
 To interact with the database you need to get an account on the [pulsars.org.au](https://pulsars.org.au) website.
-Once you have an account you then need to generate a token on this [page](https://pulsars.org.au/token_generate/).
+Once you have an account you then need to generate a token on this [page](https://pulsars.org.au/api-tokens/).
 
 Set this token using the following command (you can put this in your `~/.bashrc`):
 ```
