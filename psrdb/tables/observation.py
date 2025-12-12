@@ -68,9 +68,9 @@ class Observation(GraphQLTable):
         project_short : str, optional
             Filter by the project short name, by default None
         utcs : str, optional
-            Filter by the utc start time greater than or equal to the timestamp in the format YYYY-MM-DDTHH:MM:SS+00:00, by default None
+            Filter by the utc start time greater than or equal to the timestamp in the format YYYY-MM-DD-HH:MM:SS, by default None
         utce : str, optional
-            Filter by the utc start time less than or equal to the timestamp in the format YYYY-MM-DDTHH:MM:SS+00:00, by default None
+            Filter by the utc start time less than or equal to the timestamp in the format YYYY-MM-DD-HH:MM:SS, by default None
         obs_type : str, optional
             Filter by the observation type (fold, search or cal), by default 'fold'
         unprocessed : bool, optional
@@ -147,9 +147,9 @@ class Observation(GraphQLTable):
         project_short : str, optional
             Filter by the project short name, by default None
         utcs : str, optional
-            Filter by the utc start time greater than or equal to the timestamp in the format YYYY-MM-DDTHH:MM:SS+00:00, by default None
+            Filter by the utc start time greater than or equal to the timestamp in the format YYYY-MM-DD-HH:MM:SS, by default None
         utce : str, optional
-            Filter by the utc start time less than or equal to the timestamp in the format YYYY-MM-DDTHH:MM:SS+00:00, by default None
+            Filter by the utc start time less than or equal to the timestamp in the format YYYY-MM-DD-HH:MM:SS, by default None
         obs_type : str, optional
             Filter by the observation type (fold, search or cal), by default 'fold'
         unprocessed : str, optional
@@ -763,13 +763,13 @@ class Observation(GraphQLTable):
             "--utcs",
             metavar="UTCGTE",
             type=str,
-            help="list observations with utc_start greater than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+            help="list observations with utc_start greater than or equal to the timestamp [YYYY-MM-DD-HH:MM:SS]",
         )
         parser_list.add_argument(
             "--utce",
             metavar="UTCLTE",
             type=str,
-            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DD-HH:MM:SS]",
         )
         parser_list.add_argument(
             "--obs_type",
@@ -781,13 +781,13 @@ class Observation(GraphQLTable):
             "--unprocessed",
             action='store_true',
             default=None,
-            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DD-HH:MM:SS]",
         )
         parser_list.add_argument(
             "--incomplete",
             action='store_true',
             default=None,
-            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DD-HH:MM:SS]",
         )
 
         parser_download = subs.add_parser("download", help="download a csv with can be input to meerpipe based on the following filters")
@@ -833,13 +833,13 @@ class Observation(GraphQLTable):
             "--utcs",
             metavar="UTCGTE",
             type=str,
-            help="list observations with utc_start greater than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+            help="list observations with utc_start greater than or equal to the timestamp [YYYY-MM-DD-HH:MM:SS]",
         )
         parser_download.add_argument(
             "--utce",
             metavar="UTCLTE",
             type=str,
-            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DDTHH:MM:SS+HH:MM]",
+            help="list observations with utc_start less than or equal to the timestamp [YYYY-MM-DD-HH:MM:SS]",
         )
         parser_download.add_argument(
             "--obs_type",
