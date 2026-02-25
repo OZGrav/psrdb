@@ -6,7 +6,9 @@ from psrdb.graphql_table import GraphQLTable
 
 def get_parsers():
     """Returns the default parser for this model"""
-    parser = GraphQLTable.get_default_parser("The following options will allow you to interact with the Ephemeris database object on the command line in different ways based on the sub-commands.")
+    parser = GraphQLTable.get_default_parser(
+        "The following options will allow you to interact with the Ephemeris database object on the command line in different ways based on the sub-commands."
+    )
     Ephemeris.configure_parsers(parser)
     return parser
 
@@ -19,6 +21,7 @@ class Ephemeris(GraphQLTable):
     client : GraphQLClient
         GraphQLClient class instance with the URL and Token already set.
     """
+
     def __init__(self, client):
         GraphQLTable.__init__(self, client)
         self.table_name = "ephemeris"
@@ -48,7 +51,7 @@ class Ephemeris(GraphQLTable):
             "validTo",
         ]
 
-    def list(self, id=None, pulsar_id=None, p0=None, dm=None, eph=None):
+    def list(self, id=None, pulsar_id=None, p0=None, dm=None, rm=None, eph=None):
         """Return a list of Ephemeris information based on the `self.field_names` and filtered by the parameters.
 
         Parameters
@@ -59,6 +62,8 @@ class Ephemeris(GraphQLTable):
             Filter by the pulsar ID, by default None.
         p0 : float, optional
             Filter by the pulsar period, by default None.
+        rm: float, optional
+            Filter by the pulsar RM, by default None.
         dm : float, optional
             Filter by the pulsar DM, by default None.
         eph : str, optional
@@ -72,7 +77,7 @@ class Ephemeris(GraphQLTable):
             Else a client response object.
         """
         # P0 is stored with a maximum of 8 decimal places only
-        m = 10 ** 8
+        m = 10**8
         if p0 is None:
             p0_filtered = None
         else:
@@ -82,25 +87,33 @@ class Ephemeris(GraphQLTable):
         if eph:
             # convert string to json dict, to ensure the hash matches
             eph_json = json.loads(eph)
-            eph_hash = hashlib.md5(json.dumps(eph_json, sort_keys=True, indent=2).encode("utf-8")).hexdigest()
+            eph_hash = hashlib.md5(
+                json.dumps(eph_json, sort_keys=True, indent=2).encode("utf-8")
+            ).hexdigest()
 
         filters = [
             {"field": "id", "value": int(id) if id is not None else None},
-            {"field": "pulsar_Id", "value": int(pulsar_id) if pulsar_id is not None else None},
+            {
+                "field": "pulsar_Id",
+                "value": int(pulsar_id) if pulsar_id is not None else None,
+            },
             {"field": "p0", "value": p0_filtered},
             {"field": "dm", "value": dm},
+            {"field": "rm", "value": rm},
             {"field": "ephemerisHash", "value": eph_hash},
         ]
-        return GraphQLTable.list_graphql(self, self.table_name, filters, [], self.field_names)
+        return GraphQLTable.list_graphql(
+            self, self.table_name, filters, [], self.field_names
+        )
 
     def create(
-            self,
-            pulsar,
-            ephemeris,
-            project_code=None,
-            project_short=None,
-            comment=None,
-        ):
+        self,
+        pulsar,
+        ephemeris,
+        project_code=None,
+        project_short=None,
+        comment=None,
+    ):
         """Create a new Ephemeris database object.
 
         Parameters
@@ -155,7 +168,20 @@ class Ephemeris(GraphQLTable):
         }
         return self.mutation_graphql()
 
-    def update(self, id, pulsar, created_at, created_by, ephemeris, p0, dm, rm, comment, valid_from, valid_to):
+    def update(
+        self,
+        id,
+        pulsar,
+        created_at,
+        created_by,
+        ephemeris,
+        p0,
+        dm,
+        rm,
+        comment,
+        valid_from,
+        valid_to,
+    ):
         """Update a Ephemeris database object.
 
         Parameters
@@ -297,18 +323,36 @@ class Ephemeris(GraphQLTable):
         subs.required = True
 
         parser_list = subs.add_parser("list", help="list existing ephemerides")
-        parser_list.add_argument("--id", metavar="ID", type=int, help="list ephemeris matching the id [int]")
         parser_list.add_argument(
-            "--pulsar", metavar="PSR", type=int, help="list ephemeris matching the pulsar id [int]"
+            "--id", metavar="ID", type=int, help="list ephemeris matching the id [int]"
         )
         parser_list.add_argument(
-            "--p0", metavar="P0", type=float, help="list ephemeris matching the pulsar P0 [float]"
+            "--pulsar",
+            metavar="PSR",
+            type=int,
+            help="list ephemeris matching the pulsar id [int]",
         )
         parser_list.add_argument(
-            "--dm", metavar="DM", type=float, help="list ephemeris matching the pulsar DM [float]"
+            "--p0",
+            metavar="P0",
+            type=float,
+            help="list ephemeris matching the pulsar P0 [float]",
         )
         parser_list.add_argument(
-            "--rm", metavar="RM", type=float, help="list ephemeris matching the pulsar RM [float]"
+            "--dm",
+            metavar="DM",
+            type=float,
+            help="list ephemeris matching the pulsar DM [float]",
         )
-        parser_list.add_argument("--eph", metavar="EPH", type=str, help="list ephemeris matching the ephemeris [JSON]")
-
+        parser_list.add_argument(
+            "--rm",
+            metavar="RM",
+            type=float,
+            help="list ephemeris matching the pulsar RM [float]",
+        )
+        parser_list.add_argument(
+            "--eph",
+            metavar="EPH",
+            type=str,
+            help="list ephemeris matching the ephemeris [JSON]",
+        )
