@@ -15,10 +15,14 @@ ingest_obs = "psrdb.scripts.ingest_obs:main"
 remove_fluxcals = "psrdb.scripts.remove_fluxcals:main"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9,<3.12"
 requests = "^2.25.1"
 python-decouple = "^3.8"
 pulsar-paragraph = "^1.0.1"
+# Explicitly constrained to satisfy pulsar-paragraph, which requires pandas<2.0.0.
+# numpy must also be <2.0.0 as pandas 1.x wheels were compiled against numpy 1.x.
+pandas = ">=1.4.2,<2.0.0"
+numpy = "<2.0.0"
 
 [tool.poetry.group.docs.dependencies]
 numpydoc = "^1.5.0"
