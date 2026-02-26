@@ -73,7 +73,7 @@ class ObservationMetadata:
     # Ephemeris data
     ephemeris_text: Optional[str] = None
 
-    # Required payload mapping fields for JSON output
+    # Required payload mapping fields for ingest into psrdb
     payload_mapping = {
         "pulsar_name": "pulsarName",
         "telescope_name": "telescopeName",
