@@ -118,9 +118,11 @@ class GraphQLTable:
                     else:
                         print(created_data["id"])
             else:
-                self.logger.warning(f"Errors returned in content {content['errors']}")
+                self.logger.error(f"Errors returned in content {content['errors']}")
+                raise Exception(f"Errors returned in content {content['errors']}")
         else:
-            self.logger.warning(f"Bad response status_code={response.status_code}")
+            self.logger.error(f"Bad response status_code={response.status_code}")
+            raise Exception(f"Bad response status_code={response.status_code}")
         return None
 
     def mutation_graphql(self):
@@ -194,7 +196,12 @@ class GraphQLTable:
                             result.append(node["node"])
                         self.print_record_set(node["node"], "\t", print_headers=print_headers)
                         print_headers = cursor is None
-
+                else:
+                    self.logger.error(f"Errors returned in content {content['errors']}")
+                    raise Exception(f"Errors returned in content {content['errors']}")
+            else:
+                self.logger.error(f"Bad response status_code={response.status_code}")
+                raise Exception(f"Bad response status_code={response.status_code}")
         if self.get_dicts:
             return result
         else:
