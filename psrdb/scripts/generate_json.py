@@ -41,15 +41,15 @@ class ObservationMetadata:
     utc_start: str
 
     # Telescope pointing position information
-    raj: float
-    decj: float
-    tied_array_ra: Optional[float] = None
-    tied_array_dec: Optional[float] = None
+    raj: float | str
+    decj: float | str
+    tied_array_ra: Optional[float | str] = None
+    tied_array_dec: Optional[float | str] = None
 
     # Optional observation parameters
     duration: Optional[float] = None
     nant_eff: Optional[int] = None
-    beam: Optional[int] = 0
+    beam: Optional[int] = None
 
     # Calibration metadata
     cal_type: Optional[str] = None
@@ -60,7 +60,7 @@ class ObservationMetadata:
     fold_nbin: Optional[int] = None
     fold_nchan: Optional[int] = None
     fold_npol: Optional[int] = None
-    fold_tsubint: Optional[int] = None
+    fold_tsubint: Optional[float] = None
 
     # Filterbank/Search mode parameters
     filterbank_nbit: Optional[int] = None
@@ -68,7 +68,7 @@ class ObservationMetadata:
     filterbank_nchan: Optional[int] = None
     filterbank_tsamp: Optional[float] = None
     filterbank_dm: Optional[float] = None
-    filterbank_tsubint: Optional[int] = None
+    filterbank_tsubint: Optional[float] = None
 
     # Ephemeris data
     ephemeris_text: Optional[str] = None
@@ -82,6 +82,7 @@ class ObservationMetadata:
         "cal_type": "cal_type",
         "cal_location": "cal_location",
         "obs_type": "obsType",
+        "beam": "beam",
         "utc_start": "utcStart",
         "raj": "raj",
         "decj": "decj",
@@ -106,19 +107,29 @@ class ObservationMetadata:
     }
 
     def to_dict(self) -> dict:
-        """Convert to dictionary with camelCase keys for JSON payload."""
+        """Convert to dictionary with camelCase keys for JSON payload.
+        Only includes fields defined in the required payload mapping for psrdb.
+
+        Returns:
+            Dictionary representation of the observation metadata.
+        """
         data = asdict(self)
 
         # Map snake_case to camelCase for payload compatibility in JSON style
         payload = {}
         for key, value in data.items():
-            camel_key = self.payload_mapping.get(key, key)
-            payload[camel_key] = value
+            try:
+                camel_key = self.payload_mapping[key]
+            except KeyError:
+                pass  # Skip fields not in the payload mapping
+            else:
+                payload[camel_key] = value
 
         return payload
 
-    def to_json(self, **kwargs) -> str:
+    def to_json_string(self, **kwargs) -> str:
         """Convert to JSON string with camelCase keys for JSON payload.
+        Only includes fields defined in the required payload mapping for psrdb.
 
         Args:
             **kwargs: Additional arguments to pass to json.dumps()
@@ -131,6 +142,7 @@ class ObservationMetadata:
 
     def write_json(self, filepath: str, **kwargs) -> None:
         """Write observation metadata to a JSON file with camelCase keys.
+        Only includes fields defined in the required payload mapping for psrdb.
 
         Args:
             filepath: Path to output JSON file.
@@ -238,6 +250,10 @@ class ObservationMetadata:
             "num_channels": "nchan",
             "num_chan": "nchan",
             "beam": "beam",
+            "beam_num": "beam",
+            "beam_number": "beam",
+            "beam_id": "beam",
+            "beamid": "beam",
             "nant": "nant",
             "n_ant": "nant",
             "num_antennas": "nant",
@@ -453,28 +469,6 @@ class ObservationMetadata:
                         key.lower(), key.lower()
                     )
 
-                    # Skip fold* keys if fold mode is not enabled
-                    # if (
-                    #     standardised_key.startswith("fold_")
-                    #     and not fold_mode_enabled
-                    # ):
-                    #     logger.debug(
-                    #         "Skipping key '%s' (fold mode not enabled)",
-                    #         key,
-                    #     )
-                    #     continue
-
-                    # # Skip filterbank* keys if search mode is not enabled
-                    # if (
-                    #     standardised_key.startswith("filterbank_")
-                    #     or standardised_key.startswith("search_")
-                    # ) and not search_mode_enabled:
-                    #     logger.debug(
-                    #         "Skipping key '%s' (search mode not enabled)",
-                    #         key,
-                    #     )
-                    #     continue
-
                     # Type conversion for known possible numeric fields
                     try:
                         if standardised_key in [
@@ -496,13 +490,20 @@ class ObservationMetadata:
                         ]:
                             value = int(value)
                     except ValueError:
-                        logger.warning(
-                            "Failed to convert key '%s' value '%s' to numeric "
-                            "type. Keeping as string.",
-                            key,
-                            value,
-                        )
-                        pass  # Keep as string if conversion fails
+                        if value not in [None, "", "None"]:
+                            logger.warning(
+                                "Failed to convert key '%s' value '%s' to "
+                                "numeric type. Keeping as string.",
+                                key,
+                                value,
+                            )
+                        else:
+                            logger.warning(
+                                "Value for key '%s' is None or empty. "
+                                "Keeping as None.",
+                                key,
+                            )
+                            value = None
 
                     snake_case_data[standardised_key] = value
                     if standardised_key not in ["antenna_list"]:
