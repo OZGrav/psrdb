@@ -1,5 +1,4 @@
 import json
-import pytest
 
 from psrdb.tables.pulsar import Pulsar
 from psrdb.utils.other import to_camel_case
@@ -18,9 +17,36 @@ def test_pulsar_response_parse(capsys):
     pulsar.print_stdout = True
     table_name = "pulsar"
     mock_responses = [
-        (to_camel_case(f'create_{table_name}'), MockResponse({'data': {to_camel_case(f'create_{table_name}'): {'pulsar': {'id': '1'}}}})),
-        (to_camel_case(f'update_{table_name}'), MockResponse({'data': {to_camel_case(f'update_{table_name}'): {'pulsar': {'id': '1'}}}})),
-        (to_camel_case(f'delete_{table_name}'), MockResponse({'data': {to_camel_case(f'delete_{table_name}'): {'pulsar': {'id': '1'}}}})),
+        (
+            to_camel_case(f"create_{table_name}"),
+            MockResponse(
+                {
+                    "data": {
+                        to_camel_case(f"create_{table_name}"): {"pulsar": {"id": "1"}}
+                    }
+                }
+            ),
+        ),
+        (
+            to_camel_case(f"update_{table_name}"),
+            MockResponse(
+                {
+                    "data": {
+                        to_camel_case(f"update_{table_name}"): {"pulsar": {"id": "1"}}
+                    }
+                }
+            ),
+        ),
+        (
+            to_camel_case(f"delete_{table_name}"),
+            MockResponse(
+                {
+                    "data": {
+                        to_camel_case(f"delete_{table_name}"): {"pulsar": {"id": "1"}}
+                    }
+                }
+            ),
+        ),
     ]
 
     for mutation_name, mock_response in mock_responses:
@@ -30,3 +56,4 @@ def test_pulsar_response_parse(capsys):
         # Assert against the captured output
         captured = capsys.readouterr()
         assert captured.out == "1\n"
+
