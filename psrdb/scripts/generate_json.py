@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import json
 import logging
 import numpy as np
@@ -519,197 +520,191 @@ class ObservationMetadata:
                         line_num,
                         key,
                     )
+            # END OF PARSING FILE LINES
+        # END OF OPEN FILE CONTEXT
 
-            # Set the tied-array beam pointing to the RA/Dec if not
-            # explicitly provided
-            if (
-                "tied_array_ra" not in snake_case_data
-                and "raj" in snake_case_data
-            ):
-                snake_case_data["tied_array_ra"] = snake_case_data["raj"]
-            if (
-                "tied_array_dec" not in snake_case_data
-                and "decj" in snake_case_data
-            ):
-                snake_case_data["tied_array_dec"] = snake_case_data["decj"]
+        # Set the tied-array beam pointing to the RA/Dec if not
+        # explicitly provided
+        if "tied_array_ra" not in snake_case_data and "raj" in snake_case_data:
+            snake_case_data["tied_array_ra"] = snake_case_data["raj"]
+        if (
+            "tied_array_dec" not in snake_case_data
+            and "decj" in snake_case_data
+        ):
+            snake_case_data["tied_array_dec"] = snake_case_data["decj"]
 
-            # Derive nant from antenna list if nant is missing
-            if (
-                "nant" not in snake_case_data
-                and "antenna_list" in snake_case_data
-            ):
-                antenna_value = snake_case_data.pop("antenna_list")
+        # Derive nant from antenna list if nant is missing
+        if "nant" not in snake_case_data and "antenna_list" in snake_case_data:
+            antenna_value = snake_case_data.pop("antenna_list")
 
-                # Parse antenna list (comma-separated or space-separated)
-                if isinstance(antenna_value, str):
-                    # Try comma-separated first, then space-separated
-                    if "," in antenna_value:
-                        antennas = [
-                            a.strip()
-                            for a in antenna_value.split(",")
-                            if a.strip()
-                        ]
-                    else:
-                        antennas = [
-                            a.strip()
-                            for a in antenna_value.split()
-                            if a.strip()
-                        ]
+            # Parse antenna list (comma-separated or space-separated)
+            if isinstance(antenna_value, str):
+                # Try comma-separated first, then space-separated
+                if "," in antenna_value:
+                    antennas = [
+                        a.strip()
+                        for a in antenna_value.split(",")
+                        if a.strip()
+                    ]
+                else:
+                    antennas = [
+                        a.strip() for a in antenna_value.split() if a.strip()
+                    ]
 
-                    snake_case_data["nant"] = len(antennas)
+                snake_case_data["nant"] = len(antennas)
+                logger.info(
+                    "Derived nant=%d from antenna list",
+                    len(antennas),
+                )
+                logger.debug("Antenna list: %s", antennas)
+
+        # Derive nant_eff from WEIGHTS_POL* if nant_eff is missing
+        if "nant_eff" not in snake_case_data and pol_weights:
+            try:
+                all_weights = []
+
+                # Parse each WEIGHTS_POL* key
+                for weight_key in sorted(pol_weights.keys()):
+                    weight_value = pol_weights[weight_key]
+
+                    # Parse weights array
+                    if isinstance(weight_value, str):
+                        # Remove brackets if present
+                        if "," in weight_value:
+                            weights = [
+                                float(w.strip())
+                                for w in weight_value.split(",")
+                                if w.strip()
+                            ]
+                        else:
+                            weights = [
+                                float(w.strip())
+                                for w in weight_value.split()
+                                if w.strip()
+                            ]
+                        all_weights.append(weights)
+
+                if all_weights:
+                    # Convert to numpy array for easier computation
+                    weights_array = np.array(all_weights)
+
+                    # Sum along antenna axis (axis 1) and compute mean
+                    pol_sums = weights_array.sum(axis=1)
+                    nant_eff = int(pol_sums.mean())
+
+                    snake_case_data["nant_eff"] = nant_eff
                     logger.info(
-                        "Derived nant=%d from antenna list",
-                        len(antennas),
+                        "Derived nant_eff=%d from WEIGHTS_POL* keys",
+                        nant_eff,
                     )
-                    logger.debug("Antenna list: %s", antennas)
-
-            # Derive nant_eff from WEIGHTS_POL* if nant_eff is missing
-            if "nant_eff" not in snake_case_data and pol_weights:
-                try:
-                    all_weights = []
-
-                    # Parse each WEIGHTS_POL* key
-                    for weight_key in sorted(pol_weights.keys()):
-                        weight_value = pol_weights[weight_key]
-
-                        # Parse weights array
-                        if isinstance(weight_value, str):
-                            # Remove brackets if present
-                            if "," in weight_value:
-                                weights = [
-                                    float(w.strip())
-                                    for w in weight_value.split(",")
-                                    if w.strip()
-                                ]
-                            else:
-                                weights = [
-                                    float(w.strip())
-                                    for w in weight_value.split()
-                                    if w.strip()
-                                ]
-                            all_weights.append(weights)
-
-                    if all_weights:
-                        # Convert to numpy array for easier computation
-                        weights_array = np.array(all_weights)
-
-                        # Sum along antenna axis (axis 1) and compute mean
-                        pol_sums = weights_array.sum(axis=1)
-                        nant_eff = int(pol_sums.mean())
-
-                        snake_case_data["nant_eff"] = nant_eff
-                        logger.info(
-                            "Derived nant_eff=%d from WEIGHTS_POL* keys",
-                            nant_eff,
-                        )
-                        logger.debug(
-                            "Poln. Weights array shape: %s, poln. sums: %s",
-                            weights_array.shape,
-                            pol_sums,
-                        )
-                except (ValueError, IndexError) as e:
-                    logger.warning(
-                        "Failed to derive nant_eff from WEIGHTS_POL*: %s",
-                        str(e),
+                    logger.debug(
+                        "Poln. Weights array shape: %s, poln. sums: %s",
+                        weights_array.shape,
+                        pol_sums,
                     )
-
-            # Process fold parameters if fold mode is enabled
-            if fold_mode_enabled and fold_params:
-                # Mapping of fold parameter keys to standardized field names
-                fold_param_mapping = {
-                    "FOLD_DM": "fold_dm",
-                    "FOLD_NBIN": "fold_nbin",
-                    "FOLD_OUTNBIN": "fold_nbin",
-                    "FOLD_NCHAN": "fold_nchan",
-                    "FOLD_OUTNCHAN": "fold_nchan",
-                    "FOLD_NPOL": "fold_npol",
-                    "FOLD_OUTNPOL": "fold_npol",
-                    "FOLD_TSUBINT": "fold_tsubint",
-                    "FOLD_OUTTSUBINT": "fold_tsubint",
-                }
-
-                for param_key, param_value in fold_params.items():
-                    standardised_key = fold_param_mapping.get(param_key)
-                    if standardised_key:
-                        # Type conversion for fold parameters
-                        try:
-                            if standardised_key in ["fold_dm", "fold_tsubint"]:
-                                param_value = float(param_value)
-                            else:
-                                param_value = int(param_value)
-                        except ValueError:
-                            logger.warning(
-                                "Failed to convert fold param '%s' value '%s' "
-                                "to numeric type",
-                                param_key,
-                                param_value,
-                            )
-
-                        snake_case_data[standardised_key] = param_value
-                        logger.debug(
-                            "Added fold parameter '%s' -> '%s' with value: %s",
-                            param_key,
-                            standardised_key,
-                            param_value,
-                        )
-            elif fold_params and not fold_mode_enabled:
-                logger.debug(
-                    "Fold parameters found but fold mode not enabled; "
-                    "skipping: %s",
-                    list(fold_params.keys()),
+            except (ValueError, IndexError) as e:
+                logger.warning(
+                    "Failed to derive nant_eff from WEIGHTS_POL*: %s",
+                    str(e),
                 )
 
-            # Process search parameters if search mode is enabled
-            if search_mode_enabled and search_params:
-                # Mapping of search parameter keys to standardized field names
-                search_param_mapping = {
-                    "SEARCH_NBIT": "filterbank_nbit",
-                    "SEARCH_OUTNBIT": "filterbank_nbit",
-                    "SEARCH_NPOL": "filterbank_npol",
-                    "SEARCH_OUTNPOL": "filterbank_npol",
-                    "SEARCH_NCHAN": "filterbank_nchan",
-                    "SEARCH_OUTNCHAN": "filterbank_nchan",
-                    "SEARCH_TSAMP": "filterbank_tsamp",
-                    "SEARCH_OUTTSAMP": "filterbank_tsamp",
-                    "SEARCH_DM": "filterbank_dm",
-                    "SEARCH_TSUBINT": "filterbank_tsubint",
-                    "SEARCH_OUTTSUBINT": "filterbank_tsubint",
-                }
+        # Process fold parameters if fold mode is enabled
+        if fold_mode_enabled and fold_params:
+            # Mapping of fold parameter keys to standardized field names
+            fold_param_mapping = {
+                "FOLD_DM": "fold_dm",
+                "FOLD_NBIN": "fold_nbin",
+                "FOLD_OUTNBIN": "fold_nbin",
+                "FOLD_NCHAN": "fold_nchan",
+                "FOLD_OUTNCHAN": "fold_nchan",
+                "FOLD_NPOL": "fold_npol",
+                "FOLD_OUTNPOL": "fold_npol",
+                "FOLD_TSUBINT": "fold_tsubint",
+                "FOLD_OUTTSUBINT": "fold_tsubint",
+            }
 
-                for param_key, param_value in search_params.items():
-                    standardised_key = search_param_mapping.get(param_key)
-                    if standardised_key:
-                        # Type conversion for search parameters
-                        try:
-                            if standardised_key in [
-                                "filterbank_tsamp",
-                                "filterbank_dm",
-                                "filterbank_tsubint",
-                            ]:
-                                param_value = float(param_value)
-                            else:
-                                param_value = int(param_value)
-                        except ValueError:
-                            logger.warning(
-                                "Failed to convert search param '%s' value "
-                                "'%s' to numeric type",
-                                param_key,
-                                param_value,
-                            )
-
-                        snake_case_data[standardised_key] = param_value
-                        logger.debug(
-                            "Added search parameter '%s' -> "
-                            "'%s' with value: %s",
+            for param_key, param_value in fold_params.items():
+                standardised_key = fold_param_mapping.get(param_key)
+                if standardised_key:
+                    # Type conversion for fold parameters
+                    try:
+                        if standardised_key in ["fold_dm", "fold_tsubint"]:
+                            param_value = float(param_value)
+                        else:
+                            param_value = int(param_value)
+                    except ValueError:
+                        logger.warning(
+                            "Failed to convert fold param '%s' value '%s' "
+                            "to numeric type",
                             param_key,
-                            standardised_key,
                             param_value,
                         )
-            elif search_params and not search_mode_enabled:
-                logger.debug(
-                    "Search parameters found but search mode not enabled; "
-                    "skipping: %s",
-                    list(search_params.keys()),
-                )
+
+                    snake_case_data[standardised_key] = param_value
+                    logger.debug(
+                        "Added fold parameter '%s' -> '%s' with value: %s",
+                        param_key,
+                        standardised_key,
+                        param_value,
+                    )
+        elif fold_params and not fold_mode_enabled:
+            logger.debug(
+                "Fold parameters found but fold mode not enabled; "
+                "skipping: %s",
+                list(fold_params.keys()),
+            )
+
+        # Process search parameters if search mode is enabled
+        if search_mode_enabled and search_params:
+            # Mapping of search parameter keys to standardized field names
+            search_param_mapping = {
+                "SEARCH_NBIT": "filterbank_nbit",
+                "SEARCH_OUTNBIT": "filterbank_nbit",
+                "SEARCH_NPOL": "filterbank_npol",
+                "SEARCH_OUTNPOL": "filterbank_npol",
+                "SEARCH_NCHAN": "filterbank_nchan",
+                "SEARCH_OUTNCHAN": "filterbank_nchan",
+                "SEARCH_TSAMP": "filterbank_tsamp",
+                "SEARCH_OUTTSAMP": "filterbank_tsamp",
+                "SEARCH_DM": "filterbank_dm",
+                "SEARCH_TSUBINT": "filterbank_tsubint",
+                "SEARCH_OUTTSUBINT": "filterbank_tsubint",
+            }
+
+            for param_key, param_value in search_params.items():
+                standardised_key = search_param_mapping.get(param_key)
+                if standardised_key:
+                    # Type conversion for search parameters
+                    try:
+                        if standardised_key in [
+                            "filterbank_tsamp",
+                            "filterbank_dm",
+                            "filterbank_tsubint",
+                        ]:
+                            param_value = float(param_value)
+                        else:
+                            param_value = int(param_value)
+                    except ValueError:
+                        logger.warning(
+                            "Failed to convert search param '%s' value "
+                            "'%s' to numeric type",
+                            param_key,
+                            param_value,
+                        )
+
+                    snake_case_data[standardised_key] = param_value
+                    logger.debug(
+                        "Added search parameter '%s' -> "
+                        "'%s' with value: %s",
+                        param_key,
+                        standardised_key,
+                        param_value,
+                    )
+        elif search_params and not search_mode_enabled:
+            logger.debug(
+                "Search parameters found but search mode not enabled; "
+                "skipping: %s",
+                list(search_params.keys()),
+            )
 
         return cls(**snake_case_data)
