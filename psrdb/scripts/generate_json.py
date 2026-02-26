@@ -707,4 +707,56 @@ class ObservationMetadata:
                 list(search_params.keys()),
             )
 
+        # Check to see if we need to get the ephemeris text.
+        # This only makes sense for fold-mode observations.
+        if fold_mode_enabled and "ephemeris_text" not in snake_case_data:
+            # Look for an ephemeris file in the same directory
+            ephemeris_text = cls._get_ephemeris_text_from_local_par(
+                snake_case_data["pulsar_name"], filepath
+            )
+            if ephemeris_text:
+                snake_case_data["ephemeris_text"] = ephemeris_text
+
         return cls(**snake_case_data)
+
+    @staticmethod
+    def _get_ephemeris_text_from_local_par(
+        psrname: str, input_filepath: str
+    ) -> Optional[str]:
+        """Search for an ephemeris file in the same directory as the
+        observation header file.
+
+        The method looks for a file with the same base name as the pulsar
+        name and a .par extension.
+
+        Args:
+            psrname: Name of the pulsar (used to construct expected ephemeris
+                     filename).
+            input_filepath: Path to the input text file containing observation
+                            metadata.
+
+        Returns:
+            The content of the ephemeris file as a string if found, otherwise
+            None.
+        """
+        input_dir = os.path.dirname(input_filepath)
+        pulsar_name = psrname
+        ephemeris_filename = f"{pulsar_name}.par"
+        ephemeris_filepath = os.path.join(input_dir, ephemeris_filename)
+
+        if os.path.isfile(ephemeris_filepath):
+            try:
+                with open(ephemeris_filepath, "r") as eph_file:
+                    ephemeris_text = eph_file.read()
+                    logger.info(
+                        "Loaded ephemeris text from '%s'", ephemeris_filepath
+                    )
+                    return ephemeris_text
+            except Exception as e:
+                logger.warning(
+                    "Failed to read ephemeris file '%s': %s",
+                    ephemeris_filepath,
+                    str(e),
+                )
+
+        return None
