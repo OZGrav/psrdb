@@ -9,7 +9,7 @@ import subprocess
 import numpy as np
 
 from dataclasses import dataclass, asdict
-from typing import Optional
+from typing import Optional, Union
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -45,10 +45,10 @@ class ObservationMetadata:
     utc_start: str
 
     # Telescope pointing position information
-    raj: float | str
-    decj: float | str
-    tied_array_ra: Optional[float | str] = None
-    tied_array_dec: Optional[float | str] = None
+    raj: Union[float, str]
+    decj: Union[float, str]
+    tied_array_ra: Optional[Union[float, str]] = None
+    tied_array_dec: Optional[Union[float, str]] = None
 
     # Optional observation parameters
     duration: Optional[float] = None
@@ -76,6 +76,9 @@ class ObservationMetadata:
 
     # Ephemeris data
     ephemeris_text: Optional[str] = None
+
+    # Logging level
+    log_level: Optional[Union[int, str]] = None
 
     # Required payload mapping fields for ingest into psrdb
     payload_mapping = {
@@ -110,62 +113,141 @@ class ObservationMetadata:
         "ephemeris_text": "ephemerisText",
     }
 
-    def to_dict(self) -> dict:
-        """Convert to dictionary with camelCase keys for JSON payload.
-        Only includes fields defined in the required payload mapping for psrdb.
+    def __post_init__(self):
+        if self.log_level is not None:
+            logger.setLevel(self._resolve_level(self.log_level))
+
+    @staticmethod
+    def _resolve_level(level):
+        if isinstance(level, str):
+            return getattr(logging, level.upper())
+        return level
+
+    @staticmethod
+    def _get_ephemeris_text_from_local_par(
+        input_filepath: str,
+        psrname: str,
+    ) -> Optional[str]:
+        """Search for an ephemeris file in the same directory as the
+        observation header file.
+
+        The method looks for a file with the same base name as the pulsar
+        name and a .par extension.
+
+        Args:
+            input_filepath: Path to the input text file containing observation
+                            metadata.
+            psrname: Name of the pulsar (used to construct expected ephemeris
+                     filename: e.g., "J1234+5678" -> "J1234+5678.par").
 
         Returns:
-            Dictionary representation of the observation metadata.
+            The content of the ephemeris file as a string if found, otherwise
+            None.
         """
-        logger.debug(
-            "Converting observation metadata to dictionary with "
-            "camelCase keys (for JSON style compatibility)."
-        )
-        data = asdict(self)
+        input_dir = os.path.dirname(input_filepath)
+        pulsar_name = psrname
+        ephemeris_filename = f"{pulsar_name}.par"
+        ephemeris_filepath = os.path.join(input_dir, ephemeris_filename)
 
-        # Map snake_case to camelCase for payload compatibility in JSON style
-        payload = {}
-        for key, value in data.items():
+        if os.path.isfile(ephemeris_filepath):
             try:
-                camel_key = self.payload_mapping[key]
-            except KeyError:
-                logger.debug(
-                    "Field '%s' not in payload mapping, skipping.", key
+                with open(ephemeris_filepath, "r") as eph_file:
+                    ephemeris_text = eph_file.read()
+                    logger.info(
+                        "Loaded ephemeris text from '%s'", ephemeris_filepath
+                    )
+                    return ephemeris_text
+            except Exception as e:
+                logger.warning(
+                    "Failed to read ephemeris file '%s': %s",
+                    ephemeris_filepath,
+                    str(e),
                 )
-                pass  # Skip fields not in the payload mapping
-            else:
-                payload[camel_key] = value
 
-        return payload
+        return None
 
-    def to_json_string(self, **kwargs) -> str:
-        """Convert to JSON string with camelCase keys for JSON payload.
-        Only includes fields defined in the required payload mapping for psrdb.
+    @staticmethod
+    def _get_ephemeris_text_from_archive(input_filepath: str) -> Optional[str]:
+        """Search for the PSRCHIVE archive file in the same directory as the
+        observation header file and extract the ephemeris text.
 
-        Args:
-            **kwargs: Additional arguments to pass to json.dumps()
-                     (e.g., indent, sort_keys, etc.)
-
-        Returns:
-            JSON string representation of the observation metadata.
-        """
-        logger.debug("Converting observation metadata to JSON string.")
-        return json.dumps(self.to_dict(), **kwargs)
-
-    def write_json(self, filepath: str, **kwargs) -> None:
-        """Write observation metadata to a JSON file with camelCase keys.
-        Only includes fields defined in the required payload mapping for psrdb.
+        The method looks for ANY archive files with suffixes (in order):
+            - .sum
+            - .F
+            - .FT
+            - .ar
+            - .sf
+        and uses the first one found to attempt to extract the ephemeris text.
+        Uses a system call to the 'vap' utility from PSRCHIVE.
 
         Args:
-            filepath: Path to output JSON file.
-            **kwargs: Additional arguments to pass to json.dumps()
-                     (e.g., indent, sort_keys, etc.)
+            input_filepath: Path to the input text file containing observation
+                            metadata.
 
         Returns:
-            None
+            The content of the ephemeris file as a string if found, otherwise
+            None.
         """
-        with open(filepath, "w") as f:
-            json.dump(self.to_dict(), f, indent=1, **kwargs)
+
+        # Search current directory for archive files with expected suffixes
+        input_dir = os.path.dirname(input_filepath)
+        archive_suffixes = [".sum", ".F", ".FT", ".ar", ".sf"]
+        archive_files = []
+        for suffix in archive_suffixes:
+            archive_files.extend(
+                glob.glob(os.path.join(input_dir, f"*{suffix}"))
+            )
+
+        if not archive_files:
+            logger.warning(
+                "No archive files with suffixes %s found in directory '%s' "
+                "to extract ephemeris text.",
+                archive_suffixes,
+                input_dir,
+            )
+            return None
+        else:
+            cmd = ["vap", "-E", archive_files[0]]
+
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,  # returns output as string instead of bytes
+                    check=True,  # raises exception if command fails
+                )
+            except FileNotFoundError as e:
+                logger.exception(
+                    "The 'vap' utility from PSRCHIVE was not found. Cannot "
+                    "extract ephemeris text from the archive file '%s' "
+                    "(see debug logs for details).",
+                    archive_files[0],
+                )
+                logger.debug(str(e))
+                return None
+            except subprocess.CalledProcessError as e:
+                logger.exception(
+                    "Failed to run 'vap' to extract ephemeris text from "
+                    "archive file '%s' (see debug logs for details).",
+                    archive_files[0],
+                )
+                logger.debug(str(e))
+                return None
+
+        # Get the stdout and then check to make sure it's not empty.
+        ephemeris_text = result.stdout.strip()
+        if ephemeris_text:
+            logger.info(
+                "Extracted ephemeris text from archive '%s'",
+                archive_files[0],
+            )
+            return ephemeris_text
+        else:
+            logger.warning(
+                "No ephemeris text found in archive '%s'",
+                archive_files[0],
+            )
+            return None
 
     @classmethod
     def from_json(cls, filepath: str, **kwargs) -> "ObservationMetadata":
@@ -758,133 +840,68 @@ class ObservationMetadata:
             else:
                 logger.warning(
                     "Failed to extract the ephemeris text from BOTH the "
-                    "archive file and a local .par file.\n"
+                    "archive file and a local .par file"
+                )
+                logger.debug(
                     "Please check info in the input header file '%s'",
                     filepath,
                 )
 
         return cls(**snake_case_data)
 
-    @staticmethod
-    def _get_ephemeris_text_from_local_par(
-        input_filepath: str,
-        psrname: str,
-    ) -> Optional[str]:
-        """Search for an ephemeris file in the same directory as the
-        observation header file.
-
-        The method looks for a file with the same base name as the pulsar
-        name and a .par extension.
-
-        Args:
-            input_filepath: Path to the input text file containing observation
-                            metadata.
-            psrname: Name of the pulsar (used to construct expected ephemeris
-                     filename: e.g., "J1234+5678" -> "J1234+5678.par").
+    def to_dict(self) -> dict:
+        """Convert to dictionary with camelCase keys for JSON payload.
+        Only includes fields defined in the required payload mapping for psrdb.
 
         Returns:
-            The content of the ephemeris file as a string if found, otherwise
-            None.
+            Dictionary representation of the observation metadata.
         """
-        input_dir = os.path.dirname(input_filepath)
-        pulsar_name = psrname
-        ephemeris_filename = f"{pulsar_name}.par"
-        ephemeris_filepath = os.path.join(input_dir, ephemeris_filename)
+        logger.debug(
+            "Converting observation metadata to dictionary with "
+            "camelCase keys (for JSON style compatibility)."
+        )
+        data = asdict(self)
 
-        if os.path.isfile(ephemeris_filepath):
+        # Map snake_case to camelCase for payload compatibility in JSON style
+        payload = {}
+        for key, value in data.items():
             try:
-                with open(ephemeris_filepath, "r") as eph_file:
-                    ephemeris_text = eph_file.read()
-                    logger.info(
-                        "Loaded ephemeris text from '%s'", ephemeris_filepath
-                    )
-                    return ephemeris_text
-            except Exception as e:
-                logger.warning(
-                    "Failed to read ephemeris file '%s': %s",
-                    ephemeris_filepath,
-                    str(e),
+                camel_key = self.payload_mapping[key]
+            except KeyError:
+                logger.debug(
+                    "Field '%s' not in payload mapping, skipping.", key
                 )
+                pass  # Skip fields not in the payload mapping
+            else:
+                payload[camel_key] = value
 
-        return None
+        return payload
 
-    @staticmethod
-    def _get_ephemeris_text_from_archive(input_filepath: str) -> Optional[str]:
-        """Search for the PSRCHIVE archive file in the same directory as the
-        observation header file and extract the ephemeris text.
-
-        The method looks for ANY archive files with suffixes (in order):
-            - .sum
-            - .F
-            - .FT
-            - .ar
-            - .sf
-        and uses the first one found to attempt to extract the ephemeris text.
-        Uses a system call to the 'vap' utility from PSRCHIVE.
+    def to_json_string(self, **kwargs) -> str:
+        """Convert to JSON string with camelCase keys for JSON payload.
+        Only includes fields defined in the required payload mapping for psrdb.
 
         Args:
-            input_filepath: Path to the input text file containing observation
-                            metadata.
+            **kwargs: Additional arguments to pass to json.dumps()
+                     (e.g., indent, sort_keys, etc.)
 
         Returns:
-            The content of the ephemeris file as a string if found, otherwise
-            None.
+            JSON string representation of the observation metadata.
         """
+        logger.debug("Converting observation metadata to JSON string.")
+        return json.dumps(self.to_dict(), **kwargs)
 
-        # Search current directory for archive files with expected suffixes
-        input_dir = os.path.dirname(input_filepath)
-        archive_suffixes = [".sum", ".F", ".FT", ".ar", ".sf"]
-        archive_files = []
-        for suffix in archive_suffixes:
-            archive_files.extend(
-                glob.glob(os.path.join(input_dir, f"*{suffix}"))
-            )
+    def write_json(self, filepath: str, **kwargs) -> None:
+        """Write observation metadata to a JSON file with camelCase keys.
+        Only includes fields defined in the required payload mapping for psrdb.
 
-        if not archive_files:
-            logger.warning(
-                "No archive files with suffixes %s found in directory '%s' "
-                "to extract ephemeris text.",
-                archive_suffixes,
-                input_dir,
-            )
-            return None
-        else:
-            cmd = ["vap", "-E", archive_files[0]]
+        Args:
+            filepath: Path to output JSON file.
+            **kwargs: Additional arguments to pass to json.dumps()
+                     (e.g., indent, sort_keys, etc.)
 
-            try:
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,  # returns output as string instead of bytes
-                    check=True,  # raises exception if command fails
-                )
-            except FileNotFoundError:
-                logger.exception(
-                    "The 'vap' utility from PSRCHIVE was not found. Cannot "
-                    "extract ephemeris text from the archive file '%s'",
-                    archive_files[0],
-                )
-                return None
-            except subprocess.CalledProcessError as e:
-                logger.exception(
-                    "Failed to run 'vap' to extract ephemeris text from "
-                    "archive file '%s' with error:\n\t%s",
-                    archive_files[0],
-                    str(e),
-                )
-                return None
-
-        # Get the stdout and then check to make sure it's not empty.
-        ephemeris_text = result.stdout.strip()
-        if ephemeris_text:
-            logger.info(
-                "Extracted ephemeris text from archive '%s'",
-                archive_files[0],
-            )
-            return ephemeris_text
-        else:
-            logger.warning(
-                "No ephemeris text found in archive '%s'",
-                archive_files[0],
-            )
-            return None
+        Returns:
+            None
+        """
+        with open(filepath, "w") as f:
+            json.dump(self.to_dict(), f, indent=1, **kwargs)
