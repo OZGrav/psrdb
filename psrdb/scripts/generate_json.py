@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import json
 import glob
 import logging
@@ -9,7 +10,7 @@ import subprocess
 import numpy as np
 
 from dataclasses import dataclass, asdict
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -31,6 +32,31 @@ stdout_handler.setFormatter(stdout_formatter)
 # Add both handlers to the logger
 logger.addHandler(file_handler)
 logger.addHandler(stdout_handler)
+
+
+class KeyValueStore:
+    def __init__(self, fname: str):
+        self.cfg = {}
+        self.read_file(fname)
+
+    def read_file(self, fname: str):
+        with open(fname, "r") as header_file:
+            for line in header_file:
+                line = line.strip()
+                line = re.sub("#.*", "", line)
+                if line:
+                    line = re.sub(r"\s+", " ", line)
+                    key, value = line.split(" ", 1)
+                    self.cfg[str(key)] = value.strip()
+
+    def set(self, key: str, value: Any):
+        self.cfg[key] = str(value)
+
+    def get(self, key: str):
+        if key in self.cfg.keys():
+            return self.cfg[key]
+        else:
+            return None
 
 
 @dataclass
@@ -369,33 +395,35 @@ class ObservationMetadata:
     def from_text(
         cls,
         filepath: str,
-        delimiter: str = "=",
         **kwargs,
     ) -> "ObservationMetadata":
-        """Create an ObservationMetadata instance from a generic text file.
+        """Create an ObservationMetadata instance from a text file.
 
-        Parses key-value pairs from a text file where each line contains
-        a key and value separated by the specified delimiter.
+        Uses KeyValueStore to parse the file, then processes key-value pairs
+        to extract observation metadata. Handles special cases like:
+        - WEIGHTS_POL* for deriving nant_eff
+        - FOLD_* and SEARCH_* parameters with obs. type detection
+        - Antenna/Tile list parsing for deriving nant
+        - Ephemeris file extraction for fold mode
+        - Observation length extraction from data file if not provided
+        - Mapping of various possible key names to standardized field names
 
         Args:
-            filepath: Path to text file containing observation metadata.
-            delimiter: Character(s) separating key from value (default: "=").
-                      Supports "whitespace" to mean any amount of whitespace
-                      as the delimiter.
-            **kwargs: Additional arguments to use when constructing the
-                    metadata instance (e.g., beam)
+            filepath: Path to text file containing key-value pairs.
+            **kwargs: Additional arguments (for future extensibility).
 
         Returns:
             ObservationMetadata instance populated from file data.
 
         Raises:
             FileNotFoundError: If the file does not exist.
-            ValueError: If a line cannot be parsed or required fields are
-            missing.
+            ValueError: If required fields are missing.
         """
-        logger.info(
-            "Loading observation metadata from text file: %s", filepath
-        )
+        # Use KeyValueStore to parse the file (handles comments, whitespace)
+        kv_store = KeyValueStore(filepath)
+        cfg = kv_store.cfg
+
+        # Keep the data in a style ready for JSON
         snake_case_data = {}
 
         # Map of possible key variations to standardized field names
@@ -467,8 +495,8 @@ class ObservationMetadata:
             "sample_time": "tsamp",
             "duration": "duration",
             "duration_s": "duration",
-            "tobs": "duration",
             "t_obs": "duration",
+            "tobs": "duration",
             "fold_dm": "fold_dm",
             "folddm": "fold_dm",
             "fold_nbin": "fold_nbin",
@@ -518,228 +546,270 @@ class ObservationMetadata:
             "antenna_names": "antenna_list",
             "antennanames": "antenna_list",
             "tied_array_ra": "tied_array_ra",
-            "tied_beam_ra": "tied_array_ra",
+            "tiedarrayra": "tied_array_ra",
             "tied_array_dec": "tied_array_dec",
-            "tied_beam_dec": "tied_array_dec",
+            "tiedarraydec": "tied_array_dec",
         }
 
-        # Track varius subsets separately for special processing after
-        # initial parsing of the data header
+        # Track various subsets separately for special processing
         pol_weights = {}
         fold_params = {}
         search_params = {}
         fold_mode_enabled = False
         search_mode_enabled = False
+        antenna_list_value = None
 
-        with open(filepath, "r") as f:
-            for line_num, line in enumerate(f, 1):
-                line = line.strip()
+        # Process each key-value pair from the configuration
+        for key, value in cfg.items():
+            # Track WEIGHTS_POL* keys separately for later processing
+            if key.upper().startswith("WEIGHTS_POL"):
+                logger.info(
+                    "Found polarization weights key '%s', will use later to "
+                    "compute nant_eff.",
+                    key,
+                )
+                pol_weights[key.upper()] = value
+                continue
 
-                # Skip empty lines and comments
-                if not line or line.startswith("#"):
-                    continue
-
-                # Handle different delimiters
-                if delimiter == "whitespace":
-                    parts = line.split()
-                else:
-                    parts = line.split(delimiter, 1)
-
-                if len(parts) < 2:
-                    raise ValueError(
-                        f"Line {line_num} could not be parsed: '{line}'. "
-                        f"Expected key{delimiter}value format."
+            if "obs_type" not in snake_case_data:
+                # Check for fold mode enabling keywords
+                # (only if obs_type not explicitly set)
+                if key.upper() in ["PERFORM_FOLD", "FOLD_MODE"]:
+                    fold_mode_enabled = str(value).lower() in [
+                        "true",
+                        "1",
+                        "yes",
+                        "enabled",
+                        "on",
+                    ]
+                    logger.info(
+                        "Fold mode %s based on %s=%s.",
+                        "enabled" if fold_mode_enabled else "disabled",
+                        key.upper(),
+                        value,
                     )
-
-                key, value = parts[0].strip(), parts[1].strip()
-
-                # Track WEIGHTS_POL* keys separately for later processing
-                if key.upper().startswith("WEIGHTS_POL"):
-                    pol_weights[key.upper()] = value
-                    continue
-
-                if "obs_type" not in snake_case_data:
-                    # Check for fold mode enabling keywords
-                    # (only if obs_type not explicitly set)
-                    if key.upper() in ["PERFORM_FOLD", "FOLD_MODE"]:
-                        # Parse fold mode indicator (e.g., "true", "1")
-                        fold_mode_enabled = str(value).lower() in [
-                            "true",
-                            "1",
-                            "yes",
-                            "enabled",
-                            "on",
-                        ]
-                        logger.debug(
-                            "Fold mode %s based on %s=%s "
-                            "(obs_type not explicitly set)",
-                            "enabled" if fold_mode_enabled else "disabled",
-                            key.upper(),
-                            value,
-                        )
-                        if fold_mode_enabled:
-                            snake_case_data["obs_type"] = "fold"
-                            logger.info(
-                                "Parsed key '%s=%s' and setting '%s'=%s",
-                                key,
-                                str(value),
-                                "obs_type",
-                                snake_case_data["obs_type"],
-                            )
-                        continue
-
-                    # Check for search mode enabling keywords
-                    # (only if obs_type not explicitly set)
-                    elif key.upper() in ["PERFORM_SEARCH", "SEARCH_MODE"]:
-                        # Parse search mode indicator (e.g., "true", "1")
-                        search_mode_enabled = str(value).lower() in [
-                            "true",
-                            "1",
-                            "yes",
-                            "enabled",
-                            "on",
-                        ]
-                        logger.debug(
-                            "Search mode %s based on %s=%s "
-                            "(obs_type not explicitly set)",
-                            "enabled" if search_mode_enabled else "disabled",
-                            key.upper(),
-                            value,
-                        )
-                        if search_mode_enabled:
-                            snake_case_data["obs_type"] = "search"
-                            logger.info(
-                                "Parsed key '%s=%s' and setting '%s'=%s",
-                                key,
-                                str(value),
-                                "obs_type",
-                                snake_case_data["obs_type"],
-                            )
-                        continue
-
-                    # Check for calibration enabling keywords
-                    # (only if obs_type not explicitly set)
-                    # TODO: What are the CALIBRATION enabling words or symbols
-                    # to look for here?
-                    elif key.upper() in ["PERFORM_CAL", "CAL_MODE"]:
-                        pass
-
-                # Track fold parameters (regardless of mode flag order)
-                if key.upper() in [
-                    "FOLD_DM",
-                    "FOLD_NBIN",
-                    "FOLD_OUTNBIN",
-                    "FOLD_NCHAN",
-                    "FOLD_OUTNCHAN",
-                    "FOLD_NPOL",
-                    "FOLD_OUTNPOL",
-                    "FOLD_TSUBINT",
-                    "FOLD_OUTTSUBINT",
-                ]:
-                    fold_params[key.upper()] = value
-                    continue
-
-                # Ditto for search parameters
-                if key.upper() in [
-                    "SEARCH_NBIT",
-                    "SEARCH_OUTNBIT",
-                    "SEARCH_NPOL",
-                    "SEARCH_OUTNPOL",
-                    "SEARCH_NCHAN",
-                    "SEARCH_OUTNCHAN",
-                    "SEARCH_TSAMP",
-                    "SEARCH_OUTTSAMP",
-                    "SEARCH_DM",
-                    "SEARCH_TSUBINT",
-                    "SEARCH_OUTTSUBINT",
-                ]:
-                    search_params[key.upper()] = value
-                    continue
-
-                if key.lower() in key_mapping:
-                    standardised_key = key_mapping.get(
-                        key.lower(), key.lower()
-                    )
-
-                    # Type conversion for known possible numeric fields
-                    try:
-                        if standardised_key in [
-                            "frequency",
-                            "bandwidth",
-                            "duration",
-                            "raj",
-                            "decj",
-                            "tsamp",
-                        ]:
-                            value = float(value)
-                        elif standardised_key in [
-                            "nchan",
-                            "beam",
-                            "nant",
-                            "nant_eff",
-                            "npol",
-                            "nbit",
-                        ]:
-                            value = int(value)
-                    except ValueError:
-                        if value not in [None, "", "None"]:
-                            logger.warning(
-                                "Failed to convert key '%s' value '%s' to "
-                                "numeric type. Keeping as string.",
-                                key,
-                                value,
-                            )
-                        else:
-                            logger.warning(
-                                "Value for key '%s' is None or empty. "
-                                "Keeping as None.",
-                                key,
-                            )
-                            value = None
-
-                    snake_case_data[standardised_key] = value
-                    if standardised_key not in ["antenna_list"]:
+                    if fold_mode_enabled:
+                        snake_case_data["obs_type"] = "fold"
                         logger.info(
-                            "Parsed key '%s' as '%s' with value: %s",
-                            key,
-                            standardised_key,
-                            value,
+                            "Setting '%s'='%s'",
+                            "obs_type",
+                            snake_case_data["obs_type"],
                         )
-                else:
+                    continue
+
+                # Check for search mode enabling keywords
+                # (only if obs_type not explicitly set)
+                if key.upper() in ["PERFORM_SEARCH", "SEARCH_MODE"]:
+                    search_mode_enabled = str(value).lower() in [
+                        "true",
+                        "1",
+                        "yes",
+                        "enabled",
+                        "on",
+                    ]
                     logger.debug(
-                        "Line %d: Unknown key '%s' will be skipped.",
-                        line_num,
+                        "Search mode %s based on %s=%s.",
+                        "enabled" if search_mode_enabled else "disabled",
+                        key.upper(),
+                        value,
+                    )
+                    if search_mode_enabled:
+                        snake_case_data["obs_type"] = "search"
+                        logger.info(
+                            "Setting '%s'='%s'",
+                            "obs_type",
+                            snake_case_data["obs_type"],
+                        )
+                    continue
+
+                # Check for calibration mode enabling keywords
+                # (only if obs_type not explicitly set)
+                if key.upper() in ["PERFORM_CAL", "CAL_MODE"]:
+                    cal_mode_enabled = str(value).lower() in [
+                        "true",
+                        "1",
+                        "yes",
+                        "enabled",
+                        "on",
+                    ]
+                    logger.debug(
+                        "Calibration mode %s based on %s=%s.",
+                        "enabled" if cal_mode_enabled else "disabled",
+                        key.upper(),
+                        value,
+                    )
+                    if cal_mode_enabled:
+                        snake_case_data["obs_type"] = "cal"
+                        logger.info(
+                            "Setting '%s'='%s'",
+                            "obs_type",
+                            snake_case_data["obs_type"],
+                        )
+                    continue
+
+                # Check for baseband mode enabling keywords
+                # (only if obs_type not explicitly set)
+                if key.upper() in ["PERFORM_BASEBAND", "BASEBAND_MODE"]:
+                    baseband_mode_enabled = str(value).lower() in [
+                        "true",
+                        "1",
+                        "yes",
+                        "enabled",
+                        "on",
+                    ]
+                    logger.debug(
+                        "Baseband mode %s based on %s=%s.",
+                        "enabled" if baseband_mode_enabled else "disabled",
+                        key.upper(),
+                        value,
+                    )
+                    if baseband_mode_enabled:
+                        snake_case_data["obs_type"] = "baseband"
+                        logger.info(
+                            "Setting '%s'='%s'",
+                            "obs_type",
+                            snake_case_data["obs_type"],
+                        )
+                    continue
+
+            # Track fold parameters (regardless of mode flag order in file)
+            if key.upper() in [
+                "FOLD_DM",
+                "FOLD_NBIN",
+                "FOLD_OUTNBIN",
+                "FOLD_NCHAN",
+                "FOLD_OUTNCHAN",
+                "FOLD_NPOL",
+                "FOLD_OUTNPOL",
+                "FOLD_TSUBINT",
+                "FOLD_OUTTSUBINT",
+            ]:
+                fold_params[key.upper()] = value
+                continue
+
+            # Track search parameters (regardless of mode flag order in file)
+            if key.upper() in [
+                "SEARCH_NBIT",
+                "SEARCH_OUTNBIT",
+                "SEARCH_NPOL",
+                "SEARCH_OUTNPOL",
+                "SEARCH_NCHAN",
+                "SEARCH_OUTNCHAN",
+                "SEARCH_TSAMP",
+                "SEARCH_OUTTSAMP",
+                "SEARCH_DM",
+                "SEARCH_TSUBINT",
+                "SEARCH_OUTTSUBINT",
+            ]:
+                search_params[key.upper()] = value
+                continue
+
+            # TODO: Need to do a similar check to obs_type for cal_type
+            # and cal_location.
+            #  cal_type = "pre" or "backend" means that the calibration was done
+            #             before prior to the observation and/or by the backend
+            #             system/beamformer, so there are no calibration files.
+            #  cal_type = "post" or "pipeline" means that the calibration was done
+            #             after the observation by some pipeline or workflow, so
+            #             there should be a calibration file that can be found or
+            #             identified for access in future.
+            #
+            # The cal_location should be providable via the command line along
+            # with the calibration file location, or some sensible default
+            # location. There is special consideration of the MeerTIME/MeerKAT
+            # observations here. See generate_meertime_json.py for an example.
+
+            if key.lower() in key_mapping:
+                standardised_key = key_mapping[key.lower()]
+
+                # Handle antenna_list separately - don't add to payload
+                if standardised_key == "antenna_list":
+                    antenna_list_value = value
+                    logger.debug(
+                        "Tracked antenna_list "
+                        "(will be used to derive nant only): %s",
+                        value,
+                    )
+                    continue
+
+                # Skip fold* keys if fold mode is not enabled
+                if (
+                    standardised_key.startswith("fold_")
+                    and not fold_mode_enabled
+                ):
+                    logger.debug(
+                        "Skipping key '%s' (fold mode not enabled)",
                         key,
                     )
-            # END OF PARSING FILE LINES
-        # END OF OPEN FILE CONTEXT
+                    continue
 
-        # Set the tied-array beam pointing to the RA/Dec if not
-        # explicitly provided
-        if "tied_array_ra" not in snake_case_data and "raj" in snake_case_data:
-            snake_case_data["tied_array_ra"] = snake_case_data["raj"]
-        if (
-            "tied_array_dec" not in snake_case_data
-            and "decj" in snake_case_data
-        ):
-            snake_case_data["tied_array_dec"] = snake_case_data["decj"]
+                # Skip filterbank* keys if search mode is not enabled
+                if (
+                    standardised_key.startswith("filterbank_")
+                    and not search_mode_enabled
+                ):
+                    logger.debug(
+                        "Skipping key '%s' (search mode not enabled)",
+                        key,
+                    )
+                    continue
+
+                # Type conversion for known numeric fields
+                try:
+                    if standardised_key in [
+                        "frequency",
+                        "bandwidth",
+                        "duration",
+                        "raj",
+                        "decj",
+                        "tsamp",
+                    ]:
+                        value = float(value)
+                    elif standardised_key in [
+                        "nchan",
+                        "beam",
+                        "nant",
+                        "nant_eff",
+                        "npol",
+                        "nbit",
+                    ]:
+                        value = int(value)
+                except ValueError:
+                    logger.warning(
+                        "Failed to convert key '%s' value '%s' "
+                        "to numeric type. Keeping as string.",
+                        key,
+                        value,
+                    )
+
+                snake_case_data[standardised_key] = value
+                logger.info(
+                    "Parsed key '%s' as '%s' with value: %s",
+                    key,
+                    standardised_key,
+                    value,
+                )
+            else:
+                logger.debug(
+                    "Unknown key '%s' will be skipped.",
+                    key,
+                )
 
         # Derive nant from antenna list if nant is missing
-        if "nant" not in snake_case_data and "antenna_list" in snake_case_data:
-            antenna_value = snake_case_data.pop("antenna_list")
-
+        if "nant" not in snake_case_data and antenna_list_value:
             # Parse antenna list (comma-separated or space-separated)
-            if isinstance(antenna_value, str):
-                # Try comma-separated first, then space-separated
-                if "," in antenna_value:
+            if isinstance(antenna_list_value, str):
+                if "," in antenna_list_value:
                     antennas = [
                         a.strip()
-                        for a in antenna_value.split(",")
+                        for a in antenna_list_value.split(",")
                         if a.strip()
                     ]
                 else:
                     antennas = [
-                        a.strip() for a in antenna_value.split() if a.strip()
+                        a.strip()
+                        for a in antenna_list_value.split()
+                        if a.strip()
                     ]
 
                 snake_case_data["nant"] = len(antennas)
@@ -758,9 +828,8 @@ class ObservationMetadata:
                 for weight_key in sorted(pol_weights.keys()):
                     weight_value = pol_weights[weight_key]
 
-                    # Parse weights array
+                    # Parse weight array (comma-separated or space-separated)
                     if isinstance(weight_value, str):
-                        # Remove brackets if present
                         if "," in weight_value:
                             weights = [
                                 float(w.strip())
@@ -779,19 +848,13 @@ class ObservationMetadata:
                     # Convert to numpy array for easier computation
                     weights_array = np.array(all_weights)
 
-                    # Sum along antenna axis (axis 1) and compute mean
-                    pol_sums = weights_array.sum(axis=1)
-                    nant_eff = int(pol_sums.mean())
+                    # Sum along antenna axis and compute mean
+                    nant_eff = int(weights_array.sum(axis=1).mean())
 
                     snake_case_data["nant_eff"] = nant_eff
                     logger.info(
                         "Derived nant_eff=%d from WEIGHTS_POL* keys",
                         nant_eff,
-                    )
-                    logger.debug(
-                        "Poln. Weights array shape: %s, poln. sums: %s",
-                        weights_array.shape,
-                        pol_sums,
                     )
             except (ValueError, IndexError) as e:
                 logger.warning(
@@ -799,24 +862,8 @@ class ObservationMetadata:
                     str(e),
                 )
 
-        # If beam number isn't in the observation header, check if it was
-        # provided as a command-line argument and in the kwargs
-        if "beam" in kwargs and "beam" not in snake_case_data:
-            snake_case_data["beam"] = kwargs["beam"]
-            logger.info("Set beam number from user input: %s", kwargs["beam"])
-
-        # TODO: Sort out the calibration type and location, if required.
-        #  cal_type = "pre" or "backend" means that the calibration was done
-        #             before prior to the observation and/or by the backend
-        #             system/beamformer, so there are no calibration files.
-        #  cal_type = "post" or "pipeline" means that the calibration was done
-        #             after the observation by some pipeline or workflow, so
-        #             there should be a calibration file that can be found or
-        #             identified for access in future.
-
         # Process fold parameters if fold mode is enabled
         if fold_mode_enabled and fold_params:
-            # Mapping of fold parameter keys to standardized field names
             fold_param_mapping = {
                 "FOLD_DM": "fold_dm",
                 "FOLD_NBIN": "fold_nbin",
@@ -832,7 +879,6 @@ class ObservationMetadata:
             for param_key, param_value in fold_params.items():
                 standardised_key = fold_param_mapping.get(param_key)
                 if standardised_key:
-                    # Type conversion for fold parameters
                     try:
                         if standardised_key in ["fold_dm", "fold_tsubint"]:
                             param_value = float(param_value)
@@ -862,7 +908,6 @@ class ObservationMetadata:
 
         # Process search parameters if search mode is enabled
         if search_mode_enabled and search_params:
-            # Mapping of search parameter keys to standardized field names
             search_param_mapping = {
                 "SEARCH_NBIT": "filterbank_nbit",
                 "SEARCH_OUTNBIT": "filterbank_nbit",
@@ -880,7 +925,6 @@ class ObservationMetadata:
             for param_key, param_value in search_params.items():
                 standardised_key = search_param_mapping.get(param_key)
                 if standardised_key:
-                    # Type conversion for search parameters
                     try:
                         if standardised_key in [
                             "filterbank_tsamp",
@@ -892,16 +936,15 @@ class ObservationMetadata:
                             param_value = int(param_value)
                     except ValueError:
                         logger.warning(
-                            "Failed to convert search param '%s' value "
-                            "'%s' to numeric type",
+                            "Failed to convert search param '%s' value '%s' "
+                            "to numeric type",
                             param_key,
                             param_value,
                         )
 
                     snake_case_data[standardised_key] = param_value
                     logger.debug(
-                        "Added search parameter '%s' -> "
-                        "'%s' with value: %s",
+                        "Added search parameter '%s' -> '%s' with value: %s",
                         param_key,
                         standardised_key,
                         param_value,
@@ -913,15 +956,29 @@ class ObservationMetadata:
                 list(search_params.keys()),
             )
 
+        # If beam number isn't in the observation header, check if it was
+        # provided as a command-line argument and in the kwargs
+        if "beam" in kwargs and "beam" not in snake_case_data:
+            snake_case_data["beam"] = kwargs["beam"]
+            logger.info("Set beam number from user input: %s", kwargs["beam"])
+
+        # Set the tied-array beam pointing to the RA/Dec if not
+        # explicitly provided
+        if "tied_array_ra" not in snake_case_data and "raj" in snake_case_data:
+            snake_case_data["tied_array_ra"] = snake_case_data["raj"]
+        if (
+            "tied_array_dec" not in snake_case_data
+            and "decj" in snake_case_data
+        ):
+            snake_case_data["tied_array_dec"] = snake_case_data["decj"]
+
         # Now perform operations that depend on a data file existing, first
         # by identifying the right kind of data file.
+        target_data_file = None
         if fold_mode_enabled:
             target_data_file = cls._identify_data_file(filepath)
         elif search_mode_enabled:
-            target_data_file = cls._identify_data_file(
-                filepath,
-                suffix=".sf",
-            )
+            target_data_file = cls._identify_data_file(filepath, suffix=".sf")
 
         # If a data file is found, and if duration is not already provided in
         # the header file, then extract the observation length from the data
@@ -930,7 +987,7 @@ class ObservationMetadata:
         # duration to None.
         if target_data_file and (
             "duration" not in snake_case_data
-            or snake_case_data["duration"] is None
+            or snake_case_data["duration"] == "None"
         ):
             obs_length = cls._get_observation_length_from_data(
                 target_data_file
@@ -985,17 +1042,17 @@ class ObservationMetadata:
                         "Please check info in the input header file '%s'",
                         filepath,
                     )
-                    ephemeris_text = None
+                    snake_case_data["ephemeris_text"] = None
             else:
                 logger.warning(
                     "No data file found to extract ephemeris text for "
-                    "fold-mode observation. "
+                    "fold-mode observation."
                 )
                 logger.debug(
                     "Please check info in the input header file '%s'",
                     filepath,
                 )
-                ephemeris_text = None
+                snake_case_data["ephemeris_text"] = None
 
         else:
             logger.debug(
@@ -1003,16 +1060,18 @@ class ObservationMetadata:
                 "obs_type is not fold (obs_type=%s)",
                 snake_case_data.get("obs_type"),
             )
-            snake_case_data["ephemeris_text"] = None
+            if "ephemeris_text" not in snake_case_data:
+                snake_case_data["ephemeris_text"] = None
 
         return cls(**snake_case_data)
 
     def to_dict(self) -> dict:
         """Convert to dictionary with camelCase keys for JSON payload.
-        Only includes fields defined in the required payload mapping for psrdb.
+        Includes all fields defined in the payload mapping.
 
         Returns:
-            Dictionary representation of the observation metadata.
+            Dictionary representation of the observation metadata with all
+            fields from payload_mapping included (None if not set).
         """
         logger.debug(
             "Converting observation metadata to dictionary with "
@@ -1021,17 +1080,11 @@ class ObservationMetadata:
         data = asdict(self)
 
         # Map snake_case to camelCase for payload compatibility in JSON style
+        # Ensure all payload_mapping fields are included in the output
         payload = {}
-        for key, value in data.items():
-            try:
-                camel_key = self.payload_mapping[key]
-            except KeyError:
-                logger.debug(
-                    "Field '%s' not in payload mapping, skipping.", key
-                )
-                pass  # Skip fields not in the payload mapping
-            else:
-                payload[camel_key] = value
+        for snake_key, camel_key in self.payload_mapping.items():
+            value = data.get(snake_key)
+            payload[camel_key] = value
 
         return payload
 
