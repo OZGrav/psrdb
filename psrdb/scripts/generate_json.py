@@ -114,6 +114,10 @@ class ObservationMetadata:
         Returns:
             Dictionary representation of the observation metadata.
         """
+        logger.debug(
+            "Converting observation metadata to dictionary with "
+            "camelCase keys (for JSON style compatibility)."
+        )
         data = asdict(self)
 
         # Map snake_case to camelCase for payload compatibility in JSON style
@@ -122,6 +126,9 @@ class ObservationMetadata:
             try:
                 camel_key = self.payload_mapping[key]
             except KeyError:
+                logger.debug(
+                    "Field '%s' not in payload mapping, skipping.", key
+                )
                 pass  # Skip fields not in the payload mapping
             else:
                 payload[camel_key] = value
@@ -139,6 +146,7 @@ class ObservationMetadata:
         Returns:
             JSON string representation of the observation metadata.
         """
+        logger.debug("Converting observation metadata to JSON string.")
         return json.dumps(self.to_dict(), **kwargs)
 
     def write_json(self, filepath: str, **kwargs) -> None:
@@ -157,11 +165,14 @@ class ObservationMetadata:
             json.dump(self.to_dict(), f, indent=1, **kwargs)
 
     @classmethod
-    def from_json(cls, filepath: str) -> "ObservationMetadata":
+    def from_json(cls, filepath: str, **kwargs) -> "ObservationMetadata":
         """Create an ObservationMetadata instance from a JSON file.
 
         Args:
             filepath: Path to JSON file containing observation metadata.
+            **kwargs: Additional arguments to use when constructing the
+                    metadata instance (e.g., beam)
+
 
         Returns:
             ObservationMetadata instance populated from file data.
@@ -171,6 +182,9 @@ class ObservationMetadata:
             json.JSONDecodeError: If the file is not valid JSON.
             KeyError: If required fields are missing from the JSON.
         """
+        logger.info(
+            "Loading observation metadata from JSON file: %s", filepath
+        )
         with open(filepath, "r") as f:
             data = json.load(f)
 
@@ -192,6 +206,7 @@ class ObservationMetadata:
         cls,
         filepath: str,
         delimiter: str = "=",
+        **kwargs,
     ) -> "ObservationMetadata":
         """Create an ObservationMetadata instance from a generic text file.
 
@@ -203,6 +218,8 @@ class ObservationMetadata:
             delimiter: Character(s) separating key from value (default: "=").
                       Supports "whitespace" to mean any amount of whitespace
                       as the delimiter.
+            **kwargs: Additional arguments to use when constructing the
+                    metadata instance (e.g., beam)
 
         Returns:
             ObservationMetadata instance populated from file data.
@@ -212,6 +229,9 @@ class ObservationMetadata:
             ValueError: If a line cannot be parsed or required fields are
             missing.
         """
+        logger.info(
+            "Loading observation metadata from text file: %s", filepath
+        )
         snake_case_data = {}
 
         # Map of possible key variations to standardized field names
@@ -607,6 +627,11 @@ class ObservationMetadata:
                     "Failed to derive nant_eff from WEIGHTS_POL*: %s",
                     str(e),
                 )
+        # If beam number isn't in the observation header, check if it was
+        # provided as a command-line argument and in the kwargs
+        if "beam" in kwargs and "beam" not in snake_case_data:
+            snake_case_data["beam"] = kwargs["beam"]
+            logger.info("Set beam number from user input: %s", kwargs["beam"])
 
         # Process fold parameters if fold mode is enabled
         if fold_mode_enabled and fold_params:
