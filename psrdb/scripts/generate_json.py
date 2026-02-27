@@ -712,6 +712,7 @@ class ObservationMetadata:
                     "Failed to derive nant_eff from WEIGHTS_POL*: %s",
                     str(e),
                 )
+
         # If beam number isn't in the observation header, check if it was
         # provided as a command-line argument and in the kwargs
         if "beam" in kwargs and "beam" not in snake_case_data:
@@ -905,3 +906,52 @@ class ObservationMetadata:
         """
         with open(filepath, "w") as f:
             json.dump(self.to_dict(), f, indent=1, **kwargs)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Generate JSON metadata for a pulsar observation."
+    )
+    parser.add_argument(
+        "input_file",
+        type=str,
+        help="Path to input text file containing observation metadata.",
+    )
+    parser.add_argument(
+        "beam",
+        type=int,
+        nargs="?",
+        help="Optional beam number to include in the metadata "
+        "(if not already in the input file)",
+    )
+    parser.add_argument(
+        "--output_file",
+        type=str,
+        default="meertime.json",
+        help="Path to output JSON file to write the psrdb metadata to.",
+    )
+    parser.add_argument(
+        "--delimiter",
+        type=str,
+        default="whitespace",
+        help=(
+            "Delimiter separating keys and values in the input text file. "
+            "Use 'whitespace' to split on any amount of whitespace. "
+            "(default: whitespace)"
+        ),
+    )
+    args = parser.parse_args()
+
+    try:
+        metadata = ObservationMetadata.from_text(
+            args.input_file,
+            delimiter=args.delimiter,
+            beam=args.beam,
+        )
+        metadata.write_json(args.output_file)
+        print(f"Successfully wrote metadata to {args.output_file}")
+    except Exception as e:
+        print(f"Error processing files: {str(e)}")
+        exit(1)
