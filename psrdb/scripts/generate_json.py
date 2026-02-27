@@ -590,7 +590,7 @@ class ObservationMetadata:
 
                     # Check for search mode enabling keywords
                     # (only if obs_type not explicitly set)
-                    if key.upper() in ["PERFORM_SEARCH", "SEARCH_MODE"]:
+                    elif key.upper() in ["PERFORM_SEARCH", "SEARCH_MODE"]:
                         # Parse search mode indicator (e.g., "true", "1")
                         search_mode_enabled = str(value).lower() in [
                             "true",
@@ -617,9 +617,12 @@ class ObservationMetadata:
                             )
                         continue
 
-                    # TODO: Check for calibration enabling keywords
-                    # What are the CALIBRATION enabling words or symbols
+                    # Check for calibration enabling keywords
+                    # (only if obs_type not explicitly set)
+                    # TODO: What are the CALIBRATION enabling words or symbols
                     # to look for here?
+                    elif key.upper() in ["PERFORM_CAL", "CAL_MODE"]:
+                        pass
 
                 # Track fold parameters (regardless of mode flag order)
                 if key.upper() in [
