@@ -538,6 +538,10 @@ class ObservationMetadata:
                             )
                         continue
 
+                    # TODO: Check for calibration enabling keywords
+                    # What are the CALIBRATION enabling words or symbols
+                    # to look for here?
+
                 # Track fold parameters (regardless of mode flag order)
                 if key.upper() in [
                     "FOLD_DM",
@@ -718,6 +722,19 @@ class ObservationMetadata:
         if "beam" in kwargs and "beam" not in snake_case_data:
             snake_case_data["beam"] = kwargs["beam"]
             logger.info("Set beam number from user input: %s", kwargs["beam"])
+
+        # TODO: Sort out the calibration type and location, if required.
+        #  cal_type = "pre" or "backend" means that the calibration was done
+        #             before prior to the observation and/or by the backend
+        #             system/beamformer, so there are no calibration files.
+        #  cal_type = "post" or "pipeline" means that the calibration was done
+        #             after the observation by some pipeline or workflow, so
+        #             there should be a calibration file that can be found or
+        #             identified for access in future.
+
+        # TODO: Figure out the observation duration if not provided, using the
+        # archive file associated with the header file.
+        #
 
         # Process fold parameters if fold mode is enabled
         if fold_mode_enabled and fold_params:
