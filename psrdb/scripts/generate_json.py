@@ -3,8 +3,11 @@
 
 import os
 import json
+import glob
 import logging
+import subprocess
 import numpy as np
+
 from dataclasses import dataclass, asdict
 from typing import Optional
 
@@ -732,21 +735,40 @@ class ObservationMetadata:
                 list(search_params.keys()),
             )
 
-        # Check to see if we need to get the ephemeris text.
-        # This only makes sense for fold-mode observations.
+        # Check to see if we need to get the ephemeris text. If it was
+        # provided in the header file, don't bother, otherwise try a couple
+        # of options to find it. (This only makes sense for fold-mode.)
         if fold_mode_enabled and "ephemeris_text" not in snake_case_data:
-            # Look for an ephemeris file in the same directory
-            ephemeris_text = cls._get_ephemeris_text_from_local_par(
-                snake_case_data["pulsar_name"], filepath
+            # First, try to get the ephemeris text from the archive file
+            # associated with the header file. If that fails and returns None,
+            # then try to find a local .par file with the same base name as
+            # the pulsar name in the same directory as the header file.
+            # If that fails, then just warn and return None.
+            ephemeris_text = cls._get_ephemeris_text_from_archive(
+                filepath
+            ) or cls._get_ephemeris_text_from_local_par(
+                filepath,
+                snake_case_data["pulsar_name"],
             )
+            # NOTE: We use "short-circuit" evaluation here to avoid the second
+            # method if the first one succeeds in finding the ephemeris text.
+
             if ephemeris_text:
                 snake_case_data["ephemeris_text"] = ephemeris_text
+            else:
+                logger.warning(
+                    "Failed to extract the ephemeris text from BOTH the "
+                    "archive file and a local .par file.\n"
+                    "Please check info in the input header file '%s'",
+                    filepath,
+                )
 
         return cls(**snake_case_data)
 
     @staticmethod
     def _get_ephemeris_text_from_local_par(
-        psrname: str, input_filepath: str
+        input_filepath: str,
+        psrname: str,
     ) -> Optional[str]:
         """Search for an ephemeris file in the same directory as the
         observation header file.
@@ -755,10 +777,10 @@ class ObservationMetadata:
         name and a .par extension.
 
         Args:
-            psrname: Name of the pulsar (used to construct expected ephemeris
-                     filename).
             input_filepath: Path to the input text file containing observation
                             metadata.
+            psrname: Name of the pulsar (used to construct expected ephemeris
+                     filename: e.g., "J1234+5678" -> "J1234+5678.par").
 
         Returns:
             The content of the ephemeris file as a string if found, otherwise
@@ -785,3 +807,84 @@ class ObservationMetadata:
                 )
 
         return None
+
+    @staticmethod
+    def _get_ephemeris_text_from_archive(input_filepath: str) -> Optional[str]:
+        """Search for the PSRCHIVE archive file in the same directory as the
+        observation header file and extract the ephemeris text.
+
+        The method looks for ANY archive files with suffixes (in order):
+            - .sum
+            - .F
+            - .FT
+            - .ar
+            - .sf
+        and uses the first one found to attempt to extract the ephemeris text.
+        Uses a system call to the 'vap' utility from PSRCHIVE.
+
+        Args:
+            input_filepath: Path to the input text file containing observation
+                            metadata.
+
+        Returns:
+            The content of the ephemeris file as a string if found, otherwise
+            None.
+        """
+
+        # Search current directory for archive files with expected suffixes
+        input_dir = os.path.dirname(input_filepath)
+        archive_suffixes = [".sum", ".F", ".FT", ".ar", ".sf"]
+        archive_files = []
+        for suffix in archive_suffixes:
+            archive_files.extend(
+                glob.glob(os.path.join(input_dir, f"*{suffix}"))
+            )
+
+        if not archive_files:
+            logger.warning(
+                "No archive files with suffixes %s found in directory '%s' "
+                "to extract ephemeris text.",
+                archive_suffixes,
+                input_dir,
+            )
+            return None
+        else:
+            cmd = ["vap", "-E", archive_files[0]]
+
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,  # returns output as string instead of bytes
+                    check=True,  # raises exception if command fails
+                )
+            except FileNotFoundError:
+                logger.exception(
+                    "The 'vap' utility from PSRCHIVE was not found. Cannot "
+                    "extract ephemeris text from the archive file '%s'",
+                    archive_files[0],
+                )
+                return None
+            except subprocess.CalledProcessError as e:
+                logger.exception(
+                    "Failed to run 'vap' to extract ephemeris text from "
+                    "archive file '%s' with error:\n\t%s",
+                    archive_files[0],
+                    str(e),
+                )
+                return None
+
+        # Get the stdout and then check to make sure it's not empty.
+        ephemeris_text = result.stdout.strip()
+        if ephemeris_text:
+            logger.info(
+                "Extracted ephemeris text from archive '%s'",
+                archive_files[0],
+            )
+            return ephemeris_text
+        else:
+            logger.warning(
+                "No ephemeris text found in archive '%s'",
+                archive_files[0],
+            )
+            return None
