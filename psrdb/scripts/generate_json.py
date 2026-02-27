@@ -246,21 +246,19 @@ class ObservationMetadata:
                 check=True,  # raises exception if command fails
             )
         except FileNotFoundError as e:
-            logger.exception(
+            logger.error(
                 "The 'vap' utility from PSRCHIVE was not found. Cannot "
-                "extract ephemeris text from the archive file '%s' "
+                "extract ephemeris text from the data file "
                 "(see debug logs for details).",
-                archive_file,
             )
-            logger.debug(str(e))
+            logger.debug(str(e), exc_info=True)
             return None
         except subprocess.CalledProcessError as e:
-            logger.exception(
+            logger.error(
                 "Failed to run 'vap' to extract ephemeris text from "
-                "archive file '%s' (see debug logs for details).",
-                archive_file,
+                "the data file (see debug logs for details).",
             )
-            logger.debug(str(e))
+            logger.debug(str(e), exc_info=True)
             return None
 
         # Get the stdout and then check to make sure it's not empty.
@@ -302,21 +300,19 @@ class ObservationMetadata:
                 check=True,  # raises exception if command fails
             )
         except FileNotFoundError as e:
-            logger.exception(
+            logger.error(
                 "The 'vap' utility from PSRCHIVE was not found. Cannot "
-                "extract observation length from the archive file '%s' "
+                "extract observation length from the data file "
                 "(see debug logs for details).",
-                archive_file,
             )
-            logger.debug(str(e))
+            logger.debug(str(e), exc_info=True)
             return None
         except subprocess.CalledProcessError as e:
-            logger.exception(
+            logger.error(
                 "Failed to run 'vap' to extract observation length from "
-                "archive file '%s' (see debug logs for details).",
-                archive_file,
+                "the data file (see debug logs for details).",
             )
-            logger.debug(str(e))
+            logger.debug(str(e), exc_info=True)
             return None
 
         # Get the stdout and then check to make sure it can be turned
@@ -926,9 +922,9 @@ class ObservationMetadata:
 
         # If a data file is found, and if duration is not already provided in
         # the header file, then extract the observation length from the data
-        # file and use that as the duration.
-        # If no data file is found or if the duration cannot be extracted,
-        # then log a warning and set duration to None.
+        # file and use that as the duration. If no data file is found or if
+        # the duration cannot be extracted, then log a warning and set
+        # duration to None.
         if target_data_file and (
             "duration" not in snake_case_data
             or snake_case_data["duration"] is None
@@ -946,9 +942,11 @@ class ObservationMetadata:
                 )
             else:
                 logger.warning(
-                    "Failed to extract observation duration from data file "
-                    "'%s'. Please check info in the input header file '%s'",
-                    target_data_file,
+                    "Failed to extract obs. duration from the data file. "
+                    "Setting to None."
+                )
+                logger.debug(
+                    "Please check info in the input header file '%s'",
                     filepath,
                 )
                 snake_case_data["duration"] = None
@@ -978,19 +976,24 @@ class ObservationMetadata:
                 else:
                     logger.warning(
                         "Failed to extract the ephemeris text from BOTH the "
-                        "archive file and a local .par file"
+                        "archive file and a local .par file. Setting to None."
                     )
                     logger.debug(
                         "Please check info in the input header file '%s'",
                         filepath,
                     )
+                    ephemeris_text = None
             else:
                 logger.warning(
                     "No data file found to extract ephemeris text for "
-                    "fold-mode observation. Please check info in the input "
-                    "header file '%s'",
+                    "fold-mode observation. "
+                )
+                logger.debug(
+                    "Please check info in the input header file '%s'",
                     filepath,
                 )
+                ephemeris_text = None
+
         else:
             logger.debug(
                 "Not attempting to extract ephemeris text since "
