@@ -12,11 +12,25 @@ from dataclasses import dataclass, asdict
 from typing import Optional, Union
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    encoding="utf-8",
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s",
+logger.setLevel(logging.DEBUG)
+
+# File handler (everything)
+file_handler = logging.FileHandler("generate_json.log")
+file_handler.setLevel(logging.DEBUG)
+file_formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s: %(message)s"
 )
+file_handler.setFormatter(file_formatter)
+
+# Stdout handler (INFO and above only)
+stdout_handler = logging.StreamHandler()
+stdout_handler.setLevel(logging.INFO)
+stdout_formatter = logging.Formatter("%(levelname)s: %(message)s")
+stdout_handler.setFormatter(stdout_formatter)
+
+# Add both handlers to the logger
+logger.addHandler(file_handler)
+logger.addHandler(stdout_handler)
 
 
 @dataclass
